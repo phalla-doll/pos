@@ -10,8 +10,8 @@ export default function Page() {
           <h1 className="font-medium">Project ready!</h1>
           <p>You may now add components and start building.</p>
           <p>We&apos;ve already added the button component for you.</p>
-          <Button asChild className="mt-2">
-            <Link href="/dashboard">Dashboard</Link>
+          <Button render={<Link href="/dashboard" />} nativeButton={false} className="mt-2">
+            Dashboard
           </Button>
         </div>
         <div className="font-mono text-xs text-muted-foreground">
