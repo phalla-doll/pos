@@ -5,8 +5,7 @@ import * as React from "react"
 import { TabBar, TabBarEmpty } from "@/components/dashboard/tab-bar"
 import { useTabs } from "@/hooks/use-tabs"
 import { getScreen } from "@/lib/screens"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { DashboardSquare01Icon } from "@hugeicons/core-free-icons"
+import { LayoutDashboard } from "lucide-react"
 
 /**
  * The tabbed workspace. Owns tab state via {@link useTabs}, renders the
@@ -68,8 +67,7 @@ export function TabWorkspace() {
 function EmptyState() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-      <HugeiconsIcon
-        icon={DashboardSquare01Icon}
+      <LayoutDashboard
         strokeWidth={1.5}
         className="size-10 text-muted-foreground/50"
       />

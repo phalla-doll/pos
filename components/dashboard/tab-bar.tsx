@@ -13,13 +13,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getScreen } from "@/lib/screens"
 import type { Tab } from "@/hooks/use-tabs"
-import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  Copy02Icon,
-  Cancel01Icon,
-  Cancel02Icon,
-  CancelSquareIcon,
-} from "@hugeicons/core-free-icons"
+import { Copy, X, XCircle, SquareX } from "lucide-react"
 
 export type TabBarProps = {
   tabs: Tab[]
@@ -128,7 +122,7 @@ function TabChip({
             isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100",
           )}
         >
-          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+          <X strokeWidth={2} />
         </button>
 
         {/* Active indicator bar. */}
@@ -139,20 +133,20 @@ function TabChip({
 
       <ContextMenuContent>
         <ContextMenuItem onClick={() => onDuplicate(tab.id)}>
-          <HugeiconsIcon icon={Copy02Icon} strokeWidth={2} />
+          <Copy strokeWidth={2} />
           <span>Duplicate</span>
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onClose(tab.id)}>
-          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+          <X strokeWidth={2} />
           <span>Close</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onCloseOthers(tab.id)}>
-          <HugeiconsIcon icon={CancelSquareIcon} strokeWidth={2} />
+          <SquareX strokeWidth={2} />
           <span>Close others</span>
         </ContextMenuItem>
         <ContextMenuItem variant="destructive" onClick={onCloseAll}>
-          <HugeiconsIcon icon={Cancel02Icon} strokeWidth={2} />
+          <XCircle strokeWidth={2} />
           <span>Close all</span>
         </ContextMenuItem>
       </ContextMenuContent>
