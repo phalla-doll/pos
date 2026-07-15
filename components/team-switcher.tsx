@@ -18,8 +18,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { UnfoldMoreIcon, PlusSignIcon } from "@hugeicons/core-free-icons"
+import { ChevronsUpDown, Plus } from "lucide-react"
 
 export function TeamSwitcher({
   teams,
@@ -54,7 +53,7 @@ export function TeamSwitcher({
               <span className="truncate font-medium">{activeTeam.name}</span>
               <span className="truncate text-xs">{activeTeam.plan}</span>
             </div>
-            <HugeiconsIcon icon={UnfoldMoreIcon} strokeWidth={2} className="ml-auto" />
+            <ChevronsUpDown strokeWidth={2} className="ml-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-fit"
@@ -84,7 +83,7 @@ export function TeamSwitcher({
             <DropdownMenuGroup>
               <DropdownMenuItem className="gap-2 p-2">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} className="size-4" />
+                  <Plus strokeWidth={2} className="size-4" />
                 </div>
                 <div className="font-medium text-muted-foreground">
                   Add team

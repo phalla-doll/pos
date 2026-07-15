@@ -18,8 +18,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import type { NavEntry, Screen } from "@/lib/screens"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { ChevronRight } from "lucide-react"
 
 /**
  * Primary sidebar navigation. Renders the nav tree from @/lib/screens:
@@ -78,8 +77,7 @@ function NavGroup({
           <SidebarMenuButton tooltip={label} className="group/collapsible">
             {icon}
             <span>{label}</span>
-            <HugeiconsIcon
-              icon={ArrowRight01Icon}
+            <ChevronRight
               strokeWidth={2}
               className="ml-auto transition-transform duration-200 group-data-[panel-open]/collapsible:rotate-90"
             />

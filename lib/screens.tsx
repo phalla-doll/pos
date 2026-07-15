@@ -1,25 +1,24 @@
 import type { ComponentType } from "react"
 
-import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  BankIcon,
-  ShoppingBasket01Icon,
-  ToolsIcon,
-  UserGroupIcon,
-  SlidersHorizontalIcon,
-  CheckListIcon,
-  UserMultiple02Icon,
-  LeftToRightListNumberIcon,
-  Money01Icon,
-  HistoryIcon,
-  BookOpen01Icon,
-  Analytics01Icon,
-  Exchange01Icon,
-  Invoice01Icon,
-  DeliveryTruck01Icon,
-  WarehouseIcon,
-  Settings02Icon,
-} from "@hugeicons/core-free-icons"
+  Landmark,
+  ShoppingBasket,
+  Wrench,
+  Users,
+  SlidersHorizontal,
+  ListChecks,
+  ListOrdered,
+  Banknote,
+  History,
+  BookOpen,
+  ChartColumn,
+  ArrowRightLeft,
+  ReceiptText,
+  Truck,
+  Warehouse,
+  Settings,
+  type LucideIcon,
+} from "lucide-react"
 
 /**
  * A screen is a unit of dashboard content that can be opened in a tab.
@@ -79,39 +78,39 @@ function ScreenPlaceholder({ label }: { label: string }) {
 function screen(
   type: ScreenType,
   label: string,
-  icon: typeof BankIcon,
+  Icon: LucideIcon,
 ): Screen {
   return {
     type,
     label,
-    icon: <HugeiconsIcon icon={icon} strokeWidth={2} />,
+    icon: <Icon strokeWidth={2} />,
     component: () => <ScreenPlaceholder label={label} />,
   }
 }
 
 export const screens: Record<ScreenType, Screen> = {
-  dashboard: screen("dashboard", "Dashboard", BankIcon),
-  pos: screen("pos", "POS Screen", ShoppingBasket01Icon),
-  users: screen("users", "Users", UserGroupIcon),
-  roles: screen("roles", "Roles", SlidersHorizontalIcon),
-  permissions: screen("permissions", "Permissions", CheckListIcon),
+  dashboard: screen("dashboard", "Dashboard", Landmark),
+  pos: screen("pos", "POS Screen", ShoppingBasket),
+  users: screen("users", "Users", Users),
+  roles: screen("roles", "Roles", SlidersHorizontal),
+  permissions: screen("permissions", "Permissions", ListChecks),
   "customer-listing": screen(
     "customer-listing",
     "Customer Listing",
-    LeftToRightListNumberIcon,
+    ListOrdered,
   ),
-  "customer-owed": screen("customer-owed", "Customer Owed", Money01Icon),
+  "customer-owed": screen("customer-owed", "Customer Owed", Banknote),
   "customer-history": screen(
     "customer-history",
     "Customer History",
-    HistoryIcon,
+    History,
   ),
-  "best-sales": screen("best-sales", "Best Sales", Analytics01Icon),
-  "summary-report": screen("summary-report", "Summary Report", Exchange01Icon),
-  "income-report": screen("income-report", "Income Report", Invoice01Icon),
-  suppliers: screen("suppliers", "Suppliers", DeliveryTruck01Icon),
-  inventory: screen("inventory", "Inventory", WarehouseIcon),
-  settings: screen("settings", "Settings", Settings02Icon),
+  "best-sales": screen("best-sales", "Best Sales", ChartColumn),
+  "summary-report": screen("summary-report", "Summary Report", ArrowRightLeft),
+  "income-report": screen("income-report", "Income Report", ReceiptText),
+  suppliers: screen("suppliers", "Suppliers", Truck),
+  inventory: screen("inventory", "Inventory", Warehouse),
+  settings: screen("settings", "Settings", Settings),
 }
 
 /**
@@ -132,19 +131,19 @@ export const sidebarNav: NavEntry[] = [
   {
     kind: "group",
     label: "Admin Tools",
-    icon: <HugeiconsIcon icon={ToolsIcon} strokeWidth={2} />,
+    icon: <Wrench strokeWidth={2} />,
     children: [s.users, s.roles, s.permissions],
   },
   {
     kind: "group",
     label: "Customers",
-    icon: <HugeiconsIcon icon={UserMultiple02Icon} strokeWidth={2} />,
+    icon: <Users strokeWidth={2} />,
     children: [s["customer-listing"], s["customer-owed"], s["customer-history"]],
   },
   {
     kind: "group",
     label: "Reports",
-    icon: <HugeiconsIcon icon={BookOpen01Icon} strokeWidth={2} />,
+    icon: <BookOpen strokeWidth={2} />,
     children: [s["best-sales"], s["summary-report"], s["income-report"]],
   },
   { kind: "screen", screen: s.suppliers },

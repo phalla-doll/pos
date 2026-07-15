@@ -12,8 +12,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { LayoutBottomIcon, AudioWave01Icon, CommandIcon } from "@hugeicons/core-free-icons"
+import { PanelBottom, AudioWaveform, Command } from "lucide-react"
 import { sidebarNav } from "@/lib/screens"
 
 // Static sidebar data. The nav items are sourced from the screen registry
@@ -28,21 +27,21 @@ const data = {
     {
       name: "Acme Inc",
       logo: (
-        <HugeiconsIcon icon={LayoutBottomIcon} strokeWidth={2} />
+        <PanelBottom strokeWidth={2} />
       ),
       plan: "Enterprise",
     },
     {
       name: "Acme Corp.",
       logo: (
-        <HugeiconsIcon icon={AudioWave01Icon} strokeWidth={2} />
+        <AudioWaveform strokeWidth={2} />
       ),
       plan: "Startup",
     },
     {
       name: "Evil Corp.",
       logo: (
-        <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />
+        <Command strokeWidth={2} />
       ),
       plan: "Free",
     },
