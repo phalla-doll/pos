@@ -99,7 +99,7 @@ export function ListScreen<T>({
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground tabular-nums">
           {filtered.length} {filtered.length === 1 ? "result" : "results"}
         </span>
       </div>
@@ -107,9 +107,9 @@ export function ListScreen<T>({
       {/* Filter bar — one input per filterable column, submit to search. */}
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-3 rounded-xl border bg-card p-4"
+        className="flex flex-col gap-4 rounded-xl border bg-card p-4"
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           {filterable.map((column) => (
             <div key={column.key} className="flex flex-col gap-1.5">
               <label
@@ -138,7 +138,7 @@ export function ListScreen<T>({
               Reset
             </Button>
           )}
-          <Button type="submit">
+          <Button type="submit" className="pr-3 pl-2.5">
             <Search />
             Search
           </Button>
@@ -146,14 +146,16 @@ export function ListScreen<T>({
       </form>
 
       {/* Results table. */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card">
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
               {columns.map((column) => (
                 <TableHead
                   key={column.key}
-                  className={cn(column.align === "right" && "text-right")}
+                  className={cn(
+                    column.align === "right" && "text-right tabular-nums"
+                  )}
                 >
                   {column.header}
                 </TableHead>
@@ -176,7 +178,9 @@ export function ListScreen<T>({
                   {columns.map((column) => (
                     <TableCell
                       key={column.key}
-                      className={cn(column.align === "right" && "text-right")}
+                      className={cn(
+                        column.align === "right" && "text-right tabular-nums"
+                      )}
                     >
                       {column.cell ? column.cell(row) : column.get(row)}
                     </TableCell>

@@ -93,10 +93,10 @@ function TabChip({
             data-slot="tab-chip"
             data-active={isActive}
             className={cn(
-              "group/tab relative flex h-8 shrink-0 items-center gap-1 rounded-md pr-1.5 pl-2.5 text-sm font-medium transition-[background-color,color] duration-150",
+              "group/tab relative flex h-8 shrink-0 items-center gap-1 rounded-md pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
               isActive
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                ? "bg-muted font-medium text-foreground"
+                : "font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           />
         }
