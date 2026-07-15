@@ -3,12 +3,12 @@
 import * as React from "react"
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getScreen } from "@/lib/screens"
@@ -19,7 +19,6 @@ import {
   Cancel01Icon,
   Cancel02Icon,
   CancelSquareIcon,
-  MoreHorizontalCircle01Icon,
 } from "@hugeicons/core-free-icons"
 
 export type TabBarProps = {
@@ -93,86 +92,71 @@ function TabChip({
   const icon = screen?.icon
 
   return (
-    <div
-      data-slot="tab-chip"
-      data-active={isActive}
-      className={cn(
-        "group/tab relative flex h-8 shrink-0 items-center gap-1 rounded-md pr-2 text-sm font-medium transition-[background-color,color,padding] duration-150",
-        isActive
-          ? "bg-muted text-foreground pl-2.5"
-          : "pl-2.5 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => onSelect(tab.id)}
-        className="flex h-full items-center gap-1.5 outline-none [&_svg]:size-4 [&_svg]:shrink-0"
+    <ContextMenu>
+      <ContextMenuTrigger
+        render={
+          <div
+            data-slot="tab-chip"
+            data-active={isActive}
+            className={cn(
+              "group/tab relative flex h-8 shrink-0 items-center gap-1 rounded-md pr-1.5 pl-2.5 text-sm font-medium transition-[background-color,color] duration-150",
+              isActive
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            )}
+          />
+        }
       >
-        {icon}
-        <span className="max-w-40 truncate">{label}</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => onSelect(tab.id)}
+          className="flex h-full items-center gap-1.5 outline-none [&_svg]:size-4 [&_svg]:shrink-0"
+        >
+          {icon}
+          <span className="max-w-40 truncate">{label}</span>
+        </button>
 
-      {/* Actions group — collapses to zero width when not hovered/active so
-          inactive tabs stay compact (no dead space from invisible buttons). */}
-      <div
-        className={cn(
-          "flex items-center gap-0.5 overflow-hidden transition-[opacity,width] duration-150",
-          // Active tab: always show. Inactive: reveal on chip hover.
-          isActive
-            ? "opacity-100"
-            : "w-0 opacity-0 group-hover/tab:w-auto group-hover/tab:opacity-100",
-        )}
-      >
-        {/* Quick close. */}
+        {/* Close — the only inline action. Active tabs always show it;
+            inactive tabs reveal it on hover. Everything else lives in the
+            right-click menu, so there's a single, unambiguous target. */}
         <button
           type="button"
           onClick={() => onClose(tab.id)}
           aria-label={`Close ${label} tab`}
-          className="flex size-4 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          className={cn(
+            "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-opacity duration-150 hover:bg-accent hover:text-foreground [&_svg]:size-3.5",
+            isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100",
+          )}
         >
           <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
         </button>
 
-        {/* More actions (duplicate / close others / close all). */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                type="button"
-                aria-label={`More options for ${label} tab`}
-                className="flex size-4 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:opacity-100"
-              />
-            }
-          >
-            <HugeiconsIcon icon={MoreHorizontalCircle01Icon} strokeWidth={2} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="bottom" className="w-44">
-            <DropdownMenuItem onClick={() => onDuplicate(tab.id)}>
-              <HugeiconsIcon icon={Copy02Icon} strokeWidth={2} />
-              <span>Duplicate</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onClose(tab.id)}>
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-              <span>Close</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onCloseOthers(tab.id)}>
-              <HugeiconsIcon icon={CancelSquareIcon} strokeWidth={2} />
-              <span>Close others</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" onClick={onCloseAll}>
-              <HugeiconsIcon icon={Cancel02Icon} strokeWidth={2} />
-              <span>Close all</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        {/* Active indicator bar. */}
+        {isActive && (
+          <span className="absolute -bottom-px left-2 right-2 h-px bg-primary" />
+        )}
+      </ContextMenuTrigger>
 
-      {/* Active indicator bar. */}
-      {isActive && (
-        <span className="absolute -bottom-px left-2 right-2 h-px bg-primary" />
-      )}
-    </div>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => onDuplicate(tab.id)}>
+          <HugeiconsIcon icon={Copy02Icon} strokeWidth={2} />
+          <span>Duplicate</span>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onClose(tab.id)}>
+          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+          <span>Close</span>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => onCloseOthers(tab.id)}>
+          <HugeiconsIcon icon={CancelSquareIcon} strokeWidth={2} />
+          <span>Close others</span>
+        </ContextMenuItem>
+        <ContextMenuItem variant="destructive" onClick={onCloseAll}>
+          <HugeiconsIcon icon={Cancel02Icon} strokeWidth={2} />
+          <span>Close all</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }
 
