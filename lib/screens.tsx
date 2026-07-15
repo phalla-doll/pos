@@ -1,6 +1,12 @@
 import type { ComponentType } from "react"
 
 import {
+  ListScreen,
+  type ListScreenConfig,
+} from "@/components/dashboard/list-screen"
+import { sampleCustomers, sampleInventory } from "@/lib/sample-data"
+
+import {
   Landmark,
   ShoppingBasket,
   Wrench,
@@ -88,17 +94,48 @@ function screen(
   }
 }
 
+/**
+ * Build a registry-driven list screen (filter bar + table) from a
+ * {@link ListScreenConfig}. The screen's label comes from `config.title`.
+ */
+function listScreen<T>(
+  type: ScreenType,
+  Icon: LucideIcon,
+  config: ListScreenConfig<T>,
+): Screen {
+  return {
+    type,
+    label: config.title,
+    icon: <Icon strokeWidth={2} />,
+    component: () => <ListScreen {...config} />,
+  }
+}
+
 export const screens: Record<ScreenType, Screen> = {
   dashboard: screen("dashboard", "Dashboard", Landmark),
   pos: screen("pos", "POS Screen", ShoppingBasket),
   users: screen("users", "Users", Users),
   roles: screen("roles", "Roles", SlidersHorizontal),
   permissions: screen("permissions", "Permissions", ListChecks),
-  "customer-listing": screen(
-    "customer-listing",
-    "Customer Listing",
-    ListOrdered,
-  ),
+  "customer-listing": listScreen("customer-listing", ListOrdered, {
+    title: "Customer Listing",
+    rows: sampleCustomers,
+    rowKey: (row) => row.id,
+    columns: [
+      { key: "id", header: "Customer ID", get: (c) => c.id },
+      { key: "name", header: "Name", get: (c) => c.name },
+      { key: "phone", header: "Phone", get: (c) => c.phone },
+      { key: "city", header: "City", get: (c) => c.city },
+      { key: "status", header: "Status", get: (c) => c.status },
+      {
+        key: "balance",
+        header: "Balance",
+        align: "right",
+        get: (c) => c.balance,
+        cell: (c) => `$${c.balance.toFixed(2)}`,
+      },
+    ],
+  }),
   "customer-owed": screen("customer-owed", "Customer Owed", Banknote),
   "customer-history": screen(
     "customer-history",
@@ -109,7 +146,32 @@ export const screens: Record<ScreenType, Screen> = {
   "summary-report": screen("summary-report", "Summary Report", ArrowRightLeft),
   "income-report": screen("income-report", "Income Report", ReceiptText),
   suppliers: screen("suppliers", "Suppliers", Truck),
-  inventory: screen("inventory", "Inventory", Warehouse),
+  inventory: listScreen("inventory", Warehouse, {
+    title: "Inventory",
+    rows: sampleInventory,
+    rowKey: (item) => item.sku,
+    columns: [
+      { key: "sku", header: "SKU", get: (i) => i.sku },
+      { key: "name", header: "Name", get: (i) => i.name },
+      { key: "category", header: "Category", get: (i) => i.category },
+      { key: "supplier", header: "Supplier", get: (i) => i.supplier },
+      {
+        key: "stock",
+        header: "Stock",
+        align: "right",
+        get: (i) => i.stock,
+        cell: (i) => `${i.stock} ${i.unit}`,
+      },
+      {
+        key: "price",
+        header: "Price",
+        align: "right",
+        get: (i) => i.price,
+        cell: (i) => `$${i.price.toFixed(2)}`,
+      },
+      { key: "status", header: "Status", get: (i) => i.status },
+    ],
+  }),
   settings: screen("settings", "Settings", Settings),
 }
 
