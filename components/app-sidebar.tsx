@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { LayoutBottomIcon, AudioWave01Icon, CommandIcon } from "@hugeicons/core-free-icons"
-import { sidebarScreens } from "@/lib/screens"
+import { sidebarNav } from "@/lib/screens"
 
 // Static sidebar data. The nav items are sourced from the screen registry
 // in @/lib/screens — each one launches a tab via /dashboard?tab=<type>.
@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarScreens} />
+        <NavMain items={sidebarNav} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
