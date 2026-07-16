@@ -31,6 +31,11 @@ Non-trivial state logic goes in a **pure module** under `lib/` — plain data in
 - Recursive/tree UI: one renderer parameterized by depth, not forked copies per level (see the single `NavNode` in `components/nav-main.tsx`).
 - Share visual constants (e.g. `TAB_BAR_ROW`) instead of re-declaring them where they must match.
 
+## shadcn/ui components
+
+- **Prioritize shadcn components** for UI work: use existing components from `components/ui/` first, and if one is missing, add it with `npx shadcn@latest add <component>` (components land in `components/ui/`) rather than hand-rolling a custom equivalent.
+- **Do not modify the classes of shadcn components**: treat the Tailwind classes inside `components/ui/*` as vendored — don't edit them. Customize at the call site via the `className` prop / variants instead.
+
 ## Tests
 
 - `pnpm test` (vitest, Node env) — put unit tests next to the pure module as `*.test.ts`. Cover the logic, not the render: table-driven cases over plain data.
