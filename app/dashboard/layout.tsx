@@ -7,6 +7,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { HeaderNotifications } from "@/components/header-notifications"
 import { HeaderSearch } from "@/components/header-search"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -44,7 +45,10 @@ export default function DashboardLayout({
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            <HeaderSearch />
+            <div className="ml-auto flex items-center gap-2">
+              <HeaderNotifications />
+              <HeaderSearch />
+            </div>
           </div>
         </header>
         {children}

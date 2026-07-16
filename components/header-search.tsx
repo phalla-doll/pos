@@ -28,7 +28,7 @@ export function HeaderSearch() {
   }, [])
 
   return (
-    <InputGroup className="ml-auto w-full max-w-xs">
+    <InputGroup className="w-full max-w-xs">
       <InputGroupAddon>
         <Search />
       </InputGroupAddon>
