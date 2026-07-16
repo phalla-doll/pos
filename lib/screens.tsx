@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 
+import { DashboardScreen } from "@/components/dashboard/dashboard-screen"
 import {
   ListScreen,
   type ListScreenConfig,
@@ -117,13 +118,33 @@ function listScreen<T>(
 }
 
 /**
+ * Build the dashboard overview screen. Mirrors {@link screen} and
+ * {@link listScreen}: the label and description are declared once, on the
+ * registry entry, and flow to both the screen metadata and its header.
+ */
+function overviewScreen(
+  label: string,
+  Icon: LucideIcon,
+  description: string
+): ScreenDef {
+  return {
+    label,
+    description,
+    icon: <Icon strokeWidth={2} />,
+    component: () => (
+      <DashboardScreen label={label} description={description} />
+    ),
+  }
+}
+
+/**
  * The screen registry — the single source of truth. Keys are the screen
  * types; {@link ScreenType} is derived from them, and the sidebar nav in
  * `@/lib/nav` is validated against this record. `satisfies` keeps each entry
  * type-checked as a {@link ScreenDef} while preserving the literal keys.
  */
 const screenDefs = {
-  dashboard: screen(
+  dashboard: overviewScreen(
     "Dashboard",
     Landmark,
     "An overview of sales, activity, and key metrics at a glance."
