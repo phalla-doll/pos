@@ -80,8 +80,12 @@ export function useTabs(): TabsApi {
   // state to match: ensure a tab of that type exists, then focus it. Uses
   // the "adjust state during render" pattern (storing the previous value)
   // rather than an effect — see https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  //
+  // Seed the previous value as null (not the current param) so the very first
+  // render also reconciles: on a fresh load/refresh at ?tab=inventory the tab
+  // gets created and focused instead of leaving the workspace empty.
   const tabParam = searchParams.get(TAB_PARAM)
-  const [prevTabParam, setPrevTabParam] = React.useState<string | null>(tabParam)
+  const [prevTabParam, setPrevTabParam] = React.useState<string | null>(null)
   if (tabParam !== prevTabParam) {
     setPrevTabParam(tabParam)
     const screen = getScreen(tabParam)
