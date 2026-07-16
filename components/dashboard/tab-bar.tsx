@@ -20,7 +20,7 @@ import { Copy, X, XCircle, SquareX } from "lucide-react"
  * (`TabWorkspaceFallback`) matches the bar's size exactly, instead of
  * re-declaring the constant in each place.
  */
-export const TAB_BAR_ROW = "h-10 border-b bg-background"
+export const TAB_BAR_ROW = "h-10 shrink-0 border-b bg-background"
 
 export type TabBarProps = {
   tabs: Tab[]
