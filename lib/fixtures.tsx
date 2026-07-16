@@ -22,7 +22,10 @@ export type InventoryItem = {
   supplier: string
   stock: number
   unit: string
+  /** Retail price per unit. */
   price: number
+  /** What we pay the supplier per unit — the basis for margin. */
+  cost: number
   status: "In Stock" | "Low Stock" | "Out of Stock"
 }
 
@@ -35,6 +38,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 240,
     unit: "can",
     price: 0.75,
+    cost: 0.54,
     status: "In Stock",
   },
   {
@@ -45,6 +49,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 18,
     unit: "can",
     price: 0.9,
+    cost: 0.68,
     status: "Low Stock",
   },
   {
@@ -55,6 +60,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 60,
     unit: "bag",
     price: 8.5,
+    cost: 7.1,
     status: "In Stock",
   },
   {
@@ -65,6 +71,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 0,
     unit: "bottle",
     price: 1.4,
+    cost: 0.95,
     status: "Out of Stock",
   },
   {
@@ -75,6 +82,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 320,
     unit: "pack",
     price: 0.35,
+    cost: 0.24,
     status: "In Stock",
   },
   {
@@ -85,6 +93,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 12,
     unit: "bottle",
     price: 2.1,
+    cost: 1.65,
     status: "Low Stock",
   },
   {
@@ -95,6 +104,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 85,
     unit: "tube",
     price: 1.25,
+    cost: 0.72,
     status: "In Stock",
   },
   {
@@ -105,6 +115,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 5,
     unit: "bar",
     price: 0.6,
+    cost: 0.33,
     status: "Low Stock",
   },
   {
@@ -115,6 +126,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 0,
     unit: "pack",
     price: 0.8,
+    cost: 0.46,
     status: "Out of Stock",
   },
   {
@@ -125,6 +137,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 150,
     unit: "bottle",
     price: 0.5,
+    cost: 0.34,
     status: "In Stock",
   },
   {
@@ -135,6 +148,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 44,
     unit: "bag",
     price: 1.1,
+    cost: 0.88,
     status: "In Stock",
   },
   {
@@ -145,6 +159,7 @@ export const sampleInventory: InventoryItem[] = [
     stock: 27,
     unit: "bottle",
     price: 1.75,
+    cost: 1.05,
     status: "In Stock",
   },
 ]
@@ -215,6 +230,169 @@ export const sampleCustomers: Customer[] = [
     balance: 15.0,
   },
 ]
+
+/** How a ticket was paid. Cash still leads; ABA/Wing are the local wallets. */
+export type PaymentMethod = "Cash" | "ABA" | "Wing" | "Card"
+
+/** One line of a ticket: how many of a SKU were rung up. */
+export type SaleLine = { sku: string; qty: number }
+
+/**
+ * A single ticket. Deliberately stores no total — the total is `saleTotal()`
+ * over the lines, so a ticket can never disagree with the items on it.
+ */
+export type Sale = {
+  id: string
+  /** Hour of the 24h clock the ticket was rung up in (store trades 7–21). */
+  hour: number
+  /** Wall-clock label for the recent-tickets feed, e.g. "18:42". */
+  time: string
+  /** Set when the sale was rung up against a customer account. */
+  customerId?: string
+  method: PaymentMethod
+  lines: SaleLine[]
+}
+
+/** The store's trading hours, inclusive — a 7am open and a 9pm close. */
+export const TRADING_HOURS = Array.from({ length: 15 }, (_, i) => 7 + i)
+
+/**
+ * Relative footfall per trading hour: a breakfast rush, a lunch bump, and the
+ * big after-work peak. This curve is the shape of the day — ticket counts are
+ * drawn from it, so the hourly chart and the KPIs come from the same source.
+ */
+const HOUR_WEIGHTS: Record<number, number> = {
+  7: 5,
+  8: 7,
+  9: 5,
+  10: 4,
+  11: 7,
+  12: 9,
+  13: 6,
+  14: 4,
+  15: 4,
+  16: 6,
+  17: 11,
+  18: 14,
+  19: 12,
+  20: 7,
+  21: 3,
+}
+
+/** How often each payment method turns up, as relative weights. */
+const METHOD_WEIGHTS: [PaymentMethod, number][] = [
+  ["Cash", 52],
+  ["ABA", 28],
+  ["Wing", 12],
+  ["Card", 8],
+]
+
+/** Relative likelihood of a SKU landing in a basket — staples move fastest. */
+const SKU_WEIGHTS: Record<string, number> = {
+  "SKU-0001": 14, // Coca-Cola
+  "SKU-0002": 11, // Angkor Beer
+  "SKU-0003": 4, // Jasmine Rice (big ticket, slow mover)
+  "SKU-0004": 3, // Fish Sauce
+  "SKU-0005": 16, // Instant Noodles
+  "SKU-0006": 5, // Cooking Oil
+  "SKU-0007": 4, // Toothpaste
+  "SKU-0008": 6, // Bath Soap
+  "SKU-0009": 9, // Potato Chips
+  "SKU-0010": 13, // Mineral Water
+  "SKU-0011": 6, // Sugar
+  "SKU-0012": 3, // Dish Soap
+}
+
+/**
+ * A tiny seeded PRNG (mulberry32). Fixtures must be identical on every render
+ * and in every test run, so the day is generated from a fixed seed rather than
+ * `Math.random()` — same seed in, same day out.
+ */
+function mulberry32(seed: number): () => number {
+  let a = seed
+  return () => {
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/** Draw one entry from `[value, weight]` pairs, proportional to weight. */
+function weightedPick<T>(pairs: [T, number][], rand: () => number): T {
+  const total = pairs.reduce((sum, [, w]) => sum + w, 0)
+  let roll = rand() * total
+  for (const [value, weight] of pairs) {
+    roll -= weight
+    if (roll <= 0) return value
+  }
+  return pairs[pairs.length - 1][0]
+}
+
+/**
+ * Generate one trading day of tickets from a seed. Sellable SKUs only — an
+ * out-of-stock item can't be rung up, which is what makes the inventory panel
+ * and the sales figures tell a consistent story.
+ */
+function generateDay(seed: number, volume: number): Sale[] {
+  const rand = mulberry32(seed)
+  const sellable = sampleInventory.filter(
+    (item) => item.status !== "Out of Stock"
+  )
+  const skuPairs: [string, number][] = sellable.map((item) => [
+    item.sku,
+    SKU_WEIGHTS[item.sku] ?? 1,
+  ])
+  const sales: Sale[] = []
+
+  for (const hour of TRADING_HOURS) {
+    const weight = HOUR_WEIGHTS[hour] ?? 1
+    // Jitter the hour's ticket count a little so the curve isn't mechanical.
+    const count = Math.max(
+      1,
+      Math.round(weight * volume * (0.85 + rand() * 0.3))
+    )
+    for (let i = 0; i < count; i++) {
+      const lineCount = 1 + Math.floor(rand() * 3.4)
+      const lines: SaleLine[] = []
+      for (let j = 0; j < lineCount; j++) {
+        const sku = weightedPick(skuPairs, rand)
+        if (lines.some((line) => line.sku === sku)) continue
+        lines.push({ sku, qty: 1 + Math.floor(rand() * 2.6) })
+      }
+      const minute = Math.floor(rand() * 60)
+      sales.push({
+        id: `T-${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}-${i}`,
+        hour,
+        time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+        method: weightedPick(METHOD_WEIGHTS, rand),
+        // Roughly one ticket in six is rung up against an account.
+        customerId:
+          rand() < 0.16
+            ? sampleCustomers[Math.floor(rand() * sampleCustomers.length)].id
+            : undefined,
+        lines,
+      })
+    }
+  }
+  return sales
+}
+
+/**
+ * Today's and yesterday's tickets. Two seeds, and today runs a little hotter —
+ * that gap is what the KPI deltas measure. Everything the dashboard shows is
+ * derived from these two arrays plus {@link sampleInventory}, so no total on
+ * screen can drift from the tickets underneath it.
+ */
+export const todaySales: Sale[] = generateDay(20260716, 2.6)
+export const yesterdaySales: Sale[] = generateDay(20260715, 2.35)
+
+/**
+ * The trading day the fixtures describe. A fixed label rather than a live
+ * clock: the dashboard is statically exported, so a `new Date()` here would
+ * render one date on the server and another in the browser.
+ */
+export const businessDate = "Thu 16 Jul"
 
 /** The signed-in user shown in the sidebar footer. */
 export const sidebarUser = {
