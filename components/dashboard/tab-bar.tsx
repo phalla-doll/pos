@@ -107,7 +107,18 @@ function TabChip({
           className="flex h-full items-center gap-1.5 outline-none [&_svg]:size-4 [&_svg]:shrink-0"
         >
           {icon}
-          <span className="max-w-40 truncate">{label}</span>
+          {/* Reserve the bold width with an invisible ghost so switching
+              between active (medium) and inactive (normal) weights doesn't
+              reflow the tab and shift its neighbors. */}
+          <span className="grid max-w-40">
+            <span
+              aria-hidden
+              className="col-start-1 row-start-1 truncate font-medium invisible"
+            >
+              {label}
+            </span>
+            <span className="col-start-1 row-start-1 truncate">{label}</span>
+          </span>
         </button>
 
         {/* Close — the only inline action. Active tabs always show it;
