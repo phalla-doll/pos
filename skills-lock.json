@@ -13,6 +13,12 @@
       "skillPath": "skills/better-ui/SKILL.md",
       "computedHash": "cb08e0fc63bdd829277770815d645979e0661ae5717dfb01e39a921138b684da"
     },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "66e8a50c83c3c724fcfe0769701b665c56cec220cc4f49cc1aee8bdfc07de94a"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
