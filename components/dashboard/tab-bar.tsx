@@ -16,9 +16,9 @@ import type { Tab } from "@/hooks/use-tabs"
 import { Copy, X, XCircle, SquareX } from "lucide-react"
 
 /**
- * Height + bottom border of the tab-bar row. Shared so the empty state and the
- * Suspense fallback (`TabWorkspaceFallback`) match the bar's size exactly,
- * instead of re-declaring the constant in each place.
+ * Height + bottom border of the tab-bar row. Shared so the Suspense fallback
+ * (`TabWorkspaceFallback`) matches the bar's size exactly, instead of
+ * re-declaring the constant in each place.
  */
 export const TAB_BAR_ROW = "h-10 border-b bg-background"
 
@@ -169,17 +169,5 @@ function TabChip({
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  )
-}
-
-/**
- * Empty state shown when there are no open tabs. Renders a centered prompt
- * directing the user to the sidebar.
- */
-export function TabBarEmpty() {
-  return (
-    <div className={cn("flex items-center px-4", TAB_BAR_ROW)}>
-      <span className="text-xs text-muted-foreground">No tabs open</span>
-    </div>
   )
 }

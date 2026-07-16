@@ -2,11 +2,7 @@
 
 import * as React from "react"
 
-import {
-  TabBar,
-  TabBarEmpty,
-  TAB_BAR_ROW,
-} from "@/components/dashboard/tab-bar"
+import { TabBar, TAB_BAR_ROW } from "@/components/dashboard/tab-bar"
 import { useTabs } from "@/hooks/use-tabs"
 import { getScreen } from "@/lib/screens"
 import { LayoutDashboard } from "lucide-react"
@@ -35,7 +31,7 @@ export function TabWorkspace() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {tabs.length > 0 ? (
+      {tabs.length > 0 && (
         <TabBar
           tabs={tabs}
           activeId={activeId}
@@ -45,8 +41,6 @@ export function TabWorkspace() {
           onCloseOthers={closeOthers}
           onCloseAll={closeAll}
         />
-      ) : (
-        <TabBarEmpty />
       )}
 
       {activeScreen ? (
