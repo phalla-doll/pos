@@ -226,6 +226,7 @@ const screenDefs = {
     Warehouse,
     "Track stock levels, pricing, and product details.",
     {
+      creatable: true,
       rows: sampleInventory,
       rowKey: (item) => item.sku,
       columns: [
