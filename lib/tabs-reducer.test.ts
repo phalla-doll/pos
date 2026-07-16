@@ -1,33 +1,50 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  activeScreenType,
-  initialTabsState,
+  contentEquals,
+  emptyContent,
+  fromContent,
+  initialWorkspaceState,
+  normalize,
   tabsReducer,
-  type TabsState,
+  toContent,
+  type WorkspaceContent,
+  type WorkspaceState,
 } from "@/lib/tabs-reducer"
 
-// A small state builder so cases read as data. Screen types are cast because
-// the reducer never inspects them — it only compares them for equality.
+// Small builders so cases read as data. Screen types are cast because the
+// reducer never inspects them — it only compares them for equality.
+type ScreenType = WorkspaceContent["types"][number]
+
 function state(
   tabs: Array<[id: string, screenType: string]>,
   activeId: string | null
-): TabsState {
+): WorkspaceState {
   return {
     tabs: tabs.map(([id, screenType]) => ({
       id,
-      screenType: screenType as TabsState["tabs"][number]["screenType"],
+      screenType: screenType as ScreenType,
     })),
     activeId,
   }
 }
 
-const inventory = "inventory" as TabsState["tabs"][number]["screenType"]
-const dashboard = "dashboard" as TabsState["tabs"][number]["screenType"]
+function content(types: string[], activeIndex: number): WorkspaceContent {
+  return { types: types as ScreenType[], activeIndex }
+}
 
-describe("open / sync (reuse-or-create)", () => {
+const inventory = "inventory" as ScreenType
+const dashboard = "dashboard" as ScreenType
+
+/** A deterministic mint so cases stay free of randomness. */
+function minter(prefix = "new") {
+  let n = 0
+  return () => `${prefix}${++n}`
+}
+
+describe("open (reuse-or-create)", () => {
   it("creates and focuses a new tab when none of that type is open", () => {
-    const next = tabsReducer(initialTabsState, {
+    const next = tabsReducer(initialWorkspaceState, {
       type: "open",
       screenType: inventory,
       newId: "a",
@@ -53,25 +70,11 @@ describe("open / sync (reuse-or-create)", () => {
     expect(next.activeId).toBe("a")
   })
 
-  it("sync with a null screen focuses nothing but keeps tabs open", () => {
-    const start = state([["a", "inventory"]], "a")
-    const next = tabsReducer(start, {
-      type: "sync",
-      screenType: null,
-      newId: "x",
-    })
-    expect(next.tabs).toHaveLength(1)
-    expect(next.activeId).toBeNull()
-  })
-
   it("returns the same reference when reusing the already-active tab", () => {
     const start = state([["a", "inventory"]], "a")
-    const next = tabsReducer(start, {
-      type: "open",
-      screenType: inventory,
-      newId: "unused",
-    })
-    expect(next).toBe(start)
+    expect(
+      tabsReducer(start, { type: "open", screenType: inventory, newId: "x" })
+    ).toBe(start)
   })
 })
 
@@ -90,11 +93,6 @@ describe("close (neighbor focus)", () => {
     const next = tabsReducer(three(), { type: "close", id: "b" })
     expect(next.tabs.map((t) => t.id)).toEqual(["a", "c"])
     expect(next.activeId).toBe("a")
-  })
-
-  it("focuses the next tab when closing the active first tab", () => {
-    const next = tabsReducer(three(), { type: "close", id: "a" })
-    expect(next.activeId).toBe("b") // 'a' was not active, focus unchanged
   })
 
   it("focuses the new first tab when the active first tab is closed", () => {
@@ -125,6 +123,47 @@ describe("close (neighbor focus)", () => {
   it("is a no-op for an unknown id", () => {
     const start = three()
     expect(tabsReducer(start, { type: "close", id: "zzz" })).toBe(start)
+  })
+})
+
+// The bug this whole design exists to prevent: with two tabs of the same
+// screen, closing one must leave the other's id — and therefore its mounted
+// screen and everything typed into it — completely untouched.
+describe("identity survives closing an identical sibling", () => {
+  const twins = () =>
+    state(
+      [
+        ["a", "inventory"],
+        ["b", "inventory"],
+      ],
+      "b"
+    )
+
+  it("keeps the focused tab's id when its identical twin is closed", () => {
+    const next = tabsReducer(twins(), { type: "close", id: "a" })
+    expect(next.tabs).toEqual([{ id: "b", screenType: inventory }])
+    expect(next.activeId).toBe("b")
+  })
+
+  it("closes exactly the tab asked for, not the leftmost of its type", () => {
+    const next = tabsReducer(twins(), { type: "close", id: "b" })
+    expect(next.tabs.map((t) => t.id)).toEqual(["a"])
+  })
+
+  it("keeps the focused tab's id through closeOthers", () => {
+    const next = tabsReducer(twins(), { type: "closeOthers", id: "b" })
+    expect(next.tabs).toEqual([{ id: "b", screenType: inventory }])
+    expect(next.activeId).toBe("b")
+  })
+
+  it("leaves the source id alone when duplicating", () => {
+    const next = tabsReducer(state([["a", "inventory"]], "a"), {
+      type: "duplicate",
+      id: "a",
+      newId: "a2",
+    })
+    expect(next.tabs.map((t) => t.id)).toEqual(["a", "a2"])
+    expect(next.activeId).toBe("a2")
   })
 })
 
@@ -174,13 +213,64 @@ describe("closeOthers / closeAll", () => {
       ],
       "a"
     )
-    const next = tabsReducer(start, { type: "closeAll" })
-    expect(next).toEqual(initialTabsState)
+    expect(tabsReducer(start, { type: "closeAll" })).toEqual(
+      initialWorkspaceState
+    )
   })
 })
 
-describe("activeScreenType", () => {
-  it("returns the active tab's screen type", () => {
+describe("sync (content from outside)", () => {
+  it("adopts content on a cold start, minting ids", () => {
+    const next = tabsReducer(initialWorkspaceState, {
+      type: "sync",
+      content: content(["dashboard", "inventory"], 1),
+      mint: minter(),
+    })
+    expect(next.tabs).toEqual([
+      { id: "new1", screenType: dashboard },
+      { id: "new2", screenType: inventory },
+    ])
+    expect(next.activeId).toBe("new2")
+  })
+
+  it("keeps ids for tabs that survive an external change", () => {
+    const start = state(
+      [
+        ["a", "dashboard"],
+        ["b", "inventory"],
+      ],
+      "a"
+    )
+    const next = tabsReducer(start, {
+      type: "sync",
+      content: content(["dashboard", "inventory", "roles"], 2),
+      mint: minter(),
+    })
+    expect(next.tabs.map((t) => t.id)).toEqual(["a", "b", "new1"])
+    expect(next.activeId).toBe("new1")
+  })
+
+  it("normalizes the content it is given", () => {
+    const next = tabsReducer(initialWorkspaceState, {
+      type: "sync",
+      content: content(["dashboard", "inventory"], 42),
+      mint: minter(),
+    })
+    expect(next.activeId).toBe("new2")
+  })
+
+  it("empties the workspace when the URL has no tabs", () => {
+    const start = state([["a", "dashboard"]], "a")
+    const next = tabsReducer(start, {
+      type: "sync",
+      content: emptyContent,
+      mint: minter(),
+    })
+    expect(next.tabs).toEqual([])
+    expect(next.activeId).toBeNull()
+  })
+
+  it("returns the same reference when the content already matches", () => {
     const start = state(
       [
         ["a", "dashboard"],
@@ -188,10 +278,88 @@ describe("activeScreenType", () => {
       ],
       "b"
     )
-    expect(activeScreenType(start)).toBe(inventory)
+    expect(
+      tabsReducer(start, {
+        type: "sync",
+        content: content(["dashboard", "inventory"], 1),
+        mint: minter(),
+      })
+    ).toBe(start)
+  })
+})
+
+describe("normalize (whatever the URL hands us)", () => {
+  it.each([
+    ["clamps an index past the end", content(["dashboard", "inventory"], 9), 1],
+    ["clamps a negative index", content(["dashboard", "inventory"], -3), 0],
+    [
+      "focuses the first tab when the index is missing",
+      content(["dashboard"], -1),
+      0,
+    ],
+    [
+      "defaults a non-integer index to the first tab",
+      content(["dashboard"], NaN),
+      0,
+    ],
+  ])("%s", (_label, input, expected) => {
+    expect(normalize(input).activeIndex).toBe(expected)
   })
 
-  it("returns null when nothing is focused", () => {
-    expect(activeScreenType(initialTabsState)).toBeNull()
+  it("collapses a stray index with no tabs to the empty workspace", () => {
+    expect(normalize(content([], 3))).toEqual(emptyContent)
+  })
+
+  it("returns the same reference when the content is already valid", () => {
+    const start = content(["dashboard", "inventory"], 1)
+    expect(normalize(start)).toBe(start)
+  })
+})
+
+describe("toContent / fromContent", () => {
+  it("projects state down to what the URL carries", () => {
+    const start = state(
+      [
+        ["a", "inventory"],
+        ["b", "inventory"],
+      ],
+      "b"
+    )
+    expect(toContent(start)).toEqual(content(["inventory", "inventory"], 1))
+  })
+
+  it("reports no focus for an empty workspace", () => {
+    expect(toContent(initialWorkspaceState)).toEqual(content([], -1))
+  })
+
+  it("round-trips content through a placeholder state", () => {
+    const start = content(["dashboard", "inventory", "inventory"], 2)
+    expect(toContent(fromContent(start))).toEqual(start)
+  })
+
+  it("round-trips empty content", () => {
+    expect(toContent(fromContent(emptyContent))).toEqual(emptyContent)
+  })
+})
+
+describe("contentEquals", () => {
+  it.each([
+    ["identical content", content(["a", "b"], 1), content(["a", "b"], 1), true],
+    [
+      "a different index",
+      content(["a", "b"], 0),
+      content(["a", "b"], 1),
+      false,
+    ],
+    [
+      "a different order",
+      content(["b", "a"], 0),
+      content(["a", "b"], 0),
+      false,
+    ],
+    ["a different length", content(["a"], 0), content(["a", "b"], 0), false],
+    ["repeats vs one", content(["a", "a"], 0), content(["a"], 0), false],
+  ])("%s", (_label, a, b, expected) => {
+    expect(contentEquals(a, b)).toBe(expected)
   })
 })

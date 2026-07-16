@@ -23,6 +23,7 @@ import {
   type NavCommand,
 } from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
+import { launcherHref, contentFromSearch } from "@/lib/tab-url"
 
 /** Heading for palette entries that sit at the top level of the nav tree. */
 const UNGROUPED = "Screens"
@@ -52,11 +53,18 @@ const sections: { heading: string; commands: NavCommand[] }[] = (() => {
  * its breadcrumb (see {@link commandValue}), so typing a group name lists the
  * screens inside it.
  *
- * Selecting a screen navigates to `?tab=<screenType>` rather than calling
- * `openTab`: this component renders in the dashboard *layout*, while tab state
- * lives in `useTabs` inside the workspace below it, so there is no shared hook
- * instance to call. The URL is the authoritative handoff — the workspace
- * reconciles it into a reused-or-created tab, exactly as the sidebar does.
+ * Selecting a screen navigates rather than calling `openTab`: this component
+ * renders in the dashboard *layout*, while tab state lives in `useTabs` inside
+ * the workspace below it, so there is no shared hook instance to call. The URL
+ * is the authoritative handoff — {@link launcherHref} builds the target by
+ * running the same reuse-or-create open through the tab reducer, so the
+ * palette adds to the open tabs instead of replacing them, exactly as the
+ * sidebar does.
+ *
+ * Unlike the sidebar it renders no href, so it needs the workspace only at
+ * click time and reads it straight off the live URL. That keeps this component
+ * free of the search-param subscription that would force the whole header out
+ * of static rendering.
  */
 export function HeaderSearch() {
   const router = useRouter()
@@ -77,7 +85,9 @@ export function HeaderSearch() {
   const onSelect = React.useCallback(
     (screenType: ScreenType) => {
       setOpen(false)
-      router.push(`/dashboard?tab=${screenType}`)
+      router.push(
+        launcherHref(contentFromSearch(window.location.search), screenType)
+      )
     },
     [router]
   )

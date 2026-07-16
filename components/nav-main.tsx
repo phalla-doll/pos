@@ -17,24 +17,52 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { useTabLauncherHref } from "@/hooks/use-tabs"
 import { cn } from "@/lib/utils"
 import type { NavEntry } from "@/lib/nav"
+import type { ScreenType } from "@/lib/screens"
 import { ChevronRight } from "lucide-react"
 
 /**
- * Primary sidebar navigation. Renders the nav tree from @/lib/nav: screen
- * entries are *tab launchers* (navigate to /dashboard?tab=<type>, which the
- * workspace reads to open or focus that screen's tab), and groups are
- * collapsible parents whose children are themselves nav entries — so the same
- * {@link NavNode} recurses to any depth.
+ * {@link NavMain} wired to the live URL, so each launcher preserves the tabs
+ * already open. Reads search params, so it must render inside `<Suspense>` —
+ * `components/app-sidebar.tsx` owns that boundary and its fallback.
+ *
+ * The href depends on the whole workspace, so it's resolved once here and
+ * threaded down rather than subscribing every node to the URL.
  */
-export function NavMain({ items }: { items: NavEntry[] }) {
+export function NavMainLive({ items }: { items: NavEntry[] }) {
+  return <NavMain items={items} hrefFor={useTabLauncherHref()} />
+}
+
+/**
+ * Primary sidebar navigation. Renders the nav tree from @/lib/nav: screen
+ * entries are *tab launchers* (links to the workspace URL with that screen
+ * opened or focused), and groups are collapsible parents whose children are
+ * themselves nav entries — so the same {@link NavNode} recurses to any depth.
+ *
+ * Presentational: `hrefFor` is injected so this renders identically with or
+ * without the URL in hand — which is what lets it serve as its own Suspense
+ * fallback.
+ */
+export function NavMain({
+  items,
+  hrefFor,
+}: {
+  items: NavEntry[]
+  hrefFor: (screenType: ScreenType) => string
+}) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
-          <NavNode key={subKey(item)} entry={item} depth={0} />
+          <NavNode
+            key={subKey(item)}
+            entry={item}
+            depth={0}
+            hrefFor={hrefFor}
+          />
         ))}
       </SidebarMenu>
     </SidebarGroup>
@@ -50,12 +78,20 @@ export function NavMain({ items }: { items: NavEntry[] }) {
  * ones use the sub-menu primitives (an `<a>`). Groups default to open so every
  * screen is discoverable at a glance.
  */
-function NavNode({ entry, depth }: { entry: NavEntry; depth: number }) {
+function NavNode({
+  entry,
+  depth,
+  hrefFor,
+}: {
+  entry: NavEntry
+  depth: number
+  hrefFor: (screenType: ScreenType) => string
+}) {
   const top = depth === 0
 
   if (entry.kind === "screen") {
     const { screen } = entry
-    const link = <Link href={`/dashboard?tab=${screen.type}`} />
+    const link = <Link href={hrefFor(screen.type)} />
     const content = (
       <>
         {screen.icon}
@@ -97,7 +133,12 @@ function NavNode({ entry, depth }: { entry: NavEntry; depth: number }) {
     <CollapsibleContent>
       <SidebarMenuSub>
         {entry.children.map((child) => (
-          <NavNode key={subKey(child)} entry={child} depth={depth + 1} />
+          <NavNode
+            key={subKey(child)}
+            entry={child}
+            depth={depth + 1}
+            hrefFor={hrefFor}
+          />
         ))}
       </SidebarMenuSub>
     </CollapsibleContent>

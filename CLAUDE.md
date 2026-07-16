@@ -25,7 +25,7 @@ This repo uses Next.js 16 — a version with breaking changes relative to older 
 
 ## Architecture
 
-A POS dashboard built on Next.js App Router + shadcn/ui (Tailwind v4, Base UI primitives in `components/ui/`). There is effectively **one real route** (`/dashboard`); everything else is a **tabbed workspace**: "screens" are registry entries rendered inside a single client workspace and addressed by `?tab=<screenType>`. No global store — state lives in URL search params, React local state, and `next-themes` localStorage. All data is mock fixtures (`lib/fixtures.tsx`); there is no backend.
+A POS dashboard built on Next.js App Router + shadcn/ui (Tailwind v4, Base UI primitives in `components/ui/`). There is effectively **one real route** (`/dashboard`); everything else is a **tabbed workspace**: "screens" are registry entries rendered inside a single client workspace and addressed by `?tabs=<screenType>,…&i=<index>`. No global store — state lives in URL search params, React local state, and `next-themes` localStorage. All data is mock fixtures (`lib/fixtures.tsx`); there is no backend.
 
 ### The screen registry is the single source of truth
 
@@ -43,7 +43,23 @@ New logic without a test is incomplete. Tests are `*.test.ts` next to the module
 
 ### Tab/URL flow
 
-`app/dashboard/page.tsx` → `<Suspense>` → `TabWorkspace` → `useTabs()`. The URL `?tab=` param is authoritative for the _active_ screen: `use-tabs.ts` reconciles it into reducer state during render, and mirrors state back to the URL from **one** guarded effect (`router.replace`). The open-tabs array is runtime-only (refresh restores just the active tab). The active screen renders with `key={activeTab.id}` so every tab switch/duplicate is a fresh remount — this is a deliberate rule.
+`app/dashboard/page.tsx` → `<Suspense>` → `TabWorkspace` → `useTabs()`. The URL carries the **whole** workspace, not just the active screen: `?tabs=orders,orders,inventory&i=1` holds the open screens in order plus the focused index, so a refresh or a shared link restores every tab. [nuqs](https://github.com/47ng/nuqs) owns the router write (`useQueryStates`, `history: "replace"`, both params in one atomic update) — there is no hand-rolled mirror effect.
+
+**The split that matters: the URL is authoritative for _content_ (which screens, in what order, which is focused); `useTabs` state is authoritative for _identity_ (which tab is which).** `?tabs=orders,orders` is two identical strings, so identity is not expressible there and must never be re-derived from it on a normal mutation — that's how closing one of two identical tabs used to remount the survivor and destroy what the user had typed. Instead the open tabs (ids and all) live in React state, mutations run through the reducer, and the URL is written as a projection of the result.
+
+Re-deriving identity is reserved for content arriving from **outside** — refresh, pasted link, back/forward — via the reducer's `sync` action. That guess is lossy and that's fine: an external change has no in-place screen state of ours to protect.
+
+The pieces:
+
+- `lib/tabs-reducer.ts` — the algebra over `{ tabs: Tab[], activeId }`, addressing tabs by **id** (the UI knows which tab it means; discarding that is what made closes ambiguous). Also owns the `WorkspaceContent` projection and `normalize`, which makes anything the URL hands us safe (clamps `i`, enforces "open tabs ⟹ exactly one focused").
+- `lib/tab-url.ts` — the URL codec (parsers, `contentFromSearch`, `launcherHref`). Imports `nuqs/server`, which is React-free, so it stays a pure Node-testable module.
+- `lib/tab-identity.ts` — `reconcileIds`, the external-change guess. Greedy type-matching; the `sync` path is its **only** caller by design.
+
+`use-tabs.ts` reconciles only when the URL *changed* **and** the new content doesn't already match what it projected. Both halves are load-bearing: reacting to any state/URL divergence would undo our own mutation before the URL caught up, and reacting to every URL change would reconcile against the URL we just wrote — the lossy path this design exists to avoid.
+
+The active screen renders with `key={activeTab.id}` so every tab switch/duplicate is a fresh remount — this is a deliberate rule. Only the active screen is mounted, so a background tab holds no state to lose; the identity work protects the tab you're *looking at* from unrelated closes.
+
+**Launchers** (sidebar, ⌘K search) live in the dashboard *layout*, outside the workspace, so they can't call `useTabs`; they navigate instead, building the target with the same reuse-or-create `open` action so they add to the open tabs rather than replace them. The sidebar needs an href at render, so `NavMainLive` reads the URL and `app-sidebar.tsx` wraps it in `<Suspense>` — the fallback is the same `NavMain` with `freshWorkspaceHref`, a working degraded sidebar that prerenders. The ⌘K palette renders no href, so it reads the live URL at click time and needs no boundary. Anything that reads search params at render must sit inside a Suspense boundary or `/dashboard` stops prerendering.
 
 ## shadcn/ui components
 

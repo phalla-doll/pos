@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { NavMain } from "@/components/nav-main"
+import { NavMain, NavMainLive } from "@/components/nav-main"
 import { NavTheme } from "@/components/nav-theme"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
@@ -14,6 +14,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { sidebarNav } from "@/lib/nav"
+import { freshWorkspaceHref } from "@/lib/tab-url"
 import { sidebarTeams, sidebarUser } from "@/lib/fixtures"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -23,7 +24,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={sidebarTeams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarNav} />
+        {/*
+          NavMainLive reads the URL to build launcher hrefs that preserve the
+          open tabs, which means it can't be prerendered. The fallback is the
+          same nav in its degraded-but-working form: every link opens its
+          screen in a fresh workspace. So the static HTML ships a usable
+          sidebar and the client upgrades the hrefs in place — no skeleton, no
+          flash, and no link that lies about where it goes.
+        */}
+        <React.Suspense
+          fallback={<NavMain items={sidebarNav} hrefFor={freshWorkspaceHref} />}
+        >
+          <NavMainLive items={sidebarNav} />
+        </React.Suspense>
       </SidebarContent>
       <SidebarFooter>
         <NavTheme />

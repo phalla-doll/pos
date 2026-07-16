@@ -1,38 +1,60 @@
 import type { ScreenType } from "@/lib/screens"
+import { reconcileIds, type Tab } from "@/lib/tab-identity"
 
 /**
- * A single open tab. `id` is unique per instance (so the same screen can be
- * open in multiple tabs); `screenType` is what the URL's `?tab=` holds.
+ * The workspace as the URL can express it: which screens are open, in order,
+ * and which one is focused. This is the *content* of the workspace — plain,
+ * serializable data.
  */
-export type Tab = {
-  id: string
-  screenType: ScreenType
+export type WorkspaceContent = {
+  /** The open screens, in tab-bar order. The same screen may appear twice. */
+  types: ScreenType[]
+  /** Index into `types` of the focused tab, or -1 when no tabs are open. */
+  activeIndex: number
 }
 
 /**
- * The complete tab-workspace state: the open tabs in order, plus which one is
- * focused. This is plain data — no React, no router — so the whole tab algebra
- * below is unit-testable without a render.
+ * The workspace at runtime: the same content, plus the instance identity the
+ * URL *cannot* carry. Two tabs of the same screen are one string in the URL but
+ * two distinct tabs here, each with its own `id` — which is what `key`s the
+ * active screen and therefore decides what remounts.
+ *
+ * The split is the whole point: the URL is authoritative for **content**, this
+ * state is authoritative for **identity**. Identity was never in the URL, so it
+ * can't be derived from it — only carried alongside and reconciled when the URL
+ * changes underneath us (see the `sync` action).
+ *
+ * Plain data — no React, no router — so the algebra below is unit-testable
+ * without a render.
  */
-export type TabsState = {
+export type WorkspaceState = {
   tabs: Tab[]
   activeId: string | null
 }
 
-export const initialTabsState: TabsState = { tabs: [], activeId: null }
+export const initialWorkspaceState: WorkspaceState = {
+  tabs: [],
+  activeId: null,
+}
+export const emptyContent: WorkspaceContent = { types: [], activeIndex: -1 }
 
 /**
- * Every mutation the workspace can perform. Actions that may create a tab
- * carry a caller-supplied `newId` so the reducer stays pure and deterministic
- * (id generation is the adapter's job, which keeps tests free of randomness).
+ * Every mutation the workspace can perform. Tabs are addressed by `id`, not by
+ * position: the UI knows exactly which tab it means, and throwing that away in
+ * favour of an index is what used to make a close ambiguous.
+ *
+ * Actions that create a tab carry a caller-supplied `newId`, and `sync` carries
+ * a `mint`, so the reducer stays pure and deterministic — id generation is the
+ * adapter's job, which keeps tests free of randomness.
  */
 export type TabsAction =
   /**
-   * Reconcile against the authoritative `?tab=` screen: reuse an open tab of
-   * that type or create one, then focus it. `null` focuses nothing but leaves
-   * the open tabs untouched.
+   * Reconcile against content that arrived from outside — a refresh, a pasted
+   * link, back/forward. Identity is re-derived by type-matching, which is
+   * lossy but adequate: an external change never has in-place screen state to
+   * protect, because the screens involved weren't ours to begin with.
    */
-  | { type: "sync"; screenType: ScreenType | null; newId: string }
+  | { type: "sync"; content: WorkspaceContent; mint: () => string }
   /** Open a screen as a tab (reuse an existing tab of that type, else create). */
   | { type: "open"; screenType: ScreenType; newId: string }
   /** Focus a tab by id. No-op if the id isn't open. */
@@ -47,15 +69,67 @@ export type TabsAction =
   | { type: "closeAll" }
 
 /**
+ * Force candidate content to satisfy the invariant "open tabs always have
+ * exactly one focused", so anything the URL hands us is safe to render.
+ * `?tabs=orders,inventory&i=9` clamps to the last tab; `?tabs=orders,inventory`
+ * (no `i`) focuses the first; a stray `?i=3` with no tabs collapses to empty.
+ *
+ * Returns the same reference when nothing changes.
+ */
+export function normalize(content: WorkspaceContent): WorkspaceContent {
+  if (content.types.length === 0) {
+    return content.activeIndex === -1 ? content : emptyContent
+  }
+  const clamped = Number.isInteger(content.activeIndex)
+    ? Math.min(Math.max(content.activeIndex, 0), content.types.length - 1)
+    : 0
+  return clamped === content.activeIndex
+    ? content
+    : { ...content, activeIndex: clamped }
+}
+
+/** Project runtime state down to the content the URL carries. */
+export function toContent(state: WorkspaceState): WorkspaceContent {
+  return {
+    types: state.tabs.map((tab) => tab.screenType),
+    activeIndex: state.tabs.findIndex((tab) => tab.id === state.activeId),
+  }
+}
+
+/**
+ * Lift content into a throwaway state with placeholder ids. Only ever used to
+ * run the algebra over content we have no identity for — the launcher hrefs,
+ * which project straight back to content — so the ids never escape.
+ */
+export function fromContent(content: WorkspaceContent): WorkspaceState {
+  const tabs = content.types.map((screenType, i) => ({
+    id: `placeholder-${i}`,
+    screenType,
+  }))
+  return { tabs, activeId: tabs[content.activeIndex]?.id ?? null }
+}
+
+/** Value equality for content — the arrays are rebuilt on every URL read. */
+export function contentEquals(
+  a: WorkspaceContent,
+  b: WorkspaceContent
+): boolean {
+  return (
+    a.activeIndex === b.activeIndex &&
+    a.types.length === b.types.length &&
+    a.types.every((type, i) => type === b.types[i])
+  )
+}
+
+/**
  * Reuse an open tab of `screenType` (focusing it) or create one at the end and
- * focus that. Returns the same state reference when nothing changes, so React
- * (and the URL-sync effect that watches state) can skip redundant work.
+ * focus that. Returns the same state reference when nothing changes.
  */
 function openOrReuse(
-  state: TabsState,
+  state: WorkspaceState,
   screenType: ScreenType,
   newId: string
-): TabsState {
+): WorkspaceState {
   const existing = state.tabs.find((t) => t.screenType === screenType)
   if (existing) {
     if (state.activeId === existing.id) return state
@@ -68,17 +142,26 @@ function openOrReuse(
 /**
  * The pure tab reducer: `(state, action) → state`. This is the whole tab
  * algebra — open/reuse, neighbor-focus on close, duplicate-after-source,
- * close-others, close-all, and URL reconciliation — in one place, with no
- * React or router dependency.
+ * close-others, close-all, and URL reconciliation — in one place, with no React
+ * or router dependency.
+ *
+ * Because identity rides along in the state, an ordinary mutation never has to
+ * guess: closing one of two identical tabs removes exactly the one asked for
+ * and leaves the survivor's id — and so its mounted screen — untouched.
+ *
+ * Returns the same reference when nothing changes.
  */
-export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
+export function tabsReducer(
+  state: WorkspaceState,
+  action: TabsAction
+): WorkspaceState {
   switch (action.type) {
     case "sync": {
-      if (action.screenType === null) {
-        // No active screen in the URL — keep tabs open, focus nothing.
-        return state.activeId === null ? state : { ...state, activeId: null }
-      }
-      return openOrReuse(state, action.screenType, action.newId)
+      const content = normalize(action.content)
+      const tabs = reconcileIds(state.tabs, content.types, action.mint)
+      const activeId = tabs[content.activeIndex]?.id ?? null
+      if (tabs === state.tabs && activeId === state.activeId) return state
+      return { tabs, activeId }
     }
 
     case "open":
@@ -126,14 +209,9 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     case "closeAll":
       return state.tabs.length === 0 && state.activeId === null
         ? state
-        : initialTabsState
+        : initialWorkspaceState
 
     default:
       return state
   }
-}
-
-/** The screen type mirrored to `?tab=` for a given state, or `null`. */
-export function activeScreenType(state: TabsState): ScreenType | null {
-  return state.tabs.find((t) => t.id === state.activeId)?.screenType ?? null
 }

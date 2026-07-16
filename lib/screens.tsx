@@ -39,7 +39,7 @@ import {
  * There is no separate union or record type to keep in sync.
  */
 export type Screen = {
-  /** Stable identifier used in the `?tab=` search param (the registry key). */
+  /** Stable identifier used in the `?tabs=` search param (the registry key). */
   type: ScreenType
   /** Label shown in the sidebar, the tab bar, and the screen header. */
   label: string
@@ -284,6 +284,13 @@ const screenDefs = {
 export type ScreenType = keyof typeof screenDefs
 
 /**
+ * Every valid {@link ScreenType}, derived from the registry. This is what the
+ * URL layer validates `?tabs=` against, so an unknown screen can never enter
+ * tab state — one more thing the registry is the single source of.
+ */
+export const screenKeys = Object.keys(screenDefs) as readonly ScreenType[]
+
+/**
  * The screen registry keyed by {@link ScreenType}. Each entry is its
  * definition with its `type` injected from the key, so the type string is
  * declared exactly once (as the key) instead of restated per entry.
@@ -292,7 +299,7 @@ export const screens: Record<ScreenType, Screen> = Object.fromEntries(
   Object.entries(screenDefs).map(([type, def]) => [type, { ...def, type }])
 ) as Record<ScreenType, Screen>
 
-/** Look up a screen by the value of the `?tab=` param. */
+/** Look up a screen by one of the values in the `?tabs=` param. */
 export function getScreen(type: string | null | undefined): Screen | null {
   if (!type) return null
   return screens[type as ScreenType] ?? null
