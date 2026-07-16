@@ -4,15 +4,14 @@ import * as React from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 import { getScreen, type ScreenType } from "@/lib/screens"
+import {
+  activeScreenType,
+  initialTabsState,
+  tabsReducer,
+  type Tab,
+} from "@/lib/tabs-reducer"
 
-/**
- * A single open tab. `id` is unique per instance (so the same screen can be
- * open in multiple tabs); `screenType` is what the URL's `?tab=` holds.
- */
-export type Tab = {
-  id: string
-  screenType: ScreenType
-}
+export type { Tab }
 
 export type TabsApi = {
   /** All currently open tabs, in order. */
@@ -47,6 +46,11 @@ function newId() {
  * Tab workspace state, with the active tab mirrored to the URL via
  * `?tab=<screenType>`.
  *
+ * This hook is a thin **adapter**: all tab algebra lives in the pure
+ * {@link tabsReducer}; the hook only wires it to the router — reading `?tab=`
+ * as the authoritative active screen and mirroring the reducer's active tab
+ * back to the URL in one place.
+ *
  * The `tabs` array is runtime-only state — it is not persisted in the URL —
  * so a refresh restores only the active screen (one tab). This is the
  * tradeoff for supporting duplicate tabs while keeping URLs meaningful.
@@ -56,30 +60,14 @@ export function useTabs(): TabsApi {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [tabs, setTabs] = React.useState<Tab[]>([])
-  const [activeId, setActiveId] = React.useState<string | null>(null)
-
-  // Write the active tab's screenType to the URL. Using replace so tab
-  // switches don't pollute browser history with one entry per focus.
-  const writeActiveToUrl = React.useCallback(
-    (screenType: ScreenType | null) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (screenType) {
-        params.set(TAB_PARAM, screenType)
-      } else {
-        params.delete(TAB_PARAM)
-      }
-      const qs = params.toString()
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
-    },
-    [router, pathname, searchParams]
-  )
+  const [state, dispatch] = React.useReducer(tabsReducer, initialTabsState)
+  const { tabs, activeId } = state
 
   // The URL (?tab=<screenType>) is authoritative for the *active* screen.
-  // When it changes (sidebar click, back/forward, refresh), sync runtime
-  // state to match: ensure a tab of that type exists, then focus it. Uses
-  // the "adjust state during render" pattern (storing the previous value)
-  // rather than an effect — see https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  // When it changes (sidebar click, back/forward, refresh), reconcile runtime
+  // state to match. Uses the "adjust state during render" pattern (storing the
+  // previous value) rather than an effect — see
+  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
   //
   // Seed the previous value as null (not the current param) so the very first
   // render also reconciles: on a fresh load/refresh at ?tab=inventory the tab
@@ -89,98 +77,59 @@ export function useTabs(): TabsApi {
   if (tabParam !== prevTabParam) {
     setPrevTabParam(tabParam)
     const screen = getScreen(tabParam)
-    if (!screen) {
-      // No active screen in the URL — keep tabs open, focus nothing.
-      setActiveId(null)
-    } else {
-      const existing = tabs.find((t) => t.screenType === screen.type)
-      if (existing) {
-        setActiveId(existing.id)
-      } else {
-        const tab: Tab = { id: newId(), screenType: screen.type }
-        setTabs((prev) => [...prev, tab])
-        setActiveId(tab.id)
-      }
-    }
+    dispatch({
+      type: "sync",
+      screenType: screen ? screen.type : null,
+      newId: newId(),
+    })
   }
 
-  const openTab = React.useCallback(
-    (screenType: ScreenType) => {
-      // Reuse: focus an existing tab of this type if one is open.
-      const existing = tabs.find((t) => t.screenType === screenType)
-      if (existing) {
-        setActiveId(existing.id)
-      } else {
-        const tab = { id: newId(), screenType }
-        setTabs((prev) => [...prev, tab])
-        setActiveId(tab.id)
-      }
-      writeActiveToUrl(screenType)
-    },
-    [tabs, writeActiveToUrl]
-  )
+  // Mirror the active tab's screenType to the URL — the single place this
+  // sync happens (derived from state, not re-fired from every mutator). Using
+  // replace so tab switches don't pollute browser history with one entry per
+  // focus. The early-return guard is essential: it skips the write whenever
+  // the URL already matches, so a fresh `searchParams` reference (which an
+  // identical replace can still produce) can't spin this effect into a loop.
+  const activeType = activeScreenType(state)
+  React.useEffect(() => {
+    if (searchParams.get(TAB_PARAM) === (activeType ?? null)) return
+    const params = new URLSearchParams(searchParams.toString())
+    if (activeType) {
+      params.set(TAB_PARAM, activeType)
+    } else {
+      params.delete(TAB_PARAM)
+    }
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [activeType, router, pathname, searchParams])
 
   const setActive = React.useCallback(
-    (id: string) => {
-      const tab = tabs.find((t) => t.id === id)
-      if (!tab) return
-      setActiveId(id)
-      writeActiveToUrl(tab.screenType)
-    },
-    [tabs, writeActiveToUrl]
+    (id: string) => dispatch({ type: "setActive", id }),
+    []
+  )
+
+  const openTab = React.useCallback(
+    (screenType: ScreenType) =>
+      dispatch({ type: "open", screenType, newId: newId() }),
+    []
   )
 
   const closeTab = React.useCallback(
-    (id: string) => {
-      const idx = tabs.findIndex((t) => t.id === id)
-      if (idx === -1) return
-      const next = tabs.filter((t) => t.id !== id)
-      setTabs(next)
-      // If the closed tab was active, focus a neighbor (prefer the
-      // previous tab, otherwise the next, otherwise none).
-      if (activeId === id) {
-        const neighbor = next[idx - 1] ?? next[idx] ?? null
-        setActiveId(neighbor ? neighbor.id : null)
-        writeActiveToUrl(neighbor ? neighbor.screenType : null)
-      }
-    },
-    [tabs, activeId, writeActiveToUrl]
+    (id: string) => dispatch({ type: "close", id }),
+    []
   )
 
   const duplicateTab = React.useCallback(
-    (id: string) => {
-      const source = tabs.find((t) => t.id === id)
-      if (!source) return
-      const idx = tabs.findIndex((t) => t.id === id)
-      const copy = { id: newId(), screenType: source.screenType }
-      // Insert right after the source tab.
-      setTabs((prev) => [
-        ...prev.slice(0, idx + 1),
-        copy,
-        ...prev.slice(idx + 1),
-      ])
-      setActiveId(copy.id)
-      writeActiveToUrl(copy.screenType)
-    },
-    [tabs, writeActiveToUrl]
+    (id: string) => dispatch({ type: "duplicate", id, newId: newId() }),
+    []
   )
 
   const closeOthers = React.useCallback(
-    (id: string) => {
-      const keep = tabs.find((t) => t.id === id)
-      if (!keep) return
-      setTabs([keep])
-      setActiveId(keep.id)
-      writeActiveToUrl(keep.screenType)
-    },
-    [tabs, writeActiveToUrl]
+    (id: string) => dispatch({ type: "closeOthers", id }),
+    []
   )
 
-  const closeAll = React.useCallback(() => {
-    setTabs([])
-    setActiveId(null)
-    writeActiveToUrl(null)
-  }, [writeActiveToUrl])
+  const closeAll = React.useCallback(() => dispatch({ type: "closeAll" }), [])
 
   return {
     tabs,
