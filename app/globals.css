@@ -20,6 +20,13 @@
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
+    --color-chart-cat-1: var(--chart-cat-1);
+    --color-chart-cat-2: var(--chart-cat-2);
+    --color-chart-cat-3: var(--chart-cat-3);
+    --color-chart-cat-4: var(--chart-cat-4);
+    --color-status-good: var(--status-good);
+    --color-status-warning: var(--status-warning);
+    --color-status-critical: var(--status-critical);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -64,11 +71,33 @@
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.845 0.143 164.978);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.596 0.145 163.225);
-    --chart-4: oklch(0.508 0.118 165.612);
-    --chart-5: oklch(0.432 0.095 166.913);
+    /*
+     * Chart color comes in two families, each doing one job. `chart-1..5` is an
+     * ordinal emerald ramp (magnitude / ordered steps, light→dark); the light
+     * steps are darker than the dark ones so the light end still clears the
+     * surface — on white the old 0.845 step sat at 1.52:1, under the 2:1 floor.
+     * `chart-cat-1..4` are categorical slots (identity, fixed order, never
+     * cycled) for unordered series like payment methods. Both sets are
+     * validated per theme; re-run the validator before changing a value.
+     */
+    --chart-1: oklch(0.721 0.154 163.8);
+    --chart-2: oklch(0.656 0.14 163.7);
+    --chart-3: oklch(0.59 0.126 164.1);
+    --chart-4: oklch(0.525 0.112 163.6);
+    --chart-5: oklch(0.461 0.098 163.8);
+    --chart-cat-1: oklch(0.581 0.124 163.7);
+    --chart-cat-2: oklch(0.579 0.17 258.1);
+    --chart-cat-3: oklch(0.58 0.144 54.7);
+    --chart-cat-4: oklch(0.58 0.169 299.9);
+    /*
+     * Status is a fixed scale with reserved meaning — never themed, never
+     * reused as a series color, and always paired with an icon + label. On the
+     * light surface `warning` sits below 3:1 by design; the pairing is the
+     * mitigation, so status hues stay on icons and marks, never on text.
+     */
+    --status-good: oklch(0.621 0.207 142.6);
+    --status-warning: oklch(0.811 0.164 78.5);
+    --status-critical: oklch(0.575 0.186 25.2);
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
@@ -101,11 +130,17 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+    /* The dark ramp is selected for the dark surface, not flipped from light —
+     * these steps already clear it (light end 11.8:1, dark end 2.4:1). */
     --chart-1: oklch(0.845 0.143 164.978);
     --chart-2: oklch(0.696 0.17 162.48);
     --chart-3: oklch(0.596 0.145 163.225);
     --chart-4: oklch(0.508 0.118 165.612);
     --chart-5: oklch(0.432 0.095 166.913);
+    --chart-cat-1: oklch(0.659 0.14 164.3);
+    --chart-cat-2: oklch(0.661 0.169 257.9);
+    --chart-cat-3: oklch(0.66 0.164 54.7);
+    --chart-cat-4: oklch(0.66 0.169 299.9);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.623 0.214 259.815);
