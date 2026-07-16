@@ -1,5 +1,6 @@
 "use client"
 
+import { useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
 import { Sun, Moon, Monitor } from "lucide-react"
 
@@ -15,8 +16,22 @@ const themes = [
   { value: "system", label: "System", icon: Monitor },
 ] as const
 
+const emptySubscribe = () => () => {}
+
+// `true` only after hydration. The selected theme comes from localStorage, which
+// the server can't know, so we render nothing-selected until mounted to avoid a
+// hydration mismatch (React won't patch up a mismatched attribute otherwise).
+function useHydrated() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  )
+}
+
 export function NavTheme() {
   const { theme, setTheme } = useTheme()
+  const hydrated = useHydrated()
 
   return (
     <SidebarMenu>
@@ -27,7 +42,7 @@ export function NavTheme() {
           className="flex items-center gap-1 rounded-md bg-muted p-1 group-data-[collapsible=icon]:hidden"
         >
           {themes.map(({ value, label, icon: Icon }) => {
-            const isActive = theme === value
+            const isActive = hydrated && theme === value
             return (
               <button
                 key={value}
