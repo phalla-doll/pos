@@ -23,6 +23,12 @@ import {
   Truck,
   Warehouse,
   Settings,
+  Server,
+  ScrollText,
+  DatabaseBackup,
+  Wallet,
+  Percent,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react"
 
@@ -39,12 +45,16 @@ export type ScreenType =
   | "users"
   | "roles"
   | "permissions"
+  | "audit-logs"
+  | "backups"
   | "customer-listing"
   | "customer-owed"
   | "customer-history"
   | "best-sales"
   | "summary-report"
   | "income-report"
+  | "tax-report"
+  | "profit-loss"
   | "suppliers"
   | "inventory"
   | "settings"
@@ -117,6 +127,8 @@ export const screens: Record<ScreenType, Screen> = {
   users: screen("users", "Users", Users),
   roles: screen("roles", "Roles", SlidersHorizontal),
   permissions: screen("permissions", "Permissions", ListChecks),
+  "audit-logs": screen("audit-logs", "Audit Logs", ScrollText),
+  backups: screen("backups", "Backups", DatabaseBackup),
   "customer-listing": listScreen("customer-listing", ListOrdered, {
     title: "Customer Listing",
     rows: sampleCustomers,
@@ -145,6 +157,8 @@ export const screens: Record<ScreenType, Screen> = {
   "best-sales": screen("best-sales", "Best Sales", ChartColumn),
   "summary-report": screen("summary-report", "Summary Report", ArrowRightLeft),
   "income-report": screen("income-report", "Income Report", ReceiptText),
+  "tax-report": screen("tax-report", "Tax Report", Percent),
+  "profit-loss": screen("profit-loss", "Profit & Loss", TrendingUp),
   suppliers: screen("suppliers", "Suppliers", Truck),
   inventory: listScreen("inventory", Warehouse, {
     title: "Inventory",
@@ -177,40 +191,59 @@ export const screens: Record<ScreenType, Screen> = {
 
 /**
  * A sidebar nav entry is either a single tab launcher (`screen`) or a
- * collapsible `group` whose children are launchers. Groups are not
- * tab-able themselves — they only expand to reveal their child screens.
+ * collapsible `group`. A group is not tab-able itself — it only expands
+ * to reveal its children, which are themselves nav entries. Because
+ * children are `NavEntry[]`, groups can nest to any depth (the sidebar
+ * renders each level recursively), giving 3-level menus and beyond.
  */
 export type NavEntry =
   | { kind: "screen"; screen: Screen }
-  | { kind: "group"; label: string; icon: React.ReactNode; children: Screen[] }
+  | { kind: "group"; label: string; icon: React.ReactNode; children: NavEntry[] }
 
 const s = screens
 
+/** Wrap a screen as a leaf nav entry (a tab launcher). */
+const leaf = (screen: Screen): NavEntry => ({ kind: "screen", screen })
+
+/** Build a collapsible group nav entry from a label, icon, and children. */
+const group = (
+  label: string,
+  icon: React.ReactNode,
+  children: NavEntry[],
+): NavEntry => ({ kind: "group", label, icon, children })
+
 /** The sidebar nav tree, in display order (matches the Platform menu). */
 export const sidebarNav: NavEntry[] = [
-  { kind: "screen", screen: s.dashboard },
-  { kind: "screen", screen: s.pos },
-  {
-    kind: "group",
-    label: "Admin Tools",
-    icon: <Wrench strokeWidth={2} />,
-    children: [s.users, s.roles, s.permissions],
-  },
-  {
-    kind: "group",
-    label: "Customers",
-    icon: <Users strokeWidth={2} />,
-    children: [s["customer-listing"], s["customer-owed"], s["customer-history"]],
-  },
-  {
-    kind: "group",
-    label: "Reports",
-    icon: <BookOpen strokeWidth={2} />,
-    children: [s["best-sales"], s["summary-report"], s["income-report"]],
-  },
-  { kind: "screen", screen: s.suppliers },
-  { kind: "screen", screen: s.inventory },
-  { kind: "screen", screen: s.settings },
+  leaf(s.dashboard),
+  leaf(s.pos),
+  group("Admin Tools", <Wrench strokeWidth={2} />, [
+    leaf(s.users),
+    leaf(s.roles),
+    leaf(s.permissions),
+    // 3-level: Admin Tools › System › { Audit Logs, Backups }
+    group("System", <Server strokeWidth={2} />, [
+      leaf(s["audit-logs"]),
+      leaf(s.backups),
+    ]),
+  ]),
+  group("Customers", <Users strokeWidth={2} />, [
+    leaf(s["customer-listing"]),
+    leaf(s["customer-owed"]),
+    leaf(s["customer-history"]),
+  ]),
+  group("Reports", <BookOpen strokeWidth={2} />, [
+    leaf(s["best-sales"]),
+    leaf(s["summary-report"]),
+    leaf(s["income-report"]),
+    // 3-level: Reports › Financials › { Tax Report, Profit & Loss }
+    group("Financials", <Wallet strokeWidth={2} />, [
+      leaf(s["tax-report"]),
+      leaf(s["profit-loss"]),
+    ]),
+  ]),
+  leaf(s.suppliers),
+  leaf(s.inventory),
+  leaf(s.settings),
 ]
 
 /** Look up a screen by the value of the `?tab=` param. */
