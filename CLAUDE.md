@@ -14,7 +14,7 @@ pnpm is the package manager (`pnpm@10.32.1`).
 - `pnpm test:watch` — vitest watch mode
 - Single test file: `pnpm vitest run lib/tabs-reducer.test.ts`
 - `pnpm typecheck` — `tsc --noEmit`
-- `pnpm lint` — eslint (two pre-existing errors in `components/header-search.tsx` and `hooks/use-mobile.ts` are known and unrelated)
+- `pnpm lint` — eslint (one pre-existing error in `hooks/use-mobile.ts` is known and unrelated)
 - `pnpm format` — prettier (`semi: false`, double quotes, tailwind class sorting)
 
 Before finishing a change, run `pnpm typecheck`, `pnpm test`, and `pnpm build`, and `pnpm format` the files you touched.
@@ -43,7 +43,7 @@ New logic without a test is incomplete. Tests are `*.test.ts` next to the module
 
 ### Tab/URL flow
 
-`app/dashboard/page.tsx` → `<Suspense>` → `TabWorkspace` → `useTabs()`. The URL `?tab=` param is authoritative for the *active* screen: `use-tabs.ts` reconciles it into reducer state during render, and mirrors state back to the URL from **one** guarded effect (`router.replace`). The open-tabs array is runtime-only (refresh restores just the active tab). The active screen renders with `key={activeTab.id}` so every tab switch/duplicate is a fresh remount — this is a deliberate rule.
+`app/dashboard/page.tsx` → `<Suspense>` → `TabWorkspace` → `useTabs()`. The URL `?tab=` param is authoritative for the _active_ screen: `use-tabs.ts` reconciles it into reducer state during render, and mirrors state back to the URL from **one** guarded effect (`router.replace`). The open-tabs array is runtime-only (refresh restores just the active tab). The active screen renders with `key={activeTab.id}` so every tab switch/duplicate is a fresh remount — this is a deliberate rule.
 
 ## shadcn/ui components
 

@@ -78,6 +78,41 @@ export function collectScreenTypes(nav: NavEntry[]): ScreenType[] {
 }
 
 /**
+ * A nav leaf paired with the group labels above it, outermost first — e.g.
+ * Tax Report carries `["Reports", "Financials"]`. Top-level screens have an
+ * empty path. This is the flat view the command palette searches; deriving it
+ * from {@link sidebarNav} keeps the palette on the same single source of truth
+ * as the sidebar, so a new screen appears in both from one registry entry.
+ */
+export type NavCommand = { screen: Screen; path: string[] }
+
+/**
+ * Flatten the nav tree into its screen leaves, in traversal order, each with
+ * its group breadcrumb. Pure and data-only, so the palette component stays a
+ * thin renderer and the walk itself is unit-testable.
+ */
+export function flattenNav(nav: NavEntry[]): NavCommand[] {
+  const out: NavCommand[] = []
+  const walk = (entries: NavEntry[], path: string[]) => {
+    for (const entry of entries) {
+      if (entry.kind === "screen") out.push({ screen: entry.screen, path })
+      else walk(entry.children, [...path, entry.label])
+    }
+  }
+  walk(nav, [])
+  return out
+}
+
+/**
+ * The text a palette entry matches against: its label plus its breadcrumb, so
+ * typing a group name ("financials") surfaces the screens inside it. Joined
+ * into one string because cmdk filters on a single `value` per item.
+ */
+export function commandValue(command: NavCommand): string {
+  return [command.screen.label, ...command.path].join(" ")
+}
+
+/**
  * Check the registry ↔ nav invariant: every screen is reachable from the nav
  * exactly once. Returns the screens missing from the nav (`unreachable`) and
  * any listed more than once (`duplicated`). Pure and data-only, so it is

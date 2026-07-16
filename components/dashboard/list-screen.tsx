@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import {
@@ -169,28 +170,24 @@ export function ListScreen<T>({
       >
         {/* Search / Create mode switch — only on screens that opt in. */}
         {creatable && (
-          <div className="flex w-fit gap-1 rounded-lg bg-muted p-1">
-            {MODE_TABS.map(({ value, label: modeLabel, icon: Icon }) => {
-              const active = mode === value
-              return (
-                <Button
+          <Tabs
+            value={mode}
+            onValueChange={(next) => switchMode(next as "search" | "create")}
+          >
+            {/* Rounding matches the sidebar theme switcher: see `nav-theme.tsx`. */}
+            <TabsList className="rounded-md">
+              {MODE_TABS.map(({ value, label: modeLabel, icon: Icon }) => (
+                <TabsTrigger
                   key={value}
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => switchMode(value)}
-                  className={cn(
-                    active
-                      ? "bg-background text-foreground shadow-sm hover:bg-background hover:text-foreground"
-                      : "text-muted-foreground"
-                  )}
+                  value={value}
+                  className="rounded-sm px-3"
                 >
                   <Icon />
                   {modeLabel}
-                </Button>
-              )
-            })}
-          </div>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         )}
         <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           {filterable.map((column) => (
