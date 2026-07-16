@@ -1,7 +1,10 @@
 /**
- * Sample rows for list screens. These stand in for real data until the
- * screens are wired to a backend — enough variety to exercise filtering.
+ * The single home for mock/fixture data — the list-screen rows below plus the
+ * sidebar's user and teams. Everything here stands in for real data until the
+ * app is wired to a backend, so a future swap is a one-module change.
  */
+
+import { AudioWaveform, Command, PanelBottom } from "lucide-react"
 
 export type Customer = {
   id: string
@@ -210,5 +213,31 @@ export const sampleCustomers: Customer[] = [
     city: "Battambang",
     status: "Active",
     balance: 15.0,
+  },
+]
+
+/** The signed-in user shown in the sidebar footer. */
+export const sidebarUser = {
+  name: "shadcn",
+  email: "m@example.com",
+  avatar: "/avatars/shadcn.jpg",
+}
+
+/** The teams shown in the sidebar's team switcher. */
+export const sidebarTeams = [
+  {
+    name: "Acme Inc",
+    logo: <PanelBottom strokeWidth={2} />,
+    plan: "Enterprise",
+  },
+  {
+    name: "Acme Corp.",
+    logo: <AudioWaveform strokeWidth={2} />,
+    plan: "Startup",
+  },
+  {
+    name: "Evil Corp.",
+    logo: <Command strokeWidth={2} />,
+    plan: "Free",
   },
 ]

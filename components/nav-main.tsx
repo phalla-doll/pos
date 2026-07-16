@@ -17,132 +17,121 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import type { NavEntry } from "@/lib/screens"
+import { cn } from "@/lib/utils"
+import type { NavEntry } from "@/lib/nav"
 import { ChevronRight } from "lucide-react"
 
 /**
- * Primary sidebar navigation. Renders the nav tree from @/lib/screens:
- * flat entries are *tab launchers* (navigate to /dashboard?tab=<type>,
- * which the workspace reads to open or focus that screen's tab), and
- * groups are collapsible parents whose children are launchers.
+ * Primary sidebar navigation. Renders the nav tree from @/lib/nav: screen
+ * entries are *tab launchers* (navigate to /dashboard?tab=<type>, which the
+ * workspace reads to open or focus that screen's tab), and groups are
+ * collapsible parents whose children are themselves nav entries — so the same
+ * {@link NavNode} recurses to any depth.
  */
 export function NavMain({ items }: { items: NavEntry[] }) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) =>
-          item.kind === "group" ? (
-            <NavGroup
-              key={item.label}
-              label={item.label}
-              icon={item.icon}
-              children={item.children}
-            />
-          ) : (
-            <SidebarMenuItem key={item.screen.type}>
-              <SidebarMenuButton
-                tooltip={item.screen.label}
-                render={<Link href={`/dashboard?tab=${item.screen.type}`} />}
-              >
-                {item.screen.icon}
-                <span>{item.screen.label}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )
-        )}
+        {items.map((item) => (
+          <NavNode key={subKey(item)} entry={item} depth={0} />
+        ))}
       </SidebarMenu>
     </SidebarGroup>
   )
 }
 
 /**
- * A top-level collapsible sidebar group. The trigger shows the group's
- * icon + label and a chevron that rotates when open; the panel holds the
- * child entries, each rendered recursively so nested groups (3-level menus)
- * expand within. Defaults to open so all screens are discoverable at a glance.
+ * One nav entry, rendered recursively. A single code path handles both a
+ * `screen` leaf (a tab launcher) and a collapsible `group`; the link is
+ * constructed once and the trigger content is shared. The only thing that
+ * varies with depth is which sidebar primitives wrap it — top-level entries
+ * use the menu primitives (a `<button>` with a collapsed-rail tooltip), nested
+ * ones use the sub-menu primitives (an `<a>`). Groups default to open so every
+ * screen is discoverable at a glance.
  */
-function NavGroup({
-  label,
-  icon,
-  children,
-}: {
-  label: string
-  icon: React.ReactNode
-  children: NavEntry[]
-}) {
-  return (
-    <Collapsible defaultOpen render={<SidebarMenuItem />}>
-      <CollapsibleTrigger
-        render={
-          <SidebarMenuButton tooltip={label} className="group/collapsible">
-            {icon}
-            <span>{label}</span>
-            <ChevronRight
-              strokeWidth={2}
-              className="ml-auto transition-transform duration-200 group-data-[panel-open]/collapsible:rotate-90"
-            />
-          </SidebarMenuButton>
-        }
-      />
-      <CollapsibleContent>
-        <SidebarMenuSub>
-          {children.map((child) => (
-            <NavSubEntry key={subKey(child)} entry={child} />
-          ))}
-        </SidebarMenuSub>
-      </CollapsibleContent>
-    </Collapsible>
-  )
-}
+function NavNode({ entry, depth }: { entry: NavEntry; depth: number }) {
+  const top = depth === 0
 
-/**
- * A single entry inside a group's sub-menu. A `screen` renders as a leaf
- * launcher; a nested `group` renders as its own collapsible whose panel
- * holds another {@link SidebarMenuSub}, recursing for arbitrarily deep menus.
- */
-function NavSubEntry({ entry }: { entry: NavEntry }) {
   if (entry.kind === "screen") {
     const { screen } = entry
-    return (
+    const link = <Link href={`/dashboard?tab=${screen.type}`} />
+    const content = (
+      <>
+        {screen.icon}
+        <span>{screen.label}</span>
+      </>
+    )
+    return top ? (
+      <SidebarMenuItem>
+        <SidebarMenuButton tooltip={screen.label} render={link}>
+          {content}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ) : (
       <SidebarMenuSubItem>
-        <SidebarMenuSubButton
-          render={<Link href={`/dashboard?tab=${screen.type}`} />}
-        >
-          {screen.icon}
-          <span>{screen.label}</span>
-        </SidebarMenuSubButton>
+        <SidebarMenuSubButton render={link}>{content}</SidebarMenuSubButton>
       </SidebarMenuSubItem>
     )
   }
 
-  return (
-    <Collapsible defaultOpen render={<SidebarMenuSubItem />}>
-      <CollapsibleTrigger
-        nativeButton={false}
-        render={
-          <SidebarMenuSubButton className="group/collapsible-sub">
-            {entry.icon}
-            <span>{entry.label}</span>
-            <ChevronRight
-              strokeWidth={2}
-              className="ml-auto transition-transform duration-200 group-data-[panel-open]/collapsible-sub:rotate-90"
-            />
-          </SidebarMenuSubButton>
-        }
+  // Group: a collapsible whose panel holds its children, each recursing. The
+  // chevron rotates via its own button's `group/*` scope, so nesting is safe.
+  const Item = top ? SidebarMenuItem : SidebarMenuSubItem
+  const triggerContent = (
+    <>
+      {entry.icon}
+      <span>{entry.label}</span>
+      <ChevronRight
+        strokeWidth={2}
+        className={cn(
+          "ml-auto transition-transform duration-200",
+          top
+            ? "group-data-[panel-open]/collapsible:rotate-90"
+            : "group-data-[panel-open]/collapsible-sub:rotate-90"
+        )}
       />
-      <CollapsibleContent>
-        <SidebarMenuSub>
-          {entry.children.map((child) => (
-            <NavSubEntry key={subKey(child)} entry={child} />
-          ))}
-        </SidebarMenuSub>
-      </CollapsibleContent>
+    </>
+  )
+  const panel = (
+    <CollapsibleContent>
+      <SidebarMenuSub>
+        {entry.children.map((child) => (
+          <NavNode key={subKey(child)} entry={child} depth={depth + 1} />
+        ))}
+      </SidebarMenuSub>
+    </CollapsibleContent>
+  )
+
+  return (
+    <Collapsible defaultOpen render={<Item />}>
+      {top ? (
+        <CollapsibleTrigger
+          render={
+            <SidebarMenuButton
+              tooltip={entry.label}
+              className="group/collapsible"
+            >
+              {triggerContent}
+            </SidebarMenuButton>
+          }
+        />
+      ) : (
+        <CollapsibleTrigger
+          nativeButton={false}
+          render={
+            <SidebarMenuSubButton className="group/collapsible-sub">
+              {triggerContent}
+            </SidebarMenuSubButton>
+          }
+        />
+      )}
+      {panel}
     </Collapsible>
   )
 }
 
-/** Stable React key for a sub-entry: screen type for leaves, label for groups. */
+/** Stable React key for an entry: screen type for leaves, label for groups. */
 function subKey(entry: NavEntry): string {
   return entry.kind === "screen" ? entry.screen.type : entry.label
 }
