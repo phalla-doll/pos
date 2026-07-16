@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search } from "lucide-react"
+import { ChevronDown, ChevronsUpDown, ChevronUp, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,9 +32,14 @@ export type ListColumn<T> = {
   cell?: (row: T) => React.ReactNode
   /** Whether this column appears in the filter bar. Defaults to `true`. */
   filterable?: boolean
+  /** Whether this column's header can sort the table. Defaults to `true`. */
+  sortable?: boolean
   /** Horizontal alignment of the header and cells. Defaults to `"left"`. */
   align?: "left" | "right"
 }
+
+/** Active sort: which column, in which direction. */
+type SortState = { key: string; dir: "asc" | "desc" }
 
 export type ListScreenConfig<T> = {
   /** Screen title shown above the filter bar. */
@@ -54,6 +59,15 @@ function matches<T>(row: T, column: ListColumn<T>, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
   return String(column.get(row)).toLowerCase().includes(q)
+}
+
+/**
+ * Compare two raw column values. Numbers sort numerically; everything else
+ * sorts as a locale-aware, numeric-aware string (so "10" follows "2").
+ */
+function compare(a: string | number, b: string | number): number {
+  if (typeof a === "number" && typeof b === "number") return a - b
+  return String(a).localeCompare(String(b), undefined, { numeric: true })
 }
 
 /**
@@ -85,6 +99,28 @@ export function ListScreen<T>({
       active.every((c) => matches(row, c, applied[c.key]))
     )
   }, [rows, filterable, applied])
+
+  const [sort, setSort] = React.useState<SortState | null>(null)
+
+  const sorted = React.useMemo(() => {
+    if (!sort) return filtered
+    const column = columns.find((c) => c.key === sort.key)
+    if (!column) return filtered
+    const factor = sort.dir === "asc" ? 1 : -1
+    // Stable sort on a copy; never mutate the incoming rows.
+    return [...filtered].sort(
+      (a, b) => compare(column.get(a), column.get(b)) * factor
+    )
+  }, [filtered, columns, sort])
+
+  // Cycle a column: unsorted → ascending → descending → unsorted.
+  function toggleSort(key: string) {
+    setSort((prev) => {
+      if (prev?.key !== key) return { key, dir: "asc" }
+      if (prev.dir === "asc") return { key, dir: "desc" }
+      return null
+    })
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -156,16 +192,52 @@ export function ListScreen<T>({
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={cn(
-                    column.align === "right" && "text-right tabular-nums"
-                  )}
-                >
-                  {column.header}
-                </TableHead>
-              ))}
+              {columns.map((column) => {
+                const active = sort?.key === column.key
+                const sortable = column.sortable !== false
+                return (
+                  <TableHead
+                    key={column.key}
+                    aria-sort={
+                      active
+                        ? sort.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
+                    }
+                    className={cn(
+                      column.align === "right" && "text-right tabular-nums"
+                    )}
+                  >
+                    {sortable ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSort(column.key)}
+                        className={cn(
+                          "-mx-2.5 h-8 font-medium text-muted-foreground hover:text-foreground",
+                          active && "text-foreground",
+                          column.align === "right" && "flex-row-reverse"
+                        )}
+                      >
+                        {column.header}
+                        {active ? (
+                          sort.dir === "asc" ? (
+                            <ChevronUp />
+                          ) : (
+                            <ChevronDown />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="text-muted-foreground/50" />
+                        )}
+                      </Button>
+                    ) : (
+                      column.header
+                    )}
+                  </TableHead>
+                )
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,7 +251,7 @@ export function ListScreen<T>({
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((row, index) => (
+              sorted.map((row, index) => (
                 <TableRow key={rowKey?.(row, index) ?? index}>
                   {columns.map((column) => (
                     <TableCell
