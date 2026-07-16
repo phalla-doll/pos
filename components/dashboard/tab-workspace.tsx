@@ -2,7 +2,11 @@
 
 import * as React from "react"
 
-import { TabBar, TabBarEmpty } from "@/components/dashboard/tab-bar"
+import {
+  TabBar,
+  TabBarEmpty,
+  TAB_BAR_ROW,
+} from "@/components/dashboard/tab-bar"
 import { useTabs } from "@/hooks/use-tabs"
 import { getScreen } from "@/lib/screens"
 import { LayoutDashboard } from "lucide-react"
@@ -88,7 +92,7 @@ function EmptyState() {
 export function TabWorkspaceFallback() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="h-10 border-b bg-background" />
+      <div className={TAB_BAR_ROW} />
       <div className="flex flex-1 items-center justify-center">
         <span className="text-sm text-muted-foreground">Loading…</span>
       </div>
