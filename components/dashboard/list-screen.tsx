@@ -39,6 +39,8 @@ export type ListColumn<T> = {
 export type ListScreenConfig<T> = {
   /** Screen title shown above the filter bar. */
   title: string
+  /** One-line summary shown beneath the title. */
+  description: string
   /** Column definitions — drive both the filter bar and the table. */
   columns: ListColumn<T>[]
   /** The rows to display. */
@@ -62,6 +64,7 @@ function matches<T>(row: T, column: ListColumn<T>, query: string): boolean {
  */
 export function ListScreen<T>({
   title,
+  description,
   columns,
   rows,
   rowKey,
@@ -97,8 +100,11 @@ export function ListScreen<T>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
         <span className="text-sm text-muted-foreground tabular-nums">
           {filtered.length} {filtered.length === 1 ? "result" : "results"}
         </span>
