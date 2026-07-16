@@ -217,8 +217,7 @@ export function ListScreen<T>({
                         onClick={() => toggleSort(column.key)}
                         className={cn(
                           "-mx-2.5 h-8 font-medium text-muted-foreground hover:text-foreground",
-                          active && "text-foreground",
-                          column.align === "right" && "flex-row-reverse"
+                          active && "text-foreground"
                         )}
                       >
                         {column.header}
