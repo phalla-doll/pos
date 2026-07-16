@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { NavMain } from "@/components/nav-main"
+import { NavTheme } from "@/components/nav-theme"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -58,6 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={sidebarNav} />
       </SidebarContent>
       <SidebarFooter>
+        <NavTheme />
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />
