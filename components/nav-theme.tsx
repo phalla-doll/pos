@@ -5,10 +5,7 @@ import { useTheme } from "next-themes"
 import { Sun, Moon, Monitor } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
+import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar"
 
 const themes = [
   { value: "light", label: "Light", icon: Sun },
@@ -25,7 +22,7 @@ function useHydrated() {
   return useSyncExternalStore(
     emptySubscribe,
     () => true,
-    () => false,
+    () => false
   )
 }
 
@@ -56,7 +53,7 @@ export function NavTheme() {
                   "flex h-7 flex-1 items-center justify-center gap-1.5 rounded-sm text-xs font-medium ring-sidebar-ring outline-hidden transition-colors focus-visible:ring-2",
                   isActive
                     ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Icon strokeWidth={2} className="size-3.5" />

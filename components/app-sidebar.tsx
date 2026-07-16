@@ -27,23 +27,17 @@ const data = {
   teams: [
     {
       name: "Acme Inc",
-      logo: (
-        <PanelBottom strokeWidth={2} />
-      ),
+      logo: <PanelBottom strokeWidth={2} />,
       plan: "Enterprise",
     },
     {
       name: "Acme Corp.",
-      logo: (
-        <AudioWaveform strokeWidth={2} />
-      ),
+      logo: <AudioWaveform strokeWidth={2} />,
       plan: "Startup",
     },
     {
       name: "Evil Corp.",
-      logo: (
-        <Command strokeWidth={2} />
-      ),
+      logo: <Command strokeWidth={2} />,
       plan: "Free",
     },
   ],

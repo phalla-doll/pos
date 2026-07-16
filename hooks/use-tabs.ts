@@ -72,7 +72,7 @@ export function useTabs(): TabsApi {
       const qs = params.toString()
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
     },
-    [router, pathname, searchParams],
+    [router, pathname, searchParams]
   )
 
   // The URL (?tab=<screenType>) is authoritative for the *active* screen.
@@ -117,7 +117,7 @@ export function useTabs(): TabsApi {
       }
       writeActiveToUrl(screenType)
     },
-    [tabs, writeActiveToUrl],
+    [tabs, writeActiveToUrl]
   )
 
   const setActive = React.useCallback(
@@ -127,7 +127,7 @@ export function useTabs(): TabsApi {
       setActiveId(id)
       writeActiveToUrl(tab.screenType)
     },
-    [tabs, writeActiveToUrl],
+    [tabs, writeActiveToUrl]
   )
 
   const closeTab = React.useCallback(
@@ -144,7 +144,7 @@ export function useTabs(): TabsApi {
         writeActiveToUrl(neighbor ? neighbor.screenType : null)
       }
     },
-    [tabs, activeId, writeActiveToUrl],
+    [tabs, activeId, writeActiveToUrl]
   )
 
   const duplicateTab = React.useCallback(
@@ -162,7 +162,7 @@ export function useTabs(): TabsApi {
       setActiveId(copy.id)
       writeActiveToUrl(copy.screenType)
     },
-    [tabs, writeActiveToUrl],
+    [tabs, writeActiveToUrl]
   )
 
   const closeOthers = React.useCallback(
@@ -173,7 +173,7 @@ export function useTabs(): TabsApi {
       setActiveId(keep.id)
       writeActiveToUrl(keep.screenType)
     },
-    [tabs, writeActiveToUrl],
+    [tabs, writeActiveToUrl]
   )
 
   const closeAll = React.useCallback(() => {

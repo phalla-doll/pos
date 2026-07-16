@@ -49,7 +49,7 @@ export function NavMain({ items }: { items: NavEntry[] }) {
                 <span>{item.screen.label}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ),
+          )
         )}
       </SidebarMenu>
     </SidebarGroup>

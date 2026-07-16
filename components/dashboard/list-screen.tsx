@@ -93,7 +93,9 @@ export function ListScreen<T>({
   const [applied, setApplied] = React.useState<Record<string, string>>({})
 
   const filtered = React.useMemo(() => {
-    const active = filterable.filter((c) => (applied[c.key] ?? "").trim() !== "")
+    const active = filterable.filter(
+      (c) => (applied[c.key] ?? "").trim() !== ""
+    )
     if (active.length === 0) return rows
     return rows.filter((row) =>
       active.every((c) => matches(row, c, applied[c.key]))

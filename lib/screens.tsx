@@ -106,7 +106,7 @@ function screen(
   type: ScreenType,
   label: string,
   Icon: LucideIcon,
-  description: string,
+  description: string
 ): Screen {
   return {
     type,
@@ -126,7 +126,7 @@ function screen(
 function listScreen<T>(
   type: ScreenType,
   Icon: LucideIcon,
-  config: ListScreenConfig<T>,
+  config: ListScreenConfig<T>
 ): Screen {
   return {
     type,
@@ -142,43 +142,43 @@ export const screens: Record<ScreenType, Screen> = {
     "dashboard",
     "Dashboard",
     Landmark,
-    "An overview of sales, activity, and key metrics at a glance.",
+    "An overview of sales, activity, and key metrics at a glance."
   ),
   pos: screen(
     "pos",
     "POS Screen",
     ShoppingBasket,
-    "Ring up sales and process transactions at the register.",
+    "Ring up sales and process transactions at the register."
   ),
   users: screen(
     "users",
     "Users",
     Users,
-    "Manage staff accounts and their access to the system.",
+    "Manage staff accounts and their access to the system."
   ),
   roles: screen(
     "roles",
     "Roles",
     SlidersHorizontal,
-    "Define roles and the permissions assigned to each.",
+    "Define roles and the permissions assigned to each."
   ),
   permissions: screen(
     "permissions",
     "Permissions",
     ListChecks,
-    "Configure the granular permissions available across the system.",
+    "Configure the granular permissions available across the system."
   ),
   "audit-logs": screen(
     "audit-logs",
     "Audit Logs",
     ScrollText,
-    "Track every action taken across the system.",
+    "Track every action taken across the system."
   ),
   backups: screen(
     "backups",
     "Backups",
     DatabaseBackup,
-    "Create and restore backups of your data.",
+    "Create and restore backups of your data."
   ),
   "customer-listing": listScreen("customer-listing", ListOrdered, {
     title: "Customer Listing",
@@ -204,49 +204,49 @@ export const screens: Record<ScreenType, Screen> = {
     "customer-owed",
     "Customer Owed",
     Banknote,
-    "See which customers have outstanding balances.",
+    "See which customers have outstanding balances."
   ),
   "customer-history": screen(
     "customer-history",
     "Customer History",
     History,
-    "Review past purchases and activity for each customer.",
+    "Review past purchases and activity for each customer."
   ),
   "best-sales": screen(
     "best-sales",
     "Best Sales",
     ChartColumn,
-    "Discover your top-selling products and trends.",
+    "Discover your top-selling products and trends."
   ),
   "summary-report": screen(
     "summary-report",
     "Summary Report",
     ArrowRightLeft,
-    "A consolidated summary of sales and activity.",
+    "A consolidated summary of sales and activity."
   ),
   "income-report": screen(
     "income-report",
     "Income Report",
     ReceiptText,
-    "Track revenue and income over time.",
+    "Track revenue and income over time."
   ),
   "tax-report": screen(
     "tax-report",
     "Tax Report",
     Percent,
-    "Review the tax collected across transactions.",
+    "Review the tax collected across transactions."
   ),
   "profit-loss": screen(
     "profit-loss",
     "Profit & Loss",
     TrendingUp,
-    "Compare revenue against costs to see profitability.",
+    "Compare revenue against costs to see profitability."
   ),
   suppliers: screen(
     "suppliers",
     "Suppliers",
     Truck,
-    "Manage your suppliers and their contact details.",
+    "Manage your suppliers and their contact details."
   ),
   inventory: listScreen("inventory", Warehouse, {
     title: "Inventory",
@@ -279,7 +279,7 @@ export const screens: Record<ScreenType, Screen> = {
     "settings",
     "Settings",
     Settings,
-    "Configure system preferences and options.",
+    "Configure system preferences and options."
   ),
 }
 
@@ -292,7 +292,12 @@ export const screens: Record<ScreenType, Screen> = {
  */
 export type NavEntry =
   | { kind: "screen"; screen: Screen }
-  | { kind: "group"; label: string; icon: React.ReactNode; children: NavEntry[] }
+  | {
+      kind: "group"
+      label: string
+      icon: React.ReactNode
+      children: NavEntry[]
+    }
 
 const s = screens
 
@@ -303,7 +308,7 @@ const leaf = (screen: Screen): NavEntry => ({ kind: "screen", screen })
 const group = (
   label: string,
   icon: React.ReactNode,
-  children: NavEntry[],
+  children: NavEntry[]
 ): NavEntry => ({ kind: "group", label, icon, children })
 
 /** The sidebar nav tree, in display order (matches the Platform menu). */

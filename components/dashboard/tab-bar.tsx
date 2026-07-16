@@ -96,7 +96,7 @@ function TabChip({
               "group/tab relative flex h-8 shrink-0 items-center gap-1 rounded-t-md pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
               isActive
                 ? "bg-muted font-medium text-foreground"
-                : "font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                : "font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           />
         }
@@ -113,7 +113,7 @@ function TabChip({
           <span className="grid max-w-40">
             <span
               aria-hidden
-              className="col-start-1 row-start-1 truncate font-medium invisible"
+              className="invisible col-start-1 row-start-1 truncate font-medium"
             >
               {label}
             </span>
@@ -130,7 +130,7 @@ function TabChip({
           aria-label={`Close ${label} tab`}
           className={cn(
             "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-opacity duration-150 hover:bg-accent hover:text-foreground [&_svg]:size-3.5",
-            isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100",
+            isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100"
           )}
         >
           <X strokeWidth={2} />
@@ -138,7 +138,7 @@ function TabChip({
 
         {/* Active indicator bar. */}
         {isActive && (
-          <span className="absolute -bottom-px inset-x-0 h-px bg-primary" />
+          <span className="absolute inset-x-0 -bottom-px h-px bg-primary" />
         )}
       </ContextMenuTrigger>
 
