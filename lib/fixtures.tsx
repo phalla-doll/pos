@@ -4,7 +4,7 @@
  * app is wired to a backend, so a future swap is a one-module change.
  */
 
-import { AudioWaveform, Command, PanelBottom } from "lucide-react"
+import { BrandMark } from "@/components/brand-mark"
 
 export type Customer = {
   id: string
@@ -405,17 +405,10 @@ export const sidebarUser = {
 export const sidebarTeams = [
   {
     name: "Acme Inc",
-    logo: <PanelBottom strokeWidth={2} />,
+    // Fills whatever box the switcher puts it in — the header tile and the
+    // menu row want different sizes. `!` because the sidebar and menu button
+    // variants both dictate a size for any descendant svg.
+    logo: <BrandMark className="size-full!" />,
     plan: "Enterprise",
-  },
-  {
-    name: "Acme Corp.",
-    logo: <AudioWaveform strokeWidth={2} />,
-    plan: "Startup",
-  },
-  {
-    name: "Evil Corp.",
-    logo: <Command strokeWidth={2} />,
-    plan: "Free",
   },
 ]
