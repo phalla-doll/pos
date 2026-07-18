@@ -79,7 +79,12 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
     <PinContext.Provider value={{ pinned, setPinned }}>
       <SidebarProvider
         open={open}
-        onOpenChange={setPinned}
+        // The requested value is deliberately ignored. Upstream computes it
+        // as `!open`, and `open` now includes a peek — so a toggle that lives
+        // *inside* the sidebar (the rail, which focus peeks open before its
+        // own click runs) would read "already open" and resolve to close,
+        // making it impossible to pin. A toggle means invert the pin.
+        onOpenChange={() => setPinned(!pinned)}
         className={cn("h-svh overflow-hidden", isPeek && peekOverlay)}
         style={
           { "--sidebar-width-icon": SIDEBAR_WIDTH_ICON } as React.CSSProperties

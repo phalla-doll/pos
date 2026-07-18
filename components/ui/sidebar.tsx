@@ -80,10 +80,15 @@ function SidebarProvider({
         setOpenProp(openState)
       } else {
         _setOpen(openState)
-      }
 
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        // Local edit to a vendored file: persist only while uncontrolled.
+        // Upstream writes this unconditionally, so a controlled parent got a
+        // second, competing record of a state it owns — here the sidebar is
+        // driven by `lib/sidebar-pin.ts` and `open` is derived from the pin,
+        // leaving `sidebar_state` stale the moment a hover-peek changed it.
+        // Re-adding the sidebar via the shadcn CLI will revert this.
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      }
     },
     [setOpenProp, open]
   )
