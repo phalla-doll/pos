@@ -55,7 +55,7 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="gap-1.5">
         {items.map((item) => (
           <NavNode
             key={subKey(item)}
@@ -100,13 +100,19 @@ function NavNode({
     )
     return top ? (
       <SidebarMenuItem>
-        <SidebarMenuButton tooltip={screen.label} render={link}>
+        <SidebarMenuButton
+          tooltip={screen.label}
+          className="h-10"
+          render={link}
+        >
           {content}
         </SidebarMenuButton>
       </SidebarMenuItem>
     ) : (
       <SidebarMenuSubItem>
-        <SidebarMenuSubButton render={link}>{content}</SidebarMenuSubButton>
+        <SidebarMenuSubButton className="h-8" render={link}>
+          {content}
+        </SidebarMenuSubButton>
       </SidebarMenuSubItem>
     )
   }
@@ -151,7 +157,7 @@ function NavNode({
           render={
             <SidebarMenuButton
               tooltip={entry.label}
-              className="group/collapsible"
+              className="group/collapsible h-10"
             >
               {triggerContent}
             </SidebarMenuButton>
@@ -161,7 +167,7 @@ function NavNode({
         <CollapsibleTrigger
           nativeButton={false}
           render={
-            <SidebarMenuSubButton className="group/collapsible-sub">
+            <SidebarMenuSubButton className="group/collapsible-sub h-8">
               {triggerContent}
             </SidebarMenuSubButton>
           }
