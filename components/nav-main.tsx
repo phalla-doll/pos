@@ -137,7 +137,10 @@ function NavNode({
   )
   const panel = (
     <CollapsibleContent>
-      <SidebarMenuSub>
+      {/* Drop the container's right inset (keep the left indent) so a nested
+          group's ml-auto chevron reaches the same right edge as top-level
+          chevrons instead of sitting offset by one indent level. */}
+      <SidebarMenuSub className="!mr-0 !pr-0">
         {entry.children.map((child) => (
           <NavNode
             key={subKey(child)}
