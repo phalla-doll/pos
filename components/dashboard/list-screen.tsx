@@ -13,6 +13,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import {
   Table,
   TableBody,
   TableCell,
@@ -72,10 +77,12 @@ export function ListScreen<T>({
   rowKey,
   creatable,
 }: ListScreenProps<T>) {
-  // `filters` is the live per-column search query — it filters the table on
-  // every keystroke. `createDraft` is a separate bucket so search text and
-  // entry text never bleed into each other.
+  // `filters` is the live per-column search query and `query` is the global
+  // "search any column" box in the header — both filter the table on every
+  // keystroke. `createDraft` is a separate bucket so search text and entry
+  // text never bleed into each other.
   const [filters, setFilters] = React.useState<FilterState>({})
+  const [query, setQuery] = React.useState("")
   const [createDraft, setCreateDraft] = React.useState<FilterState>({})
   const [sort, setSort] = React.useState<SortState | null>(null)
 
@@ -91,8 +98,8 @@ export function ListScreen<T>({
   // The one derivation that answers "which rows, in what order" — used for the
   // count, the empty state, and the table body alike (no filtered/sorted split).
   const visibleRows = React.useMemo(
-    () => deriveRows(rows, columns, filters, sort),
-    [rows, columns, filters, sort]
+    () => deriveRows(rows, columns, filters, sort, query),
+    [rows, columns, filters, sort, query]
   )
 
   function toggleSort(key: string) {
@@ -129,10 +136,17 @@ export function ListScreen<T>({
         description={description}
         actions={
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground tabular-nums">
-              {visibleRows.length}{" "}
-              {visibleRows.length === 1 ? "result" : "results"}
-            </span>
+            <InputGroup className="w-56 sm:w-64">
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+              <InputGroupInput
+                aria-label="Search all columns"
+                placeholder="Search…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </InputGroup>
             {creatable && (
               <Button
                 type="button"

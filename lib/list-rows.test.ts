@@ -85,6 +85,20 @@ describe("deriveRows", () => {
     const out = deriveRows(rows, columns, {}, { key: "gone", dir: "asc" })
     expect(out).toBe(rows)
   })
+
+  it("returns the original rows when the global query is blank", () => {
+    expect(deriveRows(rows, columns, {}, null, "   ")).toBe(rows)
+  })
+
+  it("matches the global query against any filterable column", () => {
+    const out = deriveRows(rows, columns, {}, null, "10")
+    expect(out.map((r) => r.name)).toEqual(["apple"]) // matched on qty
+  })
+
+  it("ANDs the global query with per-column filters", () => {
+    const out = deriveRows(rows, columns, { qty: "2" }, null, "cher")
+    expect(out.map((r) => r.name)).toEqual(["Cherry"])
+  })
 })
 
 describe("cycleSort", () => {
