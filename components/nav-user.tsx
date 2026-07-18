@@ -56,7 +56,7 @@ export function NavUser({
             <ChevronsUpDown strokeWidth={2} className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-fit"
+            className="w-60"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
