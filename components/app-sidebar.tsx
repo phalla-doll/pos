@@ -4,7 +4,7 @@ import * as React from "react"
 
 import { NavMain, NavMainLive } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { SidebarBrand } from "@/components/sidebar-brand"
 import {
   Sidebar,
   SidebarContent,
@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/sidebar"
 import { sidebarNav } from "@/lib/nav"
 import { freshWorkspaceHref } from "@/lib/tab-url"
-import { sidebarTeams, sidebarUser } from "@/lib/fixtures"
+import { sidebarUser, sidebarWorkspace } from "@/lib/fixtures"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarTeams} />
+        <SidebarBrand workspace={sidebarWorkspace} />
       </SidebarHeader>
       <SidebarContent>
         {/*

@@ -401,14 +401,12 @@ export const sidebarUser = {
   avatar: "/avatars/shadcn.jpg",
 }
 
-/** The teams shown in the sidebar's team switcher. */
-export const sidebarTeams = [
-  {
-    name: "Acme Inc",
-    // Fills whatever box the switcher puts it in — the header tile and the
-    // menu row want different sizes. `!` because the sidebar and menu button
-    // variants both dictate a size for any descendant svg.
-    logo: <BrandMark className="size-full!" />,
-    plan: "Enterprise",
-  },
-]
+/** The workspace named in the sidebar header. */
+export const sidebarWorkspace = {
+  name: "Acme Inc",
+  // Fills whatever box the header gives it, which differs between the rail
+  // and the open sidebar. `!` because the sidebar and menu button variants
+  // both dictate a size for any descendant svg.
+  logo: <BrandMark className="size-full!" />,
+  plan: "Enterprise",
+}
