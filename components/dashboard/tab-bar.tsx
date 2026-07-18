@@ -16,9 +16,12 @@ import type { Tab } from "@/hooks/use-tabs"
 import { Copy, X, XCircle, SquareX } from "lucide-react"
 
 /**
- * Height + bottom border of the tab-bar row. Shared so the Suspense fallback
- * (`TabWorkspaceFallback`) matches the bar's size exactly, instead of
- * re-declaring the constant in each place.
+ * Height + bottom border of the tab-bar row. The strip itself is transparent
+ * (`background`); contrast comes from the bottom border, which the active tab
+ * punches through — its `background` fill + flared corners erase the line
+ * beneath it, so it reads as connected to the content below, browser-tab
+ * style. Shared so the Suspense fallback (`TabWorkspaceFallback`) matches the
+ * bar's size exactly, instead of re-declaring the constant in each place.
  */
 export const TAB_BAR_ROW = "h-10 shrink-0 border-b bg-background"
 
@@ -47,9 +50,11 @@ export function TabBar({
   onCloseAll,
 }: TabBarProps) {
   return (
-    <div className={cn("flex items-center", TAB_BAR_ROW)}>
+    <div className={cn("flex items-end", TAB_BAR_ROW)}>
       <ScrollArea className="size-full">
-        <div className="flex h-10 items-center gap-1 px-2">
+        {/* Tabs sit flush to the bottom of the strip so the active tab's
+            flared corners can merge into the content area beneath. */}
+        <div className="flex h-10 items-end gap-1 px-2">
           {tabs.map((tab) => (
             <TabChip
               key={tab.id}
@@ -100,10 +105,10 @@ function TabChip({
             data-slot="tab-chip"
             data-active={isActive}
             className={cn(
-              "group/tab relative flex h-8 shrink-0 items-center gap-1 rounded-t-md pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
+              "group/tab relative flex shrink-0 items-center gap-1 rounded-t-lg pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
               isActive
-                ? "bg-muted font-medium text-foreground"
-                : "font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                ? "-mb-px h-9 bg-primary/10 font-medium text-foreground"
+                : "h-9 font-normal text-muted-foreground hover:text-foreground"
             )}
           />
         }
@@ -143,9 +148,16 @@ function TabChip({
           <X strokeWidth={2} />
         </button>
 
-        {/* Active indicator bar. */}
+        {/* Flared bottom corners — the browser-tab signature. Each is an 8px
+            square just outside the tab, filled with the tab's `primary/10`
+            color everywhere except a quarter-circle carved from the corner
+            nearest the tab, so the rounded body sweeps concavely down to the
+            strip baseline instead of ending in a hard right angle. */}
         {isActive && (
-          <span className="absolute inset-x-0 -bottom-px h-px bg-primary" />
+          <>
+            <span className="pointer-events-none absolute bottom-0 left-[-8px] size-2 bg-[radial-gradient(circle_at_top_left,transparent_7.5px,color-mix(in_oklab,var(--primary)_10%,transparent)_8px)]" />
+            <span className="pointer-events-none absolute right-[-8px] bottom-0 size-2 bg-[radial-gradient(circle_at_top_right,transparent_7.5px,color-mix(in_oklab,var(--primary)_10%,transparent)_8px)]" />
+          </>
         )}
       </ContextMenuTrigger>
 
