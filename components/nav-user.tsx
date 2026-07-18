@@ -1,6 +1,12 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils"
+import {
+  collapsedRailButton,
+  collapsedRailLabel,
+  collapsedRailTile,
+} from "@/lib/sidebar-metrics"
 import { ThemeMenuSub } from "@/components/nav-theme"
 import {
   DropdownMenu,
@@ -42,18 +48,26 @@ export function NavUser({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton size="lg" className="aria-expanded:bg-muted" />
+              <SidebarMenuButton
+                size="lg"
+                className={cn("aria-expanded:bg-muted", collapsedRailButton)}
+              />
             }
           >
-            <Avatar>
+            <Avatar className={collapsedRailTile}>
               <AvatarImage src={user.avatar} alt={user.name} />
               <AvatarFallback>CN</AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            <div
+              className={cn(
+                "grid flex-1 text-left text-sm leading-tight",
+                collapsedRailLabel
+              )}
+            >
               <span className="truncate font-medium">{user.name}</span>
               <span className="truncate text-xs">{user.email}</span>
             </div>
-            <ChevronsUpDown strokeWidth={2} className="ml-auto size-4" />
+            <ChevronsUpDown strokeWidth={1.5} className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-60"
@@ -78,29 +92,29 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles strokeWidth={2} />
+                <Sparkles strokeWidth={1.5} />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheck strokeWidth={2} />
+                <BadgeCheck strokeWidth={1.5} />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <CreditCard strokeWidth={2} />
+                <CreditCard strokeWidth={1.5} />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Bell strokeWidth={2} />
+                <Bell strokeWidth={1.5} />
                 Notifications
               </DropdownMenuItem>
               <ThemeMenuSub />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogOut strokeWidth={2} />
+              <LogOut strokeWidth={1.5} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

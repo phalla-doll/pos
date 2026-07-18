@@ -20,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { SIDEBAR_WIDTH_ICON } from "@/lib/sidebar-metrics"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 export default function DashboardLayout({
@@ -29,7 +30,12 @@ export default function DashboardLayout({
 }) {
   return (
     <NuqsAdapter>
-      <SidebarProvider className="h-svh overflow-hidden">
+      <SidebarProvider
+        className="h-svh overflow-hidden"
+        style={
+          { "--sidebar-width-icon": SIDEBAR_WIDTH_ICON } as React.CSSProperties
+        }
+      >
         <AppSidebar />
         <SidebarInset className="min-h-0 overflow-hidden">
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">

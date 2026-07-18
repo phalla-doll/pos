@@ -18,6 +18,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
+import { collapsedRailButton, collapsedRailLabel } from "@/lib/sidebar-metrics"
 import { ChevronsUpDown, Plus } from "lucide-react"
 
 export function TeamSwitcher({
@@ -42,18 +44,35 @@ export function TeamSwitcher({
             render={
               <SidebarMenuButton
                 size="lg"
-                className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
+                className={cn(
+                  "data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground",
+                  collapsedRailButton
+                )}
               />
             }
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+            <div
+              className={cn(
+                "flex aspect-square size-8 items-center justify-center",
+                // On the rail the mark is the brand, not another nav icon —
+                // it reads as the header of the column, so it runs larger
+                // than the 20px glyphs below while still leaving the 40px
+                // tile a visible margin.
+                "group-data-[collapsible=icon]:size-7"
+              )}
+            >
               {activeTeam.logo}
             </div>
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            <div
+              className={cn(
+                "grid flex-1 text-left text-sm leading-tight",
+                collapsedRailLabel
+              )}
+            >
               <span className="truncate font-medium">{activeTeam.name}</span>
               <span className="truncate text-xs">{activeTeam.plan}</span>
             </div>
-            <ChevronsUpDown strokeWidth={2} className="ml-auto" />
+            <ChevronsUpDown strokeWidth={1.5} className="ml-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-fit"
@@ -83,7 +102,7 @@ export function TeamSwitcher({
             <DropdownMenuGroup>
               <DropdownMenuItem className="gap-2 p-2">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <Plus strokeWidth={2} className="size-4" />
+                  <Plus strokeWidth={1.5} className="size-4" />
                 </div>
                 <div className="font-medium text-muted-foreground">
                   Add team
