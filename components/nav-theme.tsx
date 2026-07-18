@@ -4,8 +4,13 @@ import { useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
 import { Sun, Moon, Monitor } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar"
+import {
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const themes = [
   { value: "light", label: "Light", icon: Sun },
@@ -26,43 +31,35 @@ function useHydrated() {
   )
 }
 
-export function NavTheme() {
+/**
+ * Theme picker as a dropdown submenu, meant to nest inside the user menu
+ * ({@link NavUser}). The active theme lives in localStorage — unknown to the
+ * server — so nothing is marked selected until hydrated, keeping the checkmark
+ * out of the SSR markup.
+ */
+export function ThemeMenuSub() {
   const { theme, setTheme } = useTheme()
   const hydrated = useHydrated()
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <div
-          role="radiogroup"
-          aria-label="Theme"
-          className="flex items-center gap-1 rounded-md bg-muted p-1 group-data-[collapsible=icon]:hidden"
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        <Sun strokeWidth={2} />
+        Theme
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent>
+        <DropdownMenuRadioGroup
+          value={hydrated ? theme : undefined}
+          onValueChange={(value) => setTheme(String(value))}
         >
-          {themes.map(({ value, label, icon: Icon }) => {
-            const isActive = hydrated && theme === value
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={isActive}
-                aria-label={label}
-                title={label}
-                onClick={() => setTheme(value)}
-                className={cn(
-                  "flex h-7 flex-1 items-center justify-center gap-1.5 rounded-sm text-xs font-medium ring-sidebar-ring outline-hidden transition-colors focus-visible:ring-2",
-                  isActive
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon strokeWidth={2} className="size-3.5" />
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      </SidebarMenuItem>
-    </SidebarMenu>
+          {themes.map(({ value, label, icon: Icon }) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              <Icon strokeWidth={2} />
+              {label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   )
 }

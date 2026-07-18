@@ -1,6 +1,7 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ThemeMenuSub } from "@/components/nav-theme"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,6 +96,7 @@ export function NavUser({
                 <Bell strokeWidth={2} />
                 Notifications
               </DropdownMenuItem>
+              <ThemeMenuSub />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
