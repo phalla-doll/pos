@@ -111,9 +111,20 @@ function TabChip({
             data-slot="tab-chip"
             data-active={isActive}
             className={cn(
+              // `--tab-active` is the active tab's fill, shared by the body and
+              // the flared corners so they can never drift apart. It's a *mix*
+              // of primary into the background rather than `primary/10` so it
+              // stays fully opaque — the fill has to erase the strip's hairline
+              // beneath it. Dark mode takes a heavier dose: primary is darker
+              // there, so the same ratio against a near-black background would
+              // be invisible: dark `--primary` sits at L 0.424 against an L
+              // 0.145 background, so a light-mode-sized dose lands within a
+              // rounding error of the strip it's meant to stand out from.
               "group/tab relative flex shrink-0 items-center gap-1 rounded-t-lg pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
+              "[--tab-active:color-mix(in_oklab,var(--primary)_12%,var(--background))]",
+              "dark:[--tab-active:color-mix(in_oklab,var(--primary)_45%,var(--background))]",
               isActive
-                ? "h-9 bg-zinc-50 font-medium text-foreground dark:bg-zinc-900"
+                ? "h-9 bg-[var(--tab-active)] font-medium text-foreground"
                 : "h-9 font-normal text-muted-foreground hover:text-foreground"
             )}
           />
@@ -155,14 +166,14 @@ function TabChip({
         </button>
 
         {/* Flared bottom corners — the browser-tab signature. Each is an 8px
-            square just outside the tab, filled with the tab's `primary/10`
+            square just outside the tab, filled with the tab's `--tab-active`
             color everywhere except a quarter-circle carved from the corner
             nearest the tab, so the rounded body sweeps concavely down to the
             strip baseline instead of ending in a hard right angle. */}
         {isActive && (
           <>
-            <span className="pointer-events-none absolute bottom-0 left-[-8px] size-2 bg-[radial-gradient(circle_at_top_left,transparent_7.5px,var(--color-zinc-50)_8px)] dark:bg-[radial-gradient(circle_at_top_left,transparent_7.5px,var(--color-zinc-900)_8px)]" />
-            <span className="pointer-events-none absolute right-[-8px] bottom-0 size-2 bg-[radial-gradient(circle_at_top_right,transparent_7.5px,var(--color-zinc-50)_8px)] dark:bg-[radial-gradient(circle_at_top_right,transparent_7.5px,var(--color-zinc-900)_8px)]" />
+            <span className="pointer-events-none absolute bottom-0 left-[-8px] size-2 bg-[radial-gradient(circle_at_top_left,transparent_7.5px,var(--tab-active)_8px)]" />
+            <span className="pointer-events-none absolute right-[-8px] bottom-0 size-2 bg-[radial-gradient(circle_at_top_right,transparent_7.5px,var(--tab-active)_8px)]" />
           </>
         )}
       </ContextMenuTrigger>
