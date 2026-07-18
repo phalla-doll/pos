@@ -89,6 +89,17 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
         <AppSidebar
           onMouseEnter={() => setPeeking(true)}
           onMouseLeave={() => setPeeking(false)}
+          // Focus peeks too, so the sidebar a keyboard tabs into is the same
+          // one a pointer opens. Without this the rail stays collapsed under
+          // the keyboard — every label hidden, and a group's trigger left
+          // expanding a sub-menu that width has no room to show.
+          onFocusCapture={() => setPeeking(true)}
+          onBlurCapture={(e) => {
+            // Focus moving *within* the sidebar is not leaving it. A menu
+            // portal is not a DOM descendant, so a null or outside
+            // relatedTarget closes the peek and the menu keeps focus.
+            if (!e.currentTarget.contains(e.relatedTarget)) setPeeking(false)
+          }}
         />
         {children}
       </SidebarProvider>

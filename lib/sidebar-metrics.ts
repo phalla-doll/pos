@@ -66,11 +66,3 @@ export const collapsedRailLabel = "group-data-[collapsible=icon]:hidden"
  */
 export const peekOverlay =
   "[&_[data-slot=sidebar-gap]]:w-(--sidebar-width-icon)"
-
-/**
- * A row in the rail's flyout menu, sized to match `SidebarMenuSubButton` as
- * the expanded sidebar renders it — the flyout stands in for that sub-menu, so
- * the two should not disagree on row height or icon gap. Dropdown rows are
- * `gap-1.5 px-1.5 py-1` by default, which reads tighter and shorter.
- */
-export const railFlyoutItem = "h-8 gap-2 px-2"

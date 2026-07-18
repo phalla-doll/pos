@@ -8,18 +8,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -28,11 +16,10 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { useTabLauncherHref } from "@/hooks/use-tabs"
 import { cn } from "@/lib/utils"
-import { collapsedRailButton, railFlyoutItem } from "@/lib/sidebar-metrics"
+import { collapsedRailButton } from "@/lib/sidebar-metrics"
 import type { NavEntry } from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
 import { ChevronRight } from "lucide-react"
@@ -101,11 +88,6 @@ function NavNode({
   depth: number
   hrefFor: (screenType: ScreenType) => string
 }) {
-  const { state, isMobile } = useSidebar()
-  // The rail: collapsed *and* on desktop. On mobile the sidebar is a sheet
-  // that always renders at full width, so `state` there describes the desktop
-  // sidebar the user isn't looking at.
-  const rail = state === "collapsed" && !isMobile
   const top = depth === 0
 
   if (entry.kind === "screen") {
@@ -172,43 +154,6 @@ function NavNode({
     </CollapsibleContent>
   )
 
-  // On the collapsed rail there is nowhere to expand *into* — the sub-menu is
-  // hidden at that width, so the collapsible trigger would be a button that
-  // visibly does nothing. Swap it for a flyout menu holding the same children.
-  if (top && rail) {
-    return (
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <SidebarMenuButton
-                tooltip={entry.label}
-                className={cn("h-10", collapsedRailButton)}
-              >
-                {triggerContent}
-              </SidebarMenuButton>
-            }
-          />
-          <DropdownMenuContent side="right" align="start" className="min-w-48">
-            {/* The label is a Base UI group *part*, so it has to sit inside a
-                group — on its own it throws for a missing group context. */}
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>{entry.label}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {entry.children.map((child) => (
-                <NavFlyoutNode
-                  key={subKey(child)}
-                  entry={child}
-                  hrefFor={hrefFor}
-                />
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    )
-  }
-
   return (
     <Collapsible defaultOpen render={<Item />}>
       {top ? (
@@ -234,46 +179,6 @@ function NavNode({
       )}
       {panel}
     </Collapsible>
-  )
-}
-
-/**
- * One nav entry inside the collapsed rail's flyout. Mirrors {@link NavNode}'s
- * recursion — leaves are tab launchers, groups become submenus — so a group
- * nests to the same depth here as it does in the expanded sidebar.
- */
-function NavFlyoutNode({
-  entry,
-  hrefFor,
-}: {
-  entry: NavEntry
-  hrefFor: (screenType: ScreenType) => string
-}) {
-  if (entry.kind === "screen") {
-    const { screen } = entry
-    return (
-      <DropdownMenuItem
-        className={railFlyoutItem}
-        render={<Link href={hrefFor(screen.type)} />}
-      >
-        {screen.icon}
-        <span>{screen.label}</span>
-      </DropdownMenuItem>
-    )
-  }
-
-  return (
-    <DropdownMenuSub>
-      <DropdownMenuSubTrigger className={railFlyoutItem}>
-        {entry.icon}
-        <span>{entry.label}</span>
-      </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="min-w-48">
-        {entry.children.map((child) => (
-          <NavFlyoutNode key={subKey(child)} entry={child} hrefFor={hrefFor} />
-        ))}
-      </DropdownMenuSubContent>
-    </DropdownMenuSub>
   )
 }
 
