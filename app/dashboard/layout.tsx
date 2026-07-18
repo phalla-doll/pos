@@ -1,4 +1,3 @@
-import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,17 +9,13 @@ import {
 import { HeaderNotifications } from "@/components/header-notifications"
 import { HeaderSearch } from "@/components/header-search"
 import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarShell } from "@/components/sidebar-shell"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { SIDEBAR_WIDTH_ICON } from "@/lib/sidebar-metrics"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 export default function DashboardLayout({
@@ -30,15 +25,12 @@ export default function DashboardLayout({
 }) {
   return (
     <NuqsAdapter>
-      <SidebarProvider
-        className="h-svh overflow-hidden"
-        style={
-          { "--sidebar-width-icon": SIDEBAR_WIDTH_ICON } as React.CSSProperties
-        }
-      >
-        <AppSidebar />
+      <SidebarShell>
         <SidebarInset className="min-h-0 overflow-hidden">
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          {/* The header shrinks with the collapsed rail. A peek expands the
+              sidebar without the user asking, so it must not drag the header
+              open with it — `data-peek` holds the collapsed height. */}
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 group-data-[peek]/sidebar-wrapper:h-12">
             <div className="flex flex-1 items-center gap-2 px-4">
               <Tooltip>
                 <TooltipTrigger render={<SidebarTrigger className="-ml-1" />} />
@@ -69,7 +61,7 @@ export default function DashboardLayout({
           </header>
           {children}
         </SidebarInset>
-      </SidebarProvider>
+      </SidebarShell>
     </NuqsAdapter>
   )
 }

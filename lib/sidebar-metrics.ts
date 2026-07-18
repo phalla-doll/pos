@@ -52,6 +52,22 @@ export const collapsedRailTile = "group-data-[collapsible=icon]:size-10"
 export const collapsedRailLabel = "group-data-[collapsible=icon]:hidden"
 
 /**
+ * Makes a peek *overlay* the page instead of pushing it.
+ *
+ * The vendored sidebar lays out as two elements: a spacer that occupies the
+ * width in flow, and a `fixed` container that paints on top of it. Both size
+ * themselves off the same collapsed/expanded flag, so opening normally grows
+ * the spacer and the page reflows — right for a deliberate toggle, wrong for a
+ * hover the user may not have meant. Pinning the spacer at rail width while the
+ * container opens over it is what makes the peek weightless.
+ *
+ * The spacer takes no props, so it is reached by slot from the provider, which
+ * is the nearest ancestor a call site can style. Applied only while peeking.
+ */
+export const peekOverlay =
+  "[&_[data-slot=sidebar-gap]]:w-(--sidebar-width-icon)"
+
+/**
  * A row in the rail's flyout menu, sized to match `SidebarMenuSubButton` as
  * the expanded sidebar renders it — the flyout stands in for that sub-menu, so
  * the two should not disagree on row height or icon gap. Dropdown rows are
