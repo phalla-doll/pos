@@ -55,7 +55,7 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
-      <SidebarMenu className="gap-1.5">
+      <SidebarMenu className="gap-0.5">
         {items.map((item) => (
           <NavNode
             key={subKey(item)}
