@@ -7,6 +7,7 @@ import {
   ChevronUp,
   Plus,
   Search,
+  SlidersHorizontal,
   X,
 } from "lucide-react"
 
@@ -17,6 +18,13 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Table,
   TableBody,
@@ -136,6 +144,58 @@ export function ListScreen<T>({
         description={description}
         actions={
           <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Advanced search"
+                  />
+                }
+              >
+                <SlidersHorizontal />
+                {hasActiveFilter && (
+                  <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
+                )}
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 gap-3">
+                <PopoverHeader className="flex-row items-center justify-between">
+                  <PopoverTitle>Advanced search</PopoverTitle>
+                  {hasActiveFilter && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      onClick={clearFilters}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </PopoverHeader>
+                <div className="flex flex-col gap-2.5">
+                  {filterable.map((column) => (
+                    <div key={column.key} className="flex flex-col gap-1.5">
+                      <label
+                        htmlFor={`adv-${column.key}`}
+                        className="text-xs font-medium text-muted-foreground"
+                      >
+                        {column.header}
+                      </label>
+                      <Input
+                        id={`adv-${column.key}`}
+                        value={filters[column.key] ?? ""}
+                        onChange={(event) =>
+                          setFilter(column.key, event.target.value)
+                        }
+                        placeholder={`Search ${column.header.toLowerCase()}…`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <InputGroup className="w-56 sm:w-64">
               <InputGroupAddon>
                 <Search />
@@ -150,8 +210,7 @@ export function ListScreen<T>({
             {creatable && (
               <Button
                 type="button"
-                variant={showCreate ? "secondary" : "outline"}
-                size="sm"
+                variant={showCreate ? "secondary" : "default"}
                 onClick={toggleCreate}
                 className="pr-3 pl-2.5"
               >
