@@ -151,7 +151,7 @@ function TabChip({
             isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100"
           )}
         >
-          <X strokeWidth={2} />
+          <X strokeWidth={1.5} />
         </button>
 
         {/* Flared bottom corners — the browser-tab signature. Each is an 8px
@@ -169,20 +169,20 @@ function TabChip({
 
       <ContextMenuContent>
         <ContextMenuItem onClick={() => onDuplicate(tab.id)}>
-          <Copy strokeWidth={2} />
+          <Copy strokeWidth={1.5} />
           <span>Duplicate</span>
         </ContextMenuItem>
         <ContextMenuItem onClick={() => onClose(tab.id)}>
-          <X strokeWidth={2} />
+          <X strokeWidth={1.5} />
           <span>Close</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onCloseOthers(tab.id)}>
-          <SquareX strokeWidth={2} />
+          <SquareX strokeWidth={1.5} />
           <span>Close others</span>
         </ContextMenuItem>
         <ContextMenuItem variant="destructive" onClick={onCloseAll}>
-          <XCircle strokeWidth={2} />
+          <XCircle strokeWidth={1.5} />
           <span>Close all</span>
         </ContextMenuItem>
       </ContextMenuContent>

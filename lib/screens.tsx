@@ -89,7 +89,7 @@ function screen(
   return {
     label,
     description,
-    icon: <Icon strokeWidth={2} />,
+    icon: <Icon strokeWidth={1.5} />,
     component: () => (
       <ScreenPlaceholder label={label} description={description} />
     ),
@@ -110,7 +110,7 @@ function listScreen<T>(
   return {
     label,
     description,
-    icon: <Icon strokeWidth={2} />,
+    icon: <Icon strokeWidth={1.5} />,
     component: () => (
       <ListScreen label={label} description={description} {...config} />
     ),
@@ -130,7 +130,7 @@ function overviewScreen(
   return {
     label,
     description,
-    icon: <Icon strokeWidth={2} />,
+    icon: <Icon strokeWidth={1.5} />,
     component: () => (
       <DashboardScreen label={label} description={description} />
     ),

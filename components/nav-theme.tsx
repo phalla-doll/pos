@@ -44,7 +44,7 @@ export function ThemeMenuSub() {
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
-        <Sun strokeWidth={2} />
+        <Sun strokeWidth={1.5} />
         Theme
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
@@ -54,7 +54,7 @@ export function ThemeMenuSub() {
         >
           {themes.map(({ value, label, icon: Icon }) => (
             <DropdownMenuRadioItem key={value} value={value}>
-              <Icon strokeWidth={2} />
+              <Icon strokeWidth={1.5} />
               {label}
             </DropdownMenuRadioItem>
           ))}

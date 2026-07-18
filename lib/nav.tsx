@@ -34,27 +34,27 @@ const group = (
 export const sidebarNav: NavEntry[] = [
   leaf(s.dashboard),
   leaf(s.pos),
-  group("Admin Tools", <Wrench strokeWidth={2} />, [
+  group("Admin Tools", <Wrench strokeWidth={1.5} />, [
     leaf(s.users),
     leaf(s.roles),
     leaf(s.permissions),
     // 3-level: Admin Tools › System › { Audit Logs, Backups }
-    group("System", <Server strokeWidth={2} />, [
+    group("System", <Server strokeWidth={1.5} />, [
       leaf(s["audit-logs"]),
       leaf(s.backups),
     ]),
   ]),
-  group("Customers", <Users strokeWidth={2} />, [
+  group("Customers", <Users strokeWidth={1.5} />, [
     leaf(s["customer-listing"]),
     leaf(s["customer-owed"]),
     leaf(s["customer-history"]),
   ]),
-  group("Reports", <BookOpen strokeWidth={2} />, [
+  group("Reports", <BookOpen strokeWidth={1.5} />, [
     leaf(s["best-sales"]),
     leaf(s["summary-report"]),
     leaf(s["income-report"]),
     // 3-level: Reports › Financials › { Tax Report, Profit & Loss }
-    group("Financials", <Wallet strokeWidth={2} />, [
+    group("Financials", <Wallet strokeWidth={1.5} />, [
       leaf(s["tax-report"]),
       leaf(s["profit-loss"]),
     ]),
