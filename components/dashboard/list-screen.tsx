@@ -7,6 +7,7 @@ import {
   ChevronUp,
   Plus,
   Search,
+  X,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -19,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import {
@@ -32,44 +32,37 @@ import {
 
 export type { ListColumn }
 
-/** The two faces of a creatable list screen, with their toggle icons. */
-const MODE_TABS = [
-  { value: "search", label: "Search", icon: Search },
-  { value: "create", label: "Create", icon: Plus },
-] as const
-
 /**
  * The data shape of a list screen: its columns and rows. The screen's
  * title/description are not repeated here — they live once on the screen
  * registry entry and are passed to {@link ListScreen} as header props.
  */
 export type ListScreenConfig<T> = {
-  /** Column definitions — drive both the filter bar and the table. */
+  /** Column definitions — drive both the filter row and the table. */
   columns: ListColumn<T>[]
   /** The rows to display. */
   rows: T[]
   /** Stable row identity for React keys. Defaults to the array index. */
   rowKey?: (row: T, index: number) => React.Key
   /**
-   * Show the Search/Create mode switch above the form. Omit for a
-   * search-only screen. Create reuses the same column-driven fields as a
-   * blank entry form; submit is a UI-only stub until a backend exists.
+   * Show a "New" button that reveals a column-driven create form. Omit for a
+   * read-only screen. Submit is a UI-only stub until a backend exists.
    */
   creatable?: boolean
 }
 
 export type ListScreenProps<T> = ListScreenConfig<T> & {
-  /** Screen title, shown in the header above the filter bar. */
+  /** Screen title, shown in the header above the table. */
   label: string
   /** One-line summary, shown beneath the title. */
   description: string
 }
 
 /**
- * A registry-driven list page: a screen header, a submit-to-search filter bar
- * with one input per filterable column, and a results table. Filtering is
- * applied only when the user submits the form — typing in an input updates a
- * draft, never the visible rows.
+ * A registry-driven list page: a screen header and a results table whose first
+ * row is a fixed, per-column search bar. Typing in a column's input filters the
+ * table live — there is no submit step. Creatable screens also get a "New"
+ * button that toggles a column-driven entry form above the table.
  */
 export function ListScreen<T>({
   label,
@@ -79,71 +72,55 @@ export function ListScreen<T>({
   rowKey,
   creatable,
 }: ListScreenProps<T>) {
+  // `filters` is the live per-column search query — it filters the table on
+  // every keystroke. `createDraft` is a separate bucket so search text and
+  // entry text never bleed into each other.
+  const [filters, setFilters] = React.useState<FilterState>({})
+  const [createDraft, setCreateDraft] = React.useState<FilterState>({})
+  const [sort, setSort] = React.useState<SortState | null>(null)
+
+  // The create form is hidden until the user opts in via the "New" button.
+  const [showCreate, setShowCreate] = React.useState(false)
+  const [justCreated, setJustCreated] = React.useState(false)
+
   const filterable = React.useMemo(
     () => columns.filter((c) => c.filterable !== false),
     [columns]
   )
 
-  // Which face of the shared form is showing. Search filters the table;
-  // Create reuses the same fields as a blank entry form. Local, uncontrolled
-  // state — a tab switch remounts the screen and resets this back to "search".
-  const [mode, setMode] = React.useState<"search" | "create">("search")
-  const isCreate = mode === "create"
-
-  // `draft` tracks the search inputs; `applied` is what actually filters the
-  // table. `createDraft` is a separate bucket so filter text and entry text
-  // never bleed into each other when toggling modes.
-  const [draft, setDraft] = React.useState<FilterState>({})
-  const [applied, setApplied] = React.useState<FilterState>({})
-  const [createDraft, setCreateDraft] = React.useState<FilterState>({})
-  const [justCreated, setJustCreated] = React.useState(false)
-  const [sort, setSort] = React.useState<SortState | null>(null)
-
-  // The active field bucket + setter, chosen by mode — the field grid binds
-  // to whichever this points at.
-  const fieldDraft = isCreate ? createDraft : draft
-  const setFieldDraft = isCreate ? setCreateDraft : setDraft
-
   // The one derivation that answers "which rows, in what order" — used for the
   // count, the empty state, and the table body alike (no filtered/sorted split).
   const visibleRows = React.useMemo(
-    () => deriveRows(rows, columns, applied, sort),
-    [rows, columns, applied, sort]
+    () => deriveRows(rows, columns, filters, sort),
+    [rows, columns, filters, sort]
   )
 
   function toggleSort(key: string) {
     setSort((prev) => cycleSort(prev, key))
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  function setFilter(key: string, value: string) {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function clearFilters() {
+    setFilters({})
+  }
+
+  function handleCreateSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (isCreate) {
-      // UI-only stub: no persistence yet. Clear the form and confirm.
-      setCreateDraft({})
-      setJustCreated(true)
-      return
-    }
-    setApplied(draft)
+    // UI-only stub: no persistence yet. Clear the form and confirm.
+    setCreateDraft({})
+    setJustCreated(true)
   }
 
-  function handleReset() {
-    if (isCreate) {
-      setCreateDraft({})
-      setJustCreated(false)
-      return
-    }
-    setDraft({})
-    setApplied({})
-  }
-
-  function switchMode(next: "search" | "create") {
-    setMode(next)
+  function toggleCreate() {
+    setShowCreate((prev) => !prev)
     setJustCreated(false)
   }
 
-  const hasActiveFilter = Object.values(applied).some((v) => v.trim() !== "")
+  const hasActiveFilter = Object.values(filters).some((v) => v.trim() !== "")
   const hasCreateInput = Object.values(createDraft).some((v) => v.trim() !== "")
-  const showReset = isCreate ? hasCreateInput : hasActiveFilter
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
@@ -151,89 +128,92 @@ export function ListScreen<T>({
         label={label}
         description={description}
         actions={
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {visibleRows.length}{" "}
-            {visibleRows.length === 1 ? "result" : "results"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {visibleRows.length}{" "}
+              {visibleRows.length === 1 ? "result" : "results"}
+            </span>
+            {creatable && (
+              <Button
+                type="button"
+                variant={showCreate ? "secondary" : "outline"}
+                size="sm"
+                onClick={toggleCreate}
+                className="pr-3 pl-2.5"
+              >
+                <Plus />
+                New
+              </Button>
+            )}
+          </div>
         }
       />
 
       {/*
-        The shared form: one input per filterable column. In search mode,
-        submit applies the filter; in create mode, the same fields act as a
-        blank entry form and submit is a stub. The Search/Create switch lives
-        inside the card, above the fields.
+        Create form — a blank entry form that reuses the same column-driven
+        fields as the search row. Shown only when the user clicks "New" on a
+        creatable screen. Submit is a stub until a backend exists.
       */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 rounded-xl border bg-card p-4"
-      >
-        {/* Search / Create mode switch — only on screens that opt in. */}
-        {creatable && (
-          <Tabs
-            value={mode}
-            onValueChange={(next) => switchMode(next as "search" | "create")}
-          >
-            {/* Rounding matches the sidebar theme switcher: see `nav-theme.tsx`. */}
-            <TabsList className="rounded-md">
-              {MODE_TABS.map(({ value, label: modeLabel, icon: Icon }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="rounded-sm px-3"
+      {creatable && showCreate && (
+        <form
+          onSubmit={handleCreateSubmit}
+          className="flex flex-col gap-4 rounded-xl border bg-card p-4"
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filterable.map((column) => (
+              <div key={column.key} className="flex flex-col gap-1.5">
+                <label
+                  htmlFor={`create-${column.key}`}
+                  className="text-xs font-medium text-muted-foreground"
                 >
-                  <Icon />
-                  {modeLabel}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-        <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filterable.map((column) => (
-            <div key={column.key} className="flex flex-col gap-1.5">
-              <label
-                htmlFor={`filter-${column.key}`}
-                className="text-xs font-medium text-muted-foreground"
-              >
-                {column.header}
-              </label>
-              <Input
-                id={`filter-${column.key}`}
-                value={fieldDraft[column.key] ?? ""}
-                placeholder={`${isCreate ? "Enter" : "Search"} ${column.header.toLowerCase()}…`}
-                onChange={(event) => {
-                  const value = event.target.value
-                  setFieldDraft((prev) => ({ ...prev, [column.key]: value }))
-                  if (isCreate) setJustCreated(false)
+                  {column.header}
+                </label>
+                <Input
+                  id={`create-${column.key}`}
+                  value={createDraft[column.key] ?? ""}
+                  placeholder={`Enter ${column.header.toLowerCase()}…`}
+                  onChange={(event) => {
+                    setCreateDraft((prev) => ({
+                      ...prev,
+                      [column.key]: event.target.value,
+                    }))
+                    setJustCreated(false)
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            {justCreated && (
+              <p className="mr-auto text-sm text-muted-foreground">
+                Item created — not yet persisted.
+              </p>
+            )}
+            {hasCreateInput && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setCreateDraft({})
+                  setJustCreated(false)
                 }}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          {isCreate && justCreated && (
-            <p className="mr-auto text-sm text-muted-foreground">
-              Item created — not yet persisted.
-            </p>
-          )}
-          {showReset && (
-            <Button type="button" variant="ghost" onClick={handleReset}>
-              Reset
+              >
+                Reset
+              </Button>
+            )}
+            <Button type="submit" className="pr-3 pl-2.5">
+              <Plus />
+              Create
             </Button>
-          )}
-          <Button type="submit" className="pr-3 pl-2.5">
-            {isCreate ? <Plus /> : <Search />}
-            {isCreate ? "Create" : "Search"}
-          </Button>
-        </div>
-      </form>
+          </div>
+        </form>
+      )}
 
-      {/* Results table — always shown; the Create toggle only swaps the form. */}
+      {/* Results table — the first row is a fixed, live per-column search bar. */}
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               {columns.map((column) => {
                 const active = sort?.key === column.key
                 const sortable = column.sortable !== false
@@ -276,6 +256,51 @@ export function ListScreen<T>({
                     ) : (
                       column.header
                     )}
+                  </TableHead>
+                )
+              })}
+            </TableRow>
+            {/*
+              The fixed search row: one input per filterable column, filtering
+              the table live. It sticks under the header while the body scrolls.
+            */}
+            <TableRow className="hover:bg-transparent">
+              {columns.map((column) => {
+                const canFilter = column.filterable !== false
+                // The last filterable input hosts the clear-all button so it
+                // never needs a column of its own.
+                const isLastFilter =
+                  canFilter &&
+                  filterable[filterable.length - 1]?.key === column.key
+                return (
+                  <TableHead key={column.key} className="py-1.5">
+                    {canFilter ? (
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          aria-label={`Search ${column.header}`}
+                          value={filters[column.key] ?? ""}
+                          placeholder={`Search ${column.header.toLowerCase()}…`}
+                          onChange={(event) =>
+                            setFilter(column.key, event.target.value)
+                          }
+                          className={cn(
+                            "pl-7",
+                            isLastFilter && hasActiveFilter && "pr-7"
+                          )}
+                        />
+                        {isLastFilter && hasActiveFilter && (
+                          <button
+                            type="button"
+                            onClick={clearFilters}
+                            aria-label="Clear all filters"
+                            className="absolute top-1/2 right-1.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
                   </TableHead>
                 )
               })}
