@@ -51,25 +51,34 @@ export function compare(a: string | number, b: string | number): number {
 
 /**
  * The whole "what rows do you see and in what order" question, answered once:
- * filter the rows by every active column query, then (if sorting) stably sort
- * a copy by the sort column. Never mutates the incoming rows. This single
- * value backs the count, the empty state, and the table body alike — there is
- * no separate `filtered` vs `sorted` to drift apart.
+ * filter the rows by every active column query and the global `query` (which
+ * matches any filterable column), then (if sorting) stably sort a copy by the
+ * sort column. Never mutates the incoming rows. This single value backs the
+ * count, the empty state, and the table body alike — there is no separate
+ * `filtered` vs `sorted` to drift apart.
  */
 export function deriveRows<T>(
   rows: T[],
   columns: ListColumn<T>[],
   applied: FilterState,
-  sort: SortState | null
+  sort: SortState | null,
+  query = ""
 ): T[] {
   const active = columns.filter(
     (c) => c.filterable !== false && (applied[c.key] ?? "").trim() !== ""
   )
+  // The global query matches a row when *any* filterable column contains it.
+  const q = query.trim()
+  const searchable =
+    q === "" ? [] : columns.filter((c) => c.filterable !== false)
+
   const filtered =
-    active.length === 0
+    active.length === 0 && q === ""
       ? rows
-      : rows.filter((row) =>
-          active.every((c) => matches(row, c, applied[c.key]))
+      : rows.filter(
+          (row) =>
+            active.every((c) => matches(row, c, applied[c.key])) &&
+            (q === "" || searchable.some((c) => matches(row, c, q)))
         )
 
   if (!sort) return filtered

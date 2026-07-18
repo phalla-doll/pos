@@ -44,7 +44,7 @@ export function TabWorkspace() {
       )}
 
       {activeScreen ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-zinc-50 dark:bg-zinc-900">
           {/*
             keying on the tab id guarantees a fresh remount whenever the
             user switches tabs (or duplicates) — per the fresh-remount rule.

@@ -16,14 +16,20 @@ import type { Tab } from "@/hooks/use-tabs"
 import { Copy, X, XCircle, SquareX } from "lucide-react"
 
 /**
- * Height + bottom border of the tab-bar row. The strip itself is transparent
- * (`background`); contrast comes from the bottom border, which the active tab
- * punches through — its `background` fill + flared corners erase the line
- * beneath it, so it reads as connected to the content below, browser-tab
- * style. Shared so the Suspense fallback (`TabWorkspaceFallback`) matches the
- * bar's size exactly, instead of re-declaring the constant in each place.
+ * Height + bottom edge of the tab-bar row. The strip itself is transparent
+ * (`background`); contrast comes from a bottom hairline, which the active tab
+ * punches through — its fill + flared corners erase the line beneath it, so it
+ * reads as connected to the content below, browser-tab style. The hairline is
+ * an *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the
+ * content box (border-box), leaving the horizontal ScrollArea's viewport 1px
+ * shorter than the strip and forcing a stray vertical scrollbar. A shadow
+ * takes no layout space, so the viewport fills the strip exactly, and the
+ * active tab's background simply paints over the inset line — no `-mb-px`
+ * overflow needed. Shared so the Suspense fallback (`TabWorkspaceFallback`)
+ * matches the bar's size exactly, instead of re-declaring the constant.
  */
-export const TAB_BAR_ROW = "h-10 shrink-0 border-b bg-background"
+export const TAB_BAR_ROW =
+  "h-10 shrink-0 bg-background shadow-[inset_0_-1px_0_0_var(--border)]"
 
 export type TabBarProps = {
   tabs: Tab[]
@@ -107,7 +113,7 @@ function TabChip({
             className={cn(
               "group/tab relative flex shrink-0 items-center gap-1 rounded-t-lg pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
               isActive
-                ? "-mb-px h-9 bg-primary/10 font-medium text-foreground"
+                ? "h-9 bg-zinc-50 font-medium text-foreground dark:bg-zinc-900"
                 : "h-9 font-normal text-muted-foreground hover:text-foreground"
             )}
           />
@@ -155,8 +161,8 @@ function TabChip({
             strip baseline instead of ending in a hard right angle. */}
         {isActive && (
           <>
-            <span className="pointer-events-none absolute bottom-0 left-[-8px] size-2 bg-[radial-gradient(circle_at_top_left,transparent_7.5px,color-mix(in_oklab,var(--primary)_10%,transparent)_8px)]" />
-            <span className="pointer-events-none absolute right-[-8px] bottom-0 size-2 bg-[radial-gradient(circle_at_top_right,transparent_7.5px,color-mix(in_oklab,var(--primary)_10%,transparent)_8px)]" />
+            <span className="pointer-events-none absolute bottom-0 left-[-8px] size-2 bg-[radial-gradient(circle_at_top_left,transparent_7.5px,var(--color-zinc-50)_8px)] dark:bg-[radial-gradient(circle_at_top_left,transparent_7.5px,var(--color-zinc-900)_8px)]" />
+            <span className="pointer-events-none absolute right-[-8px] bottom-0 size-2 bg-[radial-gradient(circle_at_top_right,transparent_7.5px,var(--color-zinc-50)_8px)] dark:bg-[radial-gradient(circle_at_top_right,transparent_7.5px,var(--color-zinc-900)_8px)]" />
           </>
         )}
       </ContextMenuTrigger>
