@@ -16,7 +16,9 @@ export function ScreenHeader({
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{label}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-primary">
+          {label}
+        </h1>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       {actions}
