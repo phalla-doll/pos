@@ -4,6 +4,8 @@ import * as React from "react"
 import {
   Archive,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronsUpDown,
   ChevronUp,
   Check,
@@ -64,6 +66,19 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+} from "@/components/ui/pagination"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Popover,
   PopoverContent,
   PopoverDescription,
@@ -94,6 +109,14 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
+import {
+  defaultPageSize,
+  pageSizes,
+  pageSlice,
+  pageWindow,
+  paginate,
+  rescalePage,
+} from "@/lib/list-pagination"
 import {
   emptySelection,
   selectionForMenu,
@@ -239,6 +262,20 @@ export function ListScreen<T>({
   const [advancedOpen, setAdvancedOpen] = React.useState(false)
   const [draft, setDraft] = React.useState<FilterState>({})
 
+  // Only the *request* is stored. `paginate` clamps it against the row count
+  // on every render, so a filter that shrinks the results simply answers a
+  // lower page — no effect has to notice and reset anything after the fact.
+  const [page, setPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState<number>(defaultPageSize)
+  const pageSizeId = React.useId()
+
+  // The per-column search row is view chrome, not workspace content, so it
+  // stays local rather than going in the URL — a collapsed row is not part of
+  // what a shared link should restore. It resets on tab switch along with the
+  // rest of the screen's state, which the `key={activeTab.id}` remount implies.
+  const [showFilters, setShowFilters] = React.useState(false)
+  const filterRowId = React.useId()
+
   // The create form is hidden until the user opts in via the "New" button.
   const [showCreate, setShowCreate] = React.useState(false)
   const [justCreated, setJustCreated] = React.useState(false)
@@ -255,13 +292,34 @@ export function ListScreen<T>({
     [rows, columns, filters, sort]
   )
 
-  // Selection is keyed by row identity, so the header checkbox reflects only
-  // the rows currently on screen while filtered-out ticks stay put.
+  // Keys for every row that survives the filters, across all pages — the basis
+  // for copying and for the delete dialog, neither of which should forget a
+  // selected row just because the user paged away from it.
   const visibleKeys = React.useMemo(
     () => visibleRows.map((row, index) => rowKey?.(row, index) ?? index),
     [visibleRows, rowKey]
   )
-  const headerState = selectionSummary(selected, visibleKeys)
+
+  // The page currently rendered. `pagination` is derived, never stored, so it
+  // is always consistent with however many rows the filters left behind.
+  // Memoised on the row *count* rather than the rows: a new array with the
+  // same length can't change the arithmetic, and a stable result is what lets
+  // the slice below memoise at all.
+  const pagination = React.useMemo(
+    () => paginate(visibleRows.length, page, pageSize),
+    [visibleRows.length, page, pageSize]
+  )
+  const pageRows = React.useMemo(
+    () => pageSlice(visibleRows, pagination),
+    [visibleRows, pagination]
+  )
+  const pageKeys = visibleKeys.slice(pagination.start, pagination.end)
+
+  // The header checkbox is scoped to the page, not to the whole result set:
+  // it sits at the top of these rows, so "select all" has to mean the rows
+  // underneath it. Ticks on other pages survive untouched, which is the same
+  // rule filtered-out rows already followed.
+  const headerState = selectionSummary(selected, pageKeys)
   const selectedCount = selected.size
 
   // Deletion reaches every selected row, including ones a filter is currently
@@ -650,21 +708,86 @@ export function ListScreen<T>({
         horizontal padding is shared with the header cells above and changing
         it here would knock the columns out of alignment with them.
       */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      {/*
+        `overflow-visible` on the table's own container is what makes the
+        sticky header work. `Table` wraps itself in an `overflow-x-auto` div,
+        and a box with `overflow-x: auto` computes `overflow-y` to `auto` as
+        well — so that div, not this one, became the scroll box the sticky
+        `thead` measured itself against. It never scrolls vertically, so the
+        header had nothing to stick to and scrolled away with the rows.
+        Neutralising it hands both axes back to this container.
+      */}
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         <Table>
-          <TableHeader className="sticky top-0 z-10 bg-card">
+          {/*
+            The bottom rule is drawn as an inset shadow on the last header
+            row's cells, not with the `border-b` the rows already carry: the
+            table collapses its borders, and a collapsed border on a sticky
+            section is painted with the rows it was merged into, so it slides
+            away under the header the moment the body scrolls. A shadow is not
+            part of the border-collapse model, so it stays put.
+
+            That row's own border is then dropped, or the two stack into a
+            2px rule while the table sits unscrolled. Only the last row is
+            treated this way — any row above it is not the one meeting the
+            body, so it keeps the ordinary border that separates the two
+            header rows from each other.
+          */}
+          <TableHeader className="sticky top-0 z-10 bg-card [&_tr:last-child]:border-b-0 [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)]">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-0">
-                <Checkbox
-                  aria-label="Select all rows"
-                  disabled={visibleKeys.length === 0}
-                  checked={headerState === "all"}
-                  indeterminate={headerState === "some"}
-                  onCheckedChange={() =>
-                    setSelected((prev) => toggleAll(prev, visibleKeys))
-                  }
-                  className={indeterminateDash}
-                />
+                {/*
+                  The chevron sits *after* the checkbox, not before it: the
+                  body's checkboxes start at this column's left edge, so
+                  anything ahead of the header checkbox would push it out of
+                  line with the column of ticks underneath.
+                */}
+                <div className="flex items-center gap-1">
+                  <Checkbox
+                    aria-label="Select all rows"
+                    disabled={pageKeys.length === 0}
+                    checked={headerState === "all"}
+                    indeterminate={headerState === "some"}
+                    onCheckedChange={() =>
+                      setSelected((prev) => toggleAll(prev, pageKeys))
+                    }
+                    className={indeterminateDash}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowFilters((prev) => !prev)}
+                    aria-expanded={showFilters}
+                    aria-controls={filterRowId}
+                    aria-label={
+                      showFilters ? "Hide column search" : "Show column search"
+                    }
+                    className="flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {/*
+                      One rotating chevron rather than swapping two icons, so
+                      the state change is a movement the eye can follow — the
+                      row itself can't animate (see below).
+                    */}
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 transition-transform",
+                        !showFilters && "-rotate-90"
+                      )}
+                    />
+                  </button>
+                  {/*
+                    Collapsing must not hide a filter silently. The header's
+                    Search button already carries the dot for that, but it is
+                    across the screen from the row that vanished, so the mark
+                    is repeated on the control that did the hiding.
+                  */}
+                  {!showFilters && filtersActive && (
+                    <span
+                      aria-hidden
+                      className="size-1.5 shrink-0 rounded-full bg-primary"
+                    />
+                  )}
+                </div>
               </TableHead>
               {columns.map((column) => {
                 const active = sort?.key === column.key
@@ -713,51 +836,61 @@ export function ListScreen<T>({
               })}
             </TableRow>
             {/*
-              The fixed search row: one input per filterable column, filtering
-              the table live. It sticks under the header while the body scrolls.
+              The search row: one input per filterable column, filtering the
+              table live. It sticks under the header while the body scrolls,
+              and the chevron above collapses it — it starts hidden so the
+              table leads with data rather than with an empty query form.
+
+              Mounted and unmounted rather than animated open: this is a `tr`
+              inside a sticky `thead`, where the usual collapse trick (a
+              wrapper transitioning `grid-rows-[0fr]` to `[1fr]`) has nowhere
+              to live, and animating the row's own height fights the sticky
+              positioning. The chevron carries the motion instead.
             */}
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-0" />
-              {columns.map((column) => {
-                const canFilter = column.filterable !== false
-                // The last filterable input hosts the clear-all button so it
-                // never needs a column of its own.
-                const isLastFilter =
-                  canFilter &&
-                  filterable[filterable.length - 1]?.key === column.key
-                return (
-                  <TableHead key={column.key} className="py-1.5">
-                    {canFilter ? (
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          aria-label={`Search ${column.header}`}
-                          value={filters[column.key]?.value ?? ""}
-                          placeholder={`Search ${column.header.toLowerCase()}…`}
-                          onChange={(event) =>
-                            setFilter(column.key, event.target.value)
-                          }
-                          className={cn(
-                            "pl-7",
-                            isLastFilter && filtersActive && "pr-7"
+            {showFilters && (
+              <TableRow id={filterRowId} className="hover:bg-transparent">
+                <TableHead className="w-0" />
+                {columns.map((column) => {
+                  const canFilter = column.filterable !== false
+                  // The last filterable input hosts the clear-all button so it
+                  // never needs a column of its own.
+                  const isLastFilter =
+                    canFilter &&
+                    filterable[filterable.length - 1]?.key === column.key
+                  return (
+                    <TableHead key={column.key} className="py-1.5">
+                      {canFilter ? (
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            aria-label={`Search ${column.header}`}
+                            value={filters[column.key]?.value ?? ""}
+                            placeholder={`Search ${column.header.toLowerCase()}…`}
+                            onChange={(event) =>
+                              setFilter(column.key, event.target.value)
+                            }
+                            className={cn(
+                              "pl-7",
+                              isLastFilter && filtersActive && "pr-7"
+                            )}
+                          />
+                          {isLastFilter && filtersActive && (
+                            <button
+                              type="button"
+                              onClick={clearFilters}
+                              aria-label="Clear all filters"
+                              className="absolute top-1/2 right-1.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <X className="size-3.5" />
+                            </button>
                           )}
-                        />
-                        {isLastFilter && filtersActive && (
-                          <button
-                            type="button"
-                            onClick={clearFilters}
-                            aria-label="Clear all filters"
-                            className="absolute top-1/2 right-1.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
-                          >
-                            <X className="size-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ) : null}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
+                        </div>
+                      ) : null}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            )}
           </TableHeader>
           <TableBody>
             {visibleRows.length === 0 ? (
@@ -770,8 +903,8 @@ export function ListScreen<T>({
                 </TableCell>
               </TableRow>
             ) : (
-              visibleRows.map((row, index) => {
-                const key = visibleKeys[index]
+              pageRows.map((row, index) => {
+                const key = pageKeys[index]
                 const checked = selected.has(key)
                 // What the menu acts on: the whole selection when this row is
                 // part of it, otherwise this row alone — matching what the
@@ -882,6 +1015,113 @@ export function ListScreen<T>({
       </div>
 
       {/*
+        Pager — always rendered, even for a single page. The count on the left
+        is worth reading on its own ("of 137" is how you learn what a filter
+        did), and a footer that came and went with the page count would make
+        the table jump every time a search crossed the threshold.
+      */}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="tabular-nums">
+            {pagination.total === 0
+              ? "No rows"
+              : `${pagination.from}–${pagination.to} of ${pagination.total}`}
+          </span>
+          <Separator orientation="vertical" className="h-4" />
+          <label htmlFor={pageSizeId} className="shrink-0">
+            Rows per page
+          </label>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => {
+              const next = Number(value)
+              // Follow the row the reader is looking at into the new size
+              // rather than dropping them back at page 1.
+              setPage((prev) => rescalePage(prev, pageSize, next))
+              setPageSize(next)
+            }}
+          >
+            <SelectTrigger id={pageSizeId} size="sm" className="w-[4.5rem]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {pageSizes.map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/*
+          `Pagination` gives the nav/list semantics, but its `PaginationLink`
+          renders an anchor for href-based paging — and an anchor with no href
+          is not reachable by keyboard. These pages are client state, so the
+          controls are real buttons inside that same shell.
+        */}
+        <Pagination className="mx-0 w-auto">
+          <PaginationContent>
+            <PaginationItem>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label="Go to previous page"
+                disabled={pagination.page <= 1}
+                onClick={() => setPage(pagination.page - 1)}
+                className="pl-2"
+              >
+                <ChevronLeft />
+                <span className="hidden sm:block">Previous</span>
+              </Button>
+            </PaginationItem>
+            {pageWindow(pagination.page, pagination.pageCount).map(
+              (slot, index) =>
+                slot === "gap" ? (
+                  // Indexed key: the two gaps are interchangeable and carry no
+                  // identity of their own, and their position is the only
+                  // thing that distinguishes them.
+                  <PaginationItem key={`gap-${index}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={slot}>
+                    <Button
+                      type="button"
+                      variant={slot === pagination.page ? "outline" : "ghost"}
+                      size="icon-sm"
+                      aria-label={`Go to page ${slot}`}
+                      aria-current={
+                        slot === pagination.page ? "page" : undefined
+                      }
+                      onClick={() => setPage(slot)}
+                      className="tabular-nums"
+                    >
+                      {slot}
+                    </Button>
+                  </PaginationItem>
+                )
+            )}
+            <PaginationItem>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label="Go to next page"
+                disabled={pagination.page >= pagination.pageCount}
+                onClick={() => setPage(pagination.page + 1)}
+                className="pr-2"
+              >
+                <span className="hidden sm:block">Next</span>
+                <ChevronRight />
+              </Button>
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+
+      {/*
         Bulk-action bar — floats over the table while at least one row is
         ticked. The actions are UI-only stubs until a backend exists; only
         "Clear" does real work.
@@ -890,7 +1130,7 @@ export function ListScreen<T>({
         <div
           role="toolbar"
           aria-label="Bulk actions"
-          className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 animate-in items-center gap-1 rounded-xl border bg-popover p-1 pl-3 shadow-lg fade-in-0 slide-in-from-bottom-2"
+          className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 animate-in items-center gap-1 rounded-xl border bg-popover p-1 pl-3 shadow-lg fade-in-0 slide-in-from-bottom-2"
         >
           <span className="text-sm font-medium tabular-nums">
             {selectedCount} selected
