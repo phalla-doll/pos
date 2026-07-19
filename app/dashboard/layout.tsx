@@ -26,7 +26,10 @@ export default function DashboardLayout({
   return (
     <NuqsAdapter>
       <SidebarShell>
-        <SidebarInset className="min-h-0 overflow-hidden">
+        {/* `z-0` makes the content its own stacking context, so the sticky
+            table header (and anything else that raises itself above its
+            neighbours) stays under the sidebar when a peek expands it. */}
+        <SidebarInset className="relative z-0 min-h-0 overflow-hidden">
           {/* The header shrinks with the collapsed rail. A peek expands the
               sidebar without the user asking, so it must not drag the header
               open with it — `data-peek` holds the collapsed height. */}
