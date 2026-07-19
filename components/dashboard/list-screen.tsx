@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import {
   InputGroup,
@@ -42,6 +43,14 @@ import {
   type ListColumn,
   type SortState,
 } from "@/lib/list-rows"
+import {
+  emptySelection,
+  selectionSummary,
+  toggleAll,
+  toggleRow,
+  type RowKey,
+  type SelectionState,
+} from "@/lib/list-selection"
 
 export type { ListColumn }
 
@@ -55,8 +64,12 @@ export type ListScreenConfig<T> = {
   columns: ListColumn<T>[]
   /** The rows to display. */
   rows: T[]
-  /** Stable row identity for React keys. Defaults to the array index. */
-  rowKey?: (row: T, index: number) => React.Key
+  /**
+   * Stable row identity, used for both React keys and selection. Defaults to
+   * the array index — supply a real key if rows can be filtered or sorted, or
+   * a selection will follow positions rather than rows.
+   */
+  rowKey?: (row: T, index: number) => RowKey
   /**
    * Show a "New" button that reveals a column-driven create form. Omit for a
    * read-only screen. Submit is a UI-only stub until a backend exists.
@@ -70,6 +83,14 @@ export type ListScreenProps<T> = ListScreenConfig<T> & {
   /** One-line summary, shown beneath the title. */
   description: string
 }
+
+/**
+ * Call-site styling for the header checkbox's indeterminate state: hide the
+ * tick and draw a dash instead. The checkbox itself is vendored, so the partial
+ * look is composed here rather than by editing `components/ui/checkbox.tsx`.
+ */
+const indeterminateDash =
+  "data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-indeterminate:[&_svg]:hidden before:absolute before:hidden before:h-0.5 before:w-2 before:rounded-full before:bg-current data-indeterminate:before:block"
 
 /**
  * A registry-driven list page: a screen header and a results table whose first
@@ -93,6 +114,7 @@ export function ListScreen<T>({
   const [query, setQuery] = React.useState("")
   const [createDraft, setCreateDraft] = React.useState<FilterState>({})
   const [sort, setSort] = React.useState<SortState | null>(null)
+  const [selected, setSelected] = React.useState<SelectionState>(emptySelection)
 
   // The create form is hidden until the user opts in via the "New" button.
   const [showCreate, setShowCreate] = React.useState(false)
@@ -109,6 +131,18 @@ export function ListScreen<T>({
     () => deriveRows(rows, columns, filters, sort, query),
     [rows, columns, filters, sort, query]
   )
+
+  // Selection is keyed by row identity, so the header checkbox reflects only
+  // the rows currently on screen while filtered-out ticks stay put.
+  const visibleKeys = React.useMemo(
+    () => visibleRows.map((row, index) => rowKey?.(row, index) ?? index),
+    [visibleRows, rowKey]
+  )
+  const headerState = selectionSummary(selected, visibleKeys)
+
+  function toggleRowSelection(key: RowKey) {
+    setSelected((prev) => toggleRow(prev, key))
+  }
 
   function toggleSort(key: string) {
     setSort((prev) => cycleSort(prev, key))
@@ -287,6 +321,18 @@ export function ListScreen<T>({
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
+              <TableHead className="w-0">
+                <Checkbox
+                  aria-label="Select all rows"
+                  disabled={visibleKeys.length === 0}
+                  checked={headerState === "all"}
+                  indeterminate={headerState === "some"}
+                  onCheckedChange={() =>
+                    setSelected((prev) => toggleAll(prev, visibleKeys))
+                  }
+                  className={indeterminateDash}
+                />
+              </TableHead>
               {columns.map((column) => {
                 const active = sort?.key === column.key
                 const sortable = column.sortable !== false
@@ -338,6 +384,7 @@ export function ListScreen<T>({
               the table live. It sticks under the header while the body scrolls.
             */}
             <TableRow className="hover:bg-transparent">
+              <TableHead className="w-0" />
               {columns.map((column) => {
                 const canFilter = column.filterable !== false
                 // The last filterable input hosts the clear-all button so it
@@ -383,27 +430,41 @@ export function ListScreen<T>({
             {visibleRows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columns.length + 1}
                   className="h-32 text-center text-muted-foreground"
                 >
                   No results found.
                 </TableCell>
               </TableRow>
             ) : (
-              visibleRows.map((row, index) => (
-                <TableRow key={rowKey?.(row, index) ?? index}>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.key}
-                      className={cn(
-                        column.align === "right" && "text-right tabular-nums"
-                      )}
-                    >
-                      {column.cell ? column.cell(row) : column.get(row)}
+              visibleRows.map((row, index) => {
+                const key = visibleKeys[index]
+                const checked = selected.has(key)
+                return (
+                  <TableRow
+                    key={key}
+                    data-state={checked ? "selected" : undefined}
+                  >
+                    <TableCell className="w-0">
+                      <Checkbox
+                        aria-label="Select row"
+                        checked={checked}
+                        onCheckedChange={() => toggleRowSelection(key)}
+                      />
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
+                    {columns.map((column) => (
+                      <TableCell
+                        key={column.key}
+                        className={cn(
+                          column.align === "right" && "text-right tabular-nums"
+                        )}
+                      >
+                        {column.cell ? column.cell(row) : column.get(row)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
