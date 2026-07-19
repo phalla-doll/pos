@@ -97,14 +97,17 @@ export function HeaderSearch() {
       <Button
         variant="outline"
         onClick={() => setOpen(true)}
-        // Sized like the search input it replaces: a button only sizes to its
-        // own text, so the width is set explicitly, and `shrink` (Button is
-        // `shrink-0` by default) lets it give way on a narrow header.
-        className="w-80 min-w-0 shrink justify-start pl-2 font-normal text-muted-foreground"
+        aria-label="Search"
+        // Two shapes, one button. Below `sm` only the icon shows, so the button
+        // collapses to a square; from `sm` up it takes the width of the search
+        // input it stands in for — a button only sizes to its own text, so that
+        // width is explicit, and `shrink` (Button is `shrink-0` by default)
+        // lets it give way on a narrow header.
+        className="size-8 justify-center p-0 font-normal text-muted-foreground sm:w-80 sm:min-w-0 sm:shrink sm:justify-start sm:px-2"
       >
-        <Search data-icon="inline-start" />
-        Search...
-        <Kbd className="ml-auto">
+        <Search />
+        <span className="hidden sm:inline">Search...</span>
+        <Kbd className="ml-auto hidden sm:inline-flex">
           <MetaKey /> K
         </Kbd>
       </Button>
