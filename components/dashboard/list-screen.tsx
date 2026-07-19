@@ -15,13 +15,12 @@ import {
   Download,
   Ellipsis,
   FolderInput,
-  Funnel,
-  FunnelX,
   ListChecks,
   PackagePlus,
   Plus,
   Printer,
   Search,
+  SlidersHorizontal,
   SquareCheck,
   Tag,
   Trash2,
@@ -30,6 +29,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   ContextMenu,
@@ -526,23 +526,32 @@ export function ListScreen<T>({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Popover open={advancedOpen} onOpenChange={openAdvanced}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="pr-3 pl-2.5"
-                  />
-                }
+            {/*
+              Two halves of one control, so they read as the same idea at two
+              depths: Search opens the per-column row in the table, the sliders
+              open the panel that can do more than a substring match. Both edit
+              the same `filters`, which is why they share a group rather than
+              sitting apart as unrelated buttons.
+            */}
+            <ButtonGroup>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowFilters((prev) => !prev)}
+                aria-expanded={showFilters}
+                aria-controls={filterRowId}
+                // The search row is either open or shut, so the button is a
+                // toggle and has to look held down while it is on — `bg-accent`
+                // is the same surface its own hover uses.
+                className={cn("pr-3 pl-2.5", showFilters && "bg-accent")}
               >
                 <Search />
                 Search
                 {/*
                   Inline rather than a corner badge: the dot marks a filter set
-                  that the panel is currently hiding, and reading in the flow of
-                  the label is what makes it a caption on the button instead of
-                  decoration floating beside it.
+                  that neither surface is currently showing, and reading in the
+                  flow of the label is what makes it a caption on the button
+                  instead of decoration floating beside it.
                 */}
                 {filtersActive && (
                   <span
@@ -550,51 +559,77 @@ export function ListScreen<T>({
                     className="size-1.5 rounded-full bg-primary"
                   />
                 )}
-              </PopoverTrigger>
-              {/*
+              </Button>
+              <Popover open={advancedOpen} onOpenChange={openAdvanced}>
+                {/*
+                  Icon-only, so it needs a name — and the delay matches the
+                  rest of this header's tooltips.
+                */}
+                <TooltipProvider delay={500}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <PopoverTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              aria-label="Advanced search"
+                            />
+                          }
+                        />
+                      }
+                    >
+                      <SlidersHorizontal />
+                    </TooltipTrigger>
+                    <TooltipContent align="end">Advanced search</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {/*
                 Each row is one condition — operator and value in a single
                 field, the operator as an inline addon rather than a separate
                 control beside the input. Nothing here touches the table until
                 Apply.
               */}
-              <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
-                <form onSubmit={applyAdvanced} className="flex flex-col">
-                  {/*
+                <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
+                  <form onSubmit={applyAdvanced} className="flex flex-col">
+                    {/*
                     `items-start` rather than `items-center`: the header is now
                     two lines tall, and Clear belongs beside the title it sits
                     with, not centred against the description below it.
                   */}
-                  <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
-                    <div className="flex flex-col gap-1">
-                      <PopoverTitle>Search</PopoverTitle>
-                      {/*
+                    <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
+                      <div className="flex flex-col gap-1">
+                        <PopoverTitle>Search</PopoverTitle>
+                        {/*
                         Says the thing the panel does not show on its own: that
                         the conditions combine rather than replacing each other.
                       */}
-                      <PopoverDescription>
-                        Match on several columns at once.
-                      </PopoverDescription>
-                    </div>
-                    {draftActive && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        // Shifted up to sit on the title's line, undoing the
-                        // button's own vertical slack against a one-line title.
-                        className="-mt-0.5 shrink-0"
-                        onClick={() => setDraft({})}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </PopoverHeader>
-                  {/*
+                        <PopoverDescription>
+                          Match on several columns at once.
+                        </PopoverDescription>
+                      </div>
+                      {draftActive && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          // Shifted up to sit on the title's line, undoing the
+                          // button's own vertical slack against a one-line title.
+                          className="-mt-0.5 shrink-0"
+                          onClick={() => setDraft({})}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </PopoverHeader>
+                    {/*
                     A wide table has more columns than fit on screen, so the
                     conditions scroll and the footer stays put — Apply must
                     never be the thing that gets pushed out of view.
                   */}
-                  {/*
+                    {/*
                     One grid rather than a stack of per-row flexes: the label
                     column is shared, so every field starts at the same x no
                     matter how long its header is.
@@ -612,111 +647,113 @@ export function ListScreen<T>({
                     bare `1fr` floors at the input's intrinsic width and would
                     push the panel wider.
                   */}
-                  <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4">
-                    {filterable.map((column) => {
-                      const operators =
-                        operatorsByKind[columnKind(column, rows)]
-                      const active =
-                        operators.find((o) => o.op === draft[column.key]?.op) ??
-                        operators[0]
-                      return (
-                        <React.Fragment key={column.key}>
-                          {/*
+                    <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4">
+                      {filterable.map((column) => {
+                        const operators =
+                          operatorsByKind[columnKind(column, rows)]
+                        const active =
+                          operators.find(
+                            (o) => o.op === draft[column.key]?.op
+                          ) ?? operators[0]
+                        return (
+                          <React.Fragment key={column.key}>
+                            {/*
                             `text-sm`, matching the input beside it. At `text-xs`
                             the label read as a caption *about* the field rather
                             than the field's name — which is what it was when it
                             sat above the input, but not what it is on a shared
                             row where the eye compares the two directly.
                           */}
-                          <label
-                            htmlFor={`adv-${column.key}`}
-                            className="truncate text-sm font-medium"
-                          >
-                            {column.header}
-                          </label>
-                          <InputGroup>
-                            <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger
-                                  render={
-                                    <InputGroupButton
-                                      aria-label={`${column.header} operator`}
-                                      // A fixed width so every field's divider
-                                      // lands in the same place — "=" and
-                                      // "contains" must not stagger the inputs.
-                                      className="mr-1.5 w-20 justify-between font-normal"
-                                    />
-                                  }
-                                >
-                                  {active.short}
-                                  <ChevronDown className="text-muted-foreground/70" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="start"
-                                  className="w-56"
-                                >
-                                  {operators.map((operator) => (
-                                    <DropdownMenuItem
-                                      key={operator.op}
-                                      onClick={() =>
-                                        setDraftOperator(
-                                          column.key,
-                                          operator.op
-                                        )
-                                      }
-                                    >
-                                      <span className="w-14 shrink-0 text-muted-foreground">
-                                        {operator.short}
-                                      </span>
-                                      {operator.label}
-                                      {operator.op === active.op && (
-                                        <Check className="ml-auto" />
-                                      )}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </InputGroupAddon>
-                            <InputGroupInput
-                              id={`adv-${column.key}`}
-                              value={draft[column.key]?.value ?? ""}
-                              onChange={(event) =>
-                                setDraftValue(
-                                  column.key,
-                                  event.target.value,
-                                  active.op
-                                )
-                              }
-                              // The label beside it already names the column,
-                              // so repeating the header here would say the
-                              // same word twice on one row.
-                              placeholder="Value…"
-                            />
-                          </InputGroup>
-                        </React.Fragment>
-                      )
-                    })}
-                  </div>
-                  <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-                    {filtersActive && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="mr-auto"
-                        onClick={clearFilters}
-                      >
-                        Reset all
+                            <label
+                              htmlFor={`adv-${column.key}`}
+                              className="truncate text-sm font-medium"
+                            >
+                              {column.header}
+                            </label>
+                            <InputGroup>
+                              <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <InputGroupButton
+                                        aria-label={`${column.header} operator`}
+                                        // A fixed width so every field's divider
+                                        // lands in the same place — "=" and
+                                        // "contains" must not stagger the inputs.
+                                        className="mr-1.5 w-20 justify-between font-normal"
+                                      />
+                                    }
+                                  >
+                                    {active.short}
+                                    <ChevronDown className="text-muted-foreground/70" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    align="start"
+                                    className="w-56"
+                                  >
+                                    {operators.map((operator) => (
+                                      <DropdownMenuItem
+                                        key={operator.op}
+                                        onClick={() =>
+                                          setDraftOperator(
+                                            column.key,
+                                            operator.op
+                                          )
+                                        }
+                                      >
+                                        <span className="w-14 shrink-0 text-muted-foreground">
+                                          {operator.short}
+                                        </span>
+                                        {operator.label}
+                                        {operator.op === active.op && (
+                                          <Check className="ml-auto" />
+                                        )}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </InputGroupAddon>
+                              <InputGroupInput
+                                id={`adv-${column.key}`}
+                                value={draft[column.key]?.value ?? ""}
+                                onChange={(event) =>
+                                  setDraftValue(
+                                    column.key,
+                                    event.target.value,
+                                    active.op
+                                  )
+                                }
+                                // The label beside it already names the column,
+                                // so repeating the header here would say the
+                                // same word twice on one row.
+                                placeholder="Value…"
+                              />
+                            </InputGroup>
+                          </React.Fragment>
+                        )
+                      })}
+                    </div>
+                    <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+                      {filtersActive && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mr-auto"
+                          onClick={clearFilters}
+                        >
+                          Reset all
+                        </Button>
+                      )}
+                      <Button type="submit" className="pr-3 pl-2.5">
+                        <Search />
+                        Apply
                       </Button>
-                    )}
-                    <Button type="submit" className="pr-3 pl-2.5">
-                      <Search />
-                      Apply
-                    </Button>
-                  </div>
-                </form>
-              </PopoverContent>
-            </Popover>
+                    </div>
+                  </form>
+                </PopoverContent>
+              </Popover>
+            </ButtonGroup>
             {creatable && (
               <Button
                 type="button"
@@ -887,82 +924,11 @@ export function ListScreen<T>({
                   </TableHead>
                 )
               })}
-              {/*
-                A trailing gutter column, mirroring the checkbox column on the
-                left: `w-0` so it takes only what the icon needs and the data
-                columns keep the rest. Every row carries an empty cell for it —
-                that is the cost of putting the control here rather than
-                crowding it into the last column's header, where it would sit
-                against that column's sort button and read as part of it.
-              */}
-              <TableHead className="w-0">
-                <div className="flex items-center justify-end gap-1">
-                  {/*
-                    Collapsing must not hide a filter silently. The header's
-                    Search button already carries the dot for that, but it is
-                    across the screen from the row that vanished, so the mark
-                    is repeated on the control that did the hiding. It leads
-                    the icon rather than trailing it, so the icon stays put
-                    against the table edge as the dot comes and goes.
-                  */}
-                  {!showFilters && filtersActive && (
-                    <span
-                      aria-hidden
-                      className="size-1.5 shrink-0 rounded-full bg-primary"
-                    />
-                  )}
-                  {/*
-                    A deliberate delay: this icon sits in the header the eye
-                    crosses on its way to the data, so an instant tooltip
-                    would fire on people who were never asking about it.
-                  */}
-                  <TooltipProvider delay={500}>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <button
-                            type="button"
-                            onClick={() => setShowFilters((prev) => !prev)}
-                            aria-expanded={showFilters}
-                            aria-controls={filterRowId}
-                            aria-label={
-                              showFilters
-                                ? "Hide column search"
-                                : "Show column search"
-                            }
-                            className={cn(
-                              "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground",
-                              showFilters && "text-foreground"
-                            )}
-                          />
-                        }
-                      >
-                        {/*
-                        The icon names what the click will *do*, not what is
-                        currently true: a struck-through funnel while the row
-                        is open reads as "close this", which is the action on
-                        offer — the open row itself already shows the state.
-                      */}
-                        {showFilters ? (
-                          <FunnelX className="size-3.5" />
-                        ) : (
-                          <Funnel className="size-3.5" />
-                        )}
-                      </TooltipTrigger>
-                      <TooltipContent align="end">
-                        {showFilters
-                          ? "Hide column search"
-                          : "Show column search"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableHead>
             </TableRow>
             {/*
               The search row: one input per filterable column, filtering the
               table live. It sticks under the header while the body scrolls,
-              and the filter icon above collapses it — it starts hidden so the
+              and the header's Search button toggles it — it starts hidden so the
               table leads with data rather than with an empty query form.
 
               Mounted and unmounted rather than animated open: this is a `tr`
@@ -1013,8 +979,6 @@ export function ListScreen<T>({
                     </TableHead>
                   )
                 })}
-                {/* Spacer under the toggle, matching the gutter column. */}
-                <TableHead className="w-0" />
               </TableRow>
             )}
           </TableHeader>
@@ -1022,7 +986,7 @@ export function ListScreen<T>({
             {visibleRows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={columns.length + 2}
+                  colSpan={columns.length + 1}
                   className="h-32 text-center text-muted-foreground"
                 >
                   No results found.
@@ -1074,8 +1038,6 @@ export function ListScreen<T>({
                           {column.cell ? column.cell(row) : column.get(row)}
                         </TableCell>
                       ))}
-                      {/* Empty gutter cell under the filter toggle. */}
-                      <TableCell className="w-0" />
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-60">
                       {/* Base UI requires a group around a group label. */}
