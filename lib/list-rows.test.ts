@@ -8,6 +8,7 @@ import {
   deriveRows,
   hasActiveFilter,
   matches,
+  toClipboardText,
   type FilterOperator,
   type ListColumn,
 } from "@/lib/list-rows"
@@ -203,6 +204,18 @@ describe("deriveRows", () => {
       "cher"
     )
     expect(out.map((r) => r.name)).toEqual(["Cherry"])
+  })
+})
+
+describe("toClipboardText", () => {
+  it("writes one tab-separated line per row, in column order", () => {
+    expect(toClipboardText(rows.slice(0, 2), columns)).toBe(
+      "Banana\t2\napple\t10"
+    )
+  })
+
+  it("is empty for no rows", () => {
+    expect(toClipboardText([], columns)).toBe("")
   })
 })
 

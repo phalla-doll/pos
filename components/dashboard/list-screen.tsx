@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   ChevronUp,
   Check,
+  ClipboardCopy,
   ClipboardCheck,
   Copy,
   Download,
@@ -33,6 +34,7 @@ import {
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
@@ -76,6 +78,7 @@ import {
   deriveRows,
   hasActiveFilter,
   operatorsByKind,
+  toClipboardText,
   type FilterOperator,
   type FilterState,
   type ListColumn,
@@ -251,6 +254,21 @@ export function ListScreen<T>({
 
   function toggleRowSelection(key: RowKey) {
     setSelected((prev) => toggleRow(prev, key))
+  }
+
+  // The one context-menu action that isn't a stub. Clipboard access can be
+  // refused (an insecure origin, or a denied permission) and there is nowhere
+  // to report that yet, so a failure is swallowed rather than thrown at React.
+  async function copyRows(keys: RowKey[]) {
+    const wanted = new Set(keys)
+    const picked = visibleRows.filter((_, index) =>
+      wanted.has(visibleKeys[index])
+    )
+    try {
+      await navigator.clipboard?.writeText(toClipboardText(picked, columns))
+    } catch {
+      // ignored — copying is a convenience, not a state change
+    }
   }
 
   function toggleSort(key: string) {
@@ -712,6 +730,11 @@ export function ListScreen<T>({
                             : String(columns[0].get(row))}
                         </ContextMenuLabel>
                       </ContextMenuGroup>
+                      <ContextMenuItem onClick={() => copyRows(targets)}>
+                        <ClipboardCopy strokeWidth={1.5} />
+                        <span>{rowWord("Copy", targets.length)}</span>
+                        <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+                      </ContextMenuItem>
                       <ContextMenuItem onClick={() => toggleRowSelection(key)}>
                         <SquareCheck strokeWidth={1.5} />
                         <span>{checked ? "Deselect row" : "Select row"}</span>

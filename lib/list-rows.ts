@@ -216,6 +216,20 @@ export function deriveRows<T>(
 }
 
 /**
+ * Rows as tab-separated text, one line each, in column order — the format a
+ * spreadsheet pastes into as cells rather than as one blob. Uses the raw `get`
+ * value, not the rendered cell, so what lands on the clipboard is the data.
+ */
+export function toClipboardText<T>(
+  rows: readonly T[],
+  columns: readonly ListColumn<T>[]
+): string {
+  return rows
+    .map((row) => columns.map((column) => String(column.get(row))).join("\t"))
+    .join("\n")
+}
+
+/**
  * Advance the sort state for a clicked column header, cycling
  * unsorted → ascending → descending → unsorted.
  */
