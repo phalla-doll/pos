@@ -631,7 +631,11 @@ export function ListScreen<T>({
                   */}
                     <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
                       <div className="flex flex-col gap-1">
-                        <PopoverTitle>Search</PopoverTitle>
+                        {/* Named for the trigger that opens it, not for what
+                            it does: "Search" alone repeated the word on the
+                            button an inch above, leaving nothing to say this
+                            is the deeper of the two surfaces. */}
+                        <PopoverTitle>Advanced search</PopoverTitle>
                         {/*
                         Says the thing the panel does not show on its own: that
                         the conditions combine rather than replacing each other.
