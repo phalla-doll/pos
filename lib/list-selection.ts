@@ -41,6 +41,20 @@ export function selectionSummary(
 }
 
 /**
+ * The selection a right-click implies, following the convention every file
+ * manager uses: right-clicking inside the selection acts on the whole
+ * selection, right-clicking outside it drops the selection and targets just
+ * that row. Returns the same set when nothing changes, so the common case
+ * (right-clicking an already-selected row) re-renders nothing.
+ */
+export function selectionForMenu(
+  selected: SelectionState,
+  key: RowKey
+): SelectionState {
+  return selected.has(key) ? selected : new Set([key])
+}
+
+/**
  * The header checkbox's action: select every visible row, or — when they are
  * already all selected — deselect them. Rows hidden by a filter are left
  * untouched either way, so select-all never reaches beyond what the user sees.

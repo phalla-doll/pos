@@ -17,6 +17,7 @@ import {
   Printer,
   Search,
   SlidersHorizontal,
+  SquareCheck,
   Tag,
   Trash2,
   X,
@@ -25,6 +26,18 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +83,7 @@ import {
 } from "@/lib/list-rows"
 import {
   emptySelection,
+  selectionForMenu,
   selectionSummary,
   toggleAll,
   toggleRow,
@@ -142,6 +156,14 @@ const bulkMenuActions: {
   { label: "Print labels", icon: Printer, shortcut: "⌘P" },
   { label: "Mark as counted", icon: ClipboardCheck },
 ] as const
+
+/**
+ * "Copy row" / "Copy 3 rows" — a menu item names what it will actually act on,
+ * which for a multi-row selection is not just the row under the cursor.
+ */
+function rowWord(verb: string, count: number): string {
+  return count > 1 ? `${verb} ${count} rows` : `${verb} row`
+}
 
 /**
  * Whether a click on a row body means "select this row". Clicking the row is a
@@ -642,33 +664,90 @@ export function ListScreen<T>({
               visibleRows.map((row, index) => {
                 const key = visibleKeys[index]
                 const checked = selected.has(key)
+                // What the menu acts on: the whole selection when this row is
+                // part of it, otherwise this row alone — matching what the
+                // right-click itself just did to the selection.
+                const targets = checked ? [...selected] : [key]
                 return (
-                  <TableRow
-                    key={key}
-                    data-state={checked ? "selected" : undefined}
-                    onClick={(event) => {
-                      if (isSelectionClick(event)) toggleRowSelection(key)
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <TableCell className="w-0">
-                      <Checkbox
-                        aria-label="Select row"
-                        checked={checked}
-                        onCheckedChange={() => toggleRowSelection(key)}
-                      />
-                    </TableCell>
-                    {columns.map((column) => (
-                      <TableCell
-                        key={column.key}
-                        className={cn(
-                          column.align === "right" && "text-right tabular-nums"
-                        )}
-                      >
-                        {column.cell ? column.cell(row) : column.get(row)}
+                  <ContextMenu key={key}>
+                    <ContextMenuTrigger
+                      render={
+                        <TableRow
+                          data-state={checked ? "selected" : undefined}
+                          onClick={(event) => {
+                            if (isSelectionClick(event)) toggleRowSelection(key)
+                          }}
+                          onContextMenu={() =>
+                            setSelected((prev) => selectionForMenu(prev, key))
+                          }
+                          className="cursor-pointer"
+                        />
+                      }
+                    >
+                      <TableCell className="w-0">
+                        <Checkbox
+                          aria-label="Select row"
+                          checked={checked}
+                          onCheckedChange={() => toggleRowSelection(key)}
+                        />
                       </TableCell>
-                    ))}
-                  </TableRow>
+                      {columns.map((column) => (
+                        <TableCell
+                          key={column.key}
+                          className={cn(
+                            column.align === "right" &&
+                              "text-right tabular-nums"
+                          )}
+                        >
+                          {column.cell ? column.cell(row) : column.get(row)}
+                        </TableCell>
+                      ))}
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-60">
+                      {/* Base UI requires a group around a group label. */}
+                      <ContextMenuGroup>
+                        <ContextMenuLabel className="text-muted-foreground">
+                          {targets.length > 1
+                            ? `${targets.length} rows selected`
+                            : String(columns[0].get(row))}
+                        </ContextMenuLabel>
+                      </ContextMenuGroup>
+                      <ContextMenuItem onClick={() => toggleRowSelection(key)}>
+                        <SquareCheck strokeWidth={1.5} />
+                        <span>{checked ? "Deselect row" : "Select row"}</span>
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      {/*
+                        The same actions the bulk bar offers, so a row's menu
+                        and the bar can't drift apart. Stubs, as there.
+                      */}
+                      {bulkActions.map(({ label, icon: Icon }) => (
+                        <ContextMenuItem key={label}>
+                          <Icon strokeWidth={1.5} />
+                          <span>{rowWord(label, targets.length)}</span>
+                        </ContextMenuItem>
+                      ))}
+                      <ContextMenuSub>
+                        <ContextMenuSubTrigger>
+                          <Ellipsis strokeWidth={1.5} />
+                          <span>More actions</span>
+                        </ContextMenuSubTrigger>
+                        <ContextMenuSubContent className="w-52">
+                          {bulkMenuActions.map(({ label, icon: Icon }) => (
+                            <ContextMenuItem key={label}>
+                              <Icon strokeWidth={1.5} />
+                              <span>{label}</span>
+                            </ContextMenuItem>
+                          ))}
+                        </ContextMenuSubContent>
+                      </ContextMenuSub>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem variant="destructive">
+                        <Trash2 strokeWidth={1.5} />
+                        <span>{rowWord("Delete", targets.length)}</span>
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 )
               })
             )}
