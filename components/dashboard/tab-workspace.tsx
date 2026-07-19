@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/empty"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useDocumentTitle } from "@/hooks/use-document-title"
 import { useTabs } from "@/hooks/use-tabs"
 import { getScreen, screens, type ScreenType } from "@/lib/screens"
+import { workspaceTitle } from "@/lib/title"
 import { cn } from "@/lib/utils"
 
 /**
@@ -39,6 +41,11 @@ export function TabWorkspace() {
 
   const activeTab = tabs.find((t) => t.id === activeId) ?? null
   const activeScreen = activeTab ? getScreen(activeTab.screenType) : null
+
+  // The browser tab follows the workspace tab. Switching screens is a shallow
+  // URL write, not a navigation, so Next's metadata never re-runs — the label
+  // comes off the registry entry, same as the tab bar and screen header.
+  useDocumentTitle(workspaceTitle(activeScreen?.label))
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
