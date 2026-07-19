@@ -403,9 +403,9 @@ export function ListScreen<T>({
                 control beside the input. Nothing here touches the table until
                 Apply.
               */}
-              <PopoverContent align="start" className="w-88 gap-0 p-0">
+              <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
                 <form onSubmit={applyAdvanced} className="flex flex-col">
-                  <PopoverHeader className="flex-row items-center justify-between px-3.5 pt-3 pb-2.5">
+                  <PopoverHeader className="flex-row items-center justify-between px-4 pt-3 pb-2.5">
                     <PopoverTitle>Advanced search</PopoverTitle>
                     {draftActive && (
                       <Button
@@ -423,7 +423,25 @@ export function ListScreen<T>({
                     conditions scroll and the footer stays put — Apply must
                     never be the thing that gets pushed out of view.
                   */}
-                  <div className="flex max-h-[min(26rem,50vh)] flex-col gap-3.5 overflow-y-auto px-3.5 pt-0.5 pb-3.5">
+                  {/*
+                    One grid rather than a stack of per-row flexes: the label
+                    column is shared, so every field starts at the same x no
+                    matter how long its header is.
+
+                    `fit-content(8rem)` sizes that column to the longest label
+                    instead of a fixed width. A fixed one sets the gap to
+                    `width - label + gap`, so it grew as labels got shorter and
+                    "SKU" sat nearly twice as far from its field as "Category"
+                    did. Sizing to content makes the *widest* label define the
+                    column, so the tightest row is exactly `gap-x` and no row
+                    is arbitrarily loose. The 8rem cap keeps one long header
+                    from eating the input's width; `truncate` handles the rest.
+
+                    `minmax(0,1fr)` lets the input column actually shrink — a
+                    bare `1fr` floors at the input's intrinsic width and would
+                    push the panel wider.
+                  */}
+                  <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4">
                     {filterable.map((column) => {
                       const operators =
                         operatorsByKind[columnKind(column, rows)]
@@ -431,10 +449,17 @@ export function ListScreen<T>({
                         operators.find((o) => o.op === draft[column.key]?.op) ??
                         operators[0]
                       return (
-                        <div key={column.key} className="flex flex-col gap-2">
+                        <React.Fragment key={column.key}>
+                          {/*
+                            `text-sm`, matching the input beside it. At `text-xs`
+                            the label read as a caption *about* the field rather
+                            than the field's name — which is what it was when it
+                            sat above the input, but not what it is on a shared
+                            row where the eye compares the two directly.
+                          */}
                           <label
                             htmlFor={`adv-${column.key}`}
-                            className="text-xs font-medium text-muted-foreground"
+                            className="truncate text-sm font-medium"
                           >
                             {column.header}
                           </label>
@@ -491,14 +516,17 @@ export function ListScreen<T>({
                                   active.op
                                 )
                               }
-                              placeholder={`${column.header} value…`}
+                              // The label beside it already names the column,
+                              // so repeating the header here would say the
+                              // same word twice on one row.
+                              placeholder="Value…"
                             />
                           </InputGroup>
-                        </div>
+                        </React.Fragment>
                       )
                     })}
                   </div>
-                  <div className="flex items-center justify-end gap-2 border-t px-3.5 py-3">
+                  <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
                     {filtersActive && (
                       <Button
                         type="button"
