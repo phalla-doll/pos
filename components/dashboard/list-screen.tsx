@@ -317,9 +317,9 @@ export function ListScreen<T>({
                 control beside the input. Nothing here touches the table until
                 Apply.
               */}
-              <PopoverContent align="start" className="w-80 gap-3">
-                <form onSubmit={applyAdvanced} className="flex flex-col gap-3">
-                  <PopoverHeader className="flex-row items-center justify-between">
+              <PopoverContent align="start" className="w-88 gap-0 p-0">
+                <form onSubmit={applyAdvanced} className="flex flex-col">
+                  <PopoverHeader className="flex-row items-center justify-between px-3.5 pt-3 pb-2.5">
                     <PopoverTitle>Advanced search</PopoverTitle>
                     {draftActive && (
                       <Button
@@ -337,7 +337,7 @@ export function ListScreen<T>({
                     conditions scroll and the footer stays put — Apply must
                     never be the thing that gets pushed out of view.
                   */}
-                  <div className="flex max-h-[min(24rem,50vh)] flex-col gap-2.5 overflow-y-auto">
+                  <div className="flex max-h-[min(26rem,50vh)] flex-col gap-3.5 overflow-y-auto px-3.5 pt-0.5 pb-3.5">
                     {filterable.map((column) => {
                       const operators =
                         operatorsByKind[columnKind(column, rows)]
@@ -345,7 +345,7 @@ export function ListScreen<T>({
                         operators.find((o) => o.op === draft[column.key]?.op) ??
                         operators[0]
                       return (
-                        <div key={column.key} className="flex flex-col gap-1.5">
+                        <div key={column.key} className="flex flex-col gap-2">
                           <label
                             htmlFor={`adv-${column.key}`}
                             className="text-xs font-medium text-muted-foreground"
@@ -359,7 +359,10 @@ export function ListScreen<T>({
                                   render={
                                     <InputGroupButton
                                       aria-label={`${column.header} operator`}
-                                      className="mr-1.5 font-normal"
+                                      // A fixed width so every field's divider
+                                      // lands in the same place — "=" and
+                                      // "contains" must not stagger the inputs.
+                                      className="mr-1.5 w-20 justify-between font-normal"
                                     />
                                   }
                                 >
@@ -409,7 +412,7 @@ export function ListScreen<T>({
                       )
                     })}
                   </div>
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2 border-t px-3.5 py-3">
                     {filtersActive && (
                       <Button
                         type="button"
