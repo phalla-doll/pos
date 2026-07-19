@@ -14,10 +14,10 @@ import {
 import { useSidebarPin } from "@/components/sidebar-shell"
 import { cn } from "@/lib/utils"
 import { collapsedRailButton, collapsedRailLabel } from "@/lib/sidebar-metrics"
-import { Pin, PinOff } from "lucide-react"
+import { PanelLeftIcon } from "lucide-react"
 
 /**
- * The sidebar header: the workspace it belongs to, plus the pin.
+ * The sidebar header: the workspace it belongs to, plus the collapse button.
  *
  * Static — there is one workspace, so what used to be a switcher offered a
  * menu with a single item and a chevron promising a choice that did not
@@ -59,7 +59,7 @@ export function SidebarBrand({
             <span className="truncate font-medium">{workspace.name}</span>
             <span className="truncate text-xs">{workspace.plan}</span>
           </div>
-          <PinButton />
+          <CollapseButton />
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
@@ -67,16 +67,16 @@ export function SidebarBrand({
 }
 
 /**
- * Toggles whether the sidebar stays open. Rendered only when the sidebar is
- * open — on the rail there is no room, and a peek is the wrong moment to
- * offer it: the button would sit under a cursor that is only passing through.
- * The header's own trigger (⌘B) pins from the outside, so the rail is never a
- * dead end.
+ * Collapses the sidebar to the rail — the mirror of the footer's expand
+ * button, which is what brings it back. One direction each, so neither button
+ * is a toggle whose effect the user has to infer from the current state.
+ *
+ * Rendered only when the sidebar is open: on the rail there is no room beside
+ * the brand mark, and collapsing an already-collapsed sidebar is a no-op.
  */
-function PinButton() {
-  const { pinned, setPinned } = useSidebarPin()
-  const Icon = pinned ? PinOff : Pin
-  const label = pinned ? "Unpin sidebar" : "Pin sidebar"
+function CollapseButton() {
+  const { setPinned } = useSidebarPin()
+  const label = "Collapse sidebar"
 
   return (
     <Tooltip>
@@ -86,11 +86,10 @@ function PinButton() {
             variant="ghost"
             size="icon"
             aria-label={label}
-            aria-pressed={pinned}
             className={cn("ml-auto size-7", collapsedRailLabel)}
-            onClick={() => setPinned(!pinned)}
+            onClick={() => setPinned(false)}
           >
-            <Icon strokeWidth={1.5} />
+            <PanelLeftIcon strokeWidth={1.5} />
           </Button>
         }
       />
