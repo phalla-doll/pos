@@ -12,9 +12,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTabs } from "@/hooks/use-tabs"
 import { getScreen, screens, type ScreenType } from "@/lib/screens"
-import { LayoutDashboard } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 /**
  * The tabbed workspace. Owns tab state via {@link useTabs}, renders the
@@ -69,6 +70,75 @@ export function TabWorkspace() {
 }
 
 /**
+ * One card in the {@link WorkspaceSketch} — a wireframe of the screen layout
+ * this workspace shows: header row, body lines, footer row.
+ *
+ * The bars are `Skeleton` with its pulse removed. This is a decorative
+ * illustration of an *empty* workspace, not a loading placeholder, and a
+ * pulsing graphic behind "No screen open" would read as "still loading".
+ */
+function SketchCard({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "w-64 shrink-0 space-y-3 rounded-xl border bg-background p-3",
+        className
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <Skeleton className="size-7 animate-none rounded-full" />
+        <div className="flex-1 space-y-1.5">
+          <Skeleton className="h-2 w-1/2 animate-none" />
+          <Skeleton className="h-2 w-3/4 animate-none" />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Skeleton className="h-2 w-full animate-none" />
+        <Skeleton className="h-2 w-4/5 animate-none" />
+      </div>
+      <div className="flex items-center gap-2 border-t pt-3">
+        <Skeleton className="h-2 flex-1 animate-none" />
+        <Skeleton className="size-5 animate-none" />
+        <Skeleton className="size-5 animate-none" />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The decorative graphic above the empty-state copy: three wireframe cards,
+ * the middle one crisp and lifted, the flanking two blurred and pushed back so
+ * the row reads as a workspace continuing past the frame.
+ *
+ * The flanks are faded by a mask rather than plain opacity — a gradient on
+ * both axes (composited to their intersection) dissolves them into the
+ * background instead of ending at a visible edge.
+ */
+function WorkspaceSketch() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none relative flex w-full max-w-2xl items-center justify-center select-none"
+    >
+      {/*
+        The flanks live in their own masked layer so the fade applies only to
+        them — masking the whole row would dissolve the crisp middle card too.
+      */}
+      <div className="absolute inset-0 flex items-center justify-between [mask-image:linear-gradient(to_right,transparent,black_35%,black_65%,transparent),linear-gradient(to_bottom,black_70%,transparent)] [mask-composite:intersect]">
+        <SketchCard className="scale-90 shadow-sm blur-[1px]" />
+        <SketchCard className="scale-90 shadow-sm blur-[1px]" />
+      </div>
+      {/* Extra vertical padding, not a scale-up: it lifts the middle card past
+          the flanks without softening its edges the way a transform would.
+          The shadow is wide and faint rather than dark — enough to separate it
+          from the flanks behind it without weighing down a background graphic. */}
+      <SketchCard className="relative z-10 py-5 shadow-[0_8px_24px_-8px_rgb(0_0_0/0.12)]" />
+    </div>
+  )
+}
+
+/**
  * The screens offered as one-click shortcuts on the empty state — the handful
  * a user is most likely to want first. Curation only: every label, icon, and
  * description still comes from the registry, so this stays a list of *keys*
@@ -91,14 +161,11 @@ function EmptyState({ onOpen }: { onOpen: (screenType: ScreenType) => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-zinc-50 dark:bg-zinc-900">
       <Empty className="p-8">
+        {/* Sits outside `EmptyHeader`, which caps its children at `max-w-sm` —
+            the sketch needs the full width for its flanking cards to show. */}
+        <WorkspaceSketch />
+
         <EmptyHeader>
-          <EmptyMedia>
-            {/* A soft ring around the glyph, so the icon reads as a deliberate
-                mark rather than a stray disabled control. */}
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-background text-muted-foreground shadow-xs ring-1 ring-border">
-              <LayoutDashboard strokeWidth={1.5} className="size-6" />
-            </div>
-          </EmptyMedia>
           <EmptyTitle className="text-base">No screen open</EmptyTitle>
           <EmptyDescription>
             Jump into one of these, or open any screen from the sidebar.
