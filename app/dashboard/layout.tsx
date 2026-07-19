@@ -28,12 +28,10 @@ export default function DashboardLayout({
       <SidebarShell>
         {/* `z-0` makes the content its own stacking context, so the sticky
             table header (and anything else that raises itself above its
-            neighbours) stays under the sidebar when a peek expands it. */}
+            neighbours) stays under the sidebar when it expands. */}
         <SidebarInset className="relative z-0 min-h-0 overflow-hidden">
-          {/* The header shrinks with the collapsed rail. A peek expands the
-              sidebar without the user asking, so it must not drag the header
-              open with it — `data-peek` holds the collapsed height. */}
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 group-data-[peek]/sidebar-wrapper:h-12">
+          {/* The header shrinks with the collapsed rail. */}
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
             <div className="flex flex-1 items-center gap-2 px-4">
               <Tooltip>
                 <TooltipTrigger render={<SidebarTrigger className="-ml-1" />} />

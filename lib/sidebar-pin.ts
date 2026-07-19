@@ -1,11 +1,12 @@
 /**
  * The sidebar pin: the user's standing intent to keep the sidebar open.
  *
- * `components/ui/sidebar.tsx` already persists its own `open` flag, but that
- * records the *result* — and with hover-peek the sidebar opens constantly
- * without the user asking for it, so `open` would be overwritten by every
- * passing cursor. The pin is stored separately and is what the provider is
- * driven from; `open` becomes derived, not authoritative.
+ * Nothing opens the sidebar but a deliberate toggle — there is no hover or
+ * focus peek — so the pin is simply whether the sidebar is open, persisted.
+ * It stays separate from the `open` flag `components/ui/sidebar.tsx` keeps
+ * because the provider here runs *controlled*: the vendored cookie records
+ * only what the provider was last handed, so driving state from it would mean
+ * trusting a value this app never writes.
  *
  * A cookie rather than localStorage, to match how the vendored sidebar already
  * persists. Note it is still read on the *client*: the static-export build
@@ -40,19 +41,4 @@ export function readPinned(cookie: string): boolean {
       pair.slice(eq + 1).trim() === "true"
     )
   })
-}
-
-/**
- * Whether the sidebar renders open. Peeking is what the pin exists to keep out
- * of storage: it opens the sidebar exactly as being pinned does, but only for
- * as long as the pointer is there.
- */
-export function sidebarOpen({
-  pinned,
-  peeking,
-}: {
-  pinned: boolean
-  peeking: boolean
-}): boolean {
-  return pinned || peeking
 }

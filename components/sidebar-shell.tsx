@@ -4,14 +4,8 @@ import * as React from "react"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { cn } from "@/lib/utils"
-import { SIDEBAR_WIDTH_ICON, peekOverlay } from "@/lib/sidebar-metrics"
-import { pinCookie, readPinned, sidebarOpen } from "@/lib/sidebar-pin"
-
-/** What a peeking shell exposes to the rest of the layout, as a data attribute
- * on the wrapper — the header reads it to hold its height. A bare attribute
- * would be `data-peek=""`, which Tailwind's `data-[peek]` matches. */
-const PEEK_ATTR = "data-peek"
+import { SIDEBAR_WIDTH_ICON } from "@/lib/sidebar-metrics"
+import { pinCookie, readPinned } from "@/lib/sidebar-pin"
 
 /**
  * Lets `useSyncExternalStore` treat the pin cookie as the store it is. Writes
@@ -43,17 +37,15 @@ export function useSidebarPin(): PinContext {
 /**
  * Owns the sidebar's open state so the pin, not the vendored provider, is the
  * thing that persists — see `lib/sidebar-pin.ts` for why. The provider runs
- * controlled: `open` is derived from pin + peek, and every uncontrolled path
- * into it (the header trigger, ⌘B) lands on `setPinned`, so toggling the
- * sidebar by any route is what "pin" means.
+ * controlled: `open` *is* the pin, and every uncontrolled path into it (the
+ * header trigger, ⌘B, the rail, the footer's expand button) lands on
+ * `setPinned`, so toggling the sidebar by any route is what "pin" means.
  *
- * Unpinned, the sidebar rests collapsed and peeks open while the pointer is
- * over it. The peek deliberately does not touch the cookie: hovering past the
- * rail is not a preference.
+ * The sidebar only ever moves when asked to. It does not peek open under the
+ * pointer or under focus: an expanded sidebar reflows the page, which is too
+ * much to hand to a cursor merely passing over the rail.
  */
 export function SidebarShell({ children }: { children: React.ReactNode }) {
-  const [peeking, setPeeking] = React.useState(false)
-
   // The cookie *is* the state, so it is subscribed to rather than copied into
   // React. The prerendered HTML has no cookie in hand, which is exactly the
   // split `getServerSnapshot` exists for: the server renders unpinned and the
@@ -67,45 +59,23 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
   const setPinned = React.useCallback((next: boolean) => {
     document.cookie = pinCookie(next)
     pinStore.emit()
-    // Pinning while peeking would otherwise leave the peek latched on, so
-    // that a later pointer-leave would close a sidebar the user just pinned.
-    if (next) setPeeking(false)
   }, [])
-
-  const open = sidebarOpen({ pinned, peeking })
-  const isPeek = peeking && !pinned
 
   return (
     <PinContext.Provider value={{ pinned, setPinned }}>
       <SidebarProvider
-        open={open}
-        // The requested value is deliberately ignored. Upstream computes it
-        // as `!open`, and `open` now includes a peek — so a toggle that lives
-        // *inside* the sidebar (the rail, which focus peeks open before its
-        // own click runs) would read "already open" and resolve to close,
-        // making it impossible to pin. A toggle means invert the pin.
-        onOpenChange={() => setPinned(!pinned)}
-        className={cn("h-svh overflow-hidden", isPeek && peekOverlay)}
+        open={pinned}
+        // Upstream computes the requested value as `!open`, which is the pin
+        // inverted — so taking it or inverting the pin ourselves are the same
+        // thing. Written this way it stays correct against a `setOpen(true)`
+        // caller that means "open", not "toggle".
+        onOpenChange={(next) => setPinned(next)}
+        className="h-svh overflow-hidden"
         style={
           { "--sidebar-width-icon": SIDEBAR_WIDTH_ICON } as React.CSSProperties
         }
-        {...{ [PEEK_ATTR]: isPeek ? "" : undefined }}
       >
-        <AppSidebar
-          onMouseEnter={() => setPeeking(true)}
-          onMouseLeave={() => setPeeking(false)}
-          // Focus peeks too, so the sidebar a keyboard tabs into is the same
-          // one a pointer opens. Without this the rail stays collapsed under
-          // the keyboard — every label hidden, and a group's trigger left
-          // expanding a sub-menu that width has no room to show.
-          onFocusCapture={() => setPeeking(true)}
-          onBlurCapture={(e) => {
-            // Focus moving *within* the sidebar is not leaving it. A menu
-            // portal is not a DOM descendant, so a null or outside
-            // relatedTarget closes the peek and the menu keeps focus.
-            if (!e.currentTarget.contains(e.relatedTarget)) setPeeking(false)
-          }}
-        />
+        <AppSidebar />
         {children}
       </SidebarProvider>
     </PinContext.Provider>

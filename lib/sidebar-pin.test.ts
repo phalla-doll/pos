@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  PIN_COOKIE_NAME,
-  pinCookie,
-  readPinned,
-  sidebarOpen,
-} from "./sidebar-pin"
+import { PIN_COOKIE_NAME, pinCookie, readPinned } from "./sidebar-pin"
 
 describe("readPinned", () => {
   const cases: [name: string, cookie: string, expected: boolean][] = [
@@ -38,20 +33,5 @@ describe("pinCookie", () => {
   it("scopes the cookie to the whole site and gives it a lifetime", () => {
     expect(pinCookie(true)).toContain("path=/")
     expect(pinCookie(true)).toMatch(/max-age=\d+/)
-  })
-})
-
-describe("sidebarOpen", () => {
-  const cases: [pinned: boolean, peeking: boolean, expected: boolean][] = [
-    [false, false, false],
-    [false, true, true],
-    [true, false, true],
-    // A peek over an already-pinned sidebar changes nothing, so leaving it
-    // cannot close one the user pinned.
-    [true, true, true],
-  ]
-
-  it.each(cases)("pinned=%s peeking=%s -> %s", (pinned, peeking, expected) => {
-    expect(sidebarOpen({ pinned, peeking })).toBe(expected)
   })
 })
