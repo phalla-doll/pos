@@ -2,18 +2,37 @@
 
 import * as React from "react"
 import {
+  Archive,
   ChevronDown,
   ChevronsUpDown,
   ChevronUp,
+  ClipboardCheck,
+  Copy,
+  Download,
+  Ellipsis,
+  FolderInput,
+  PackagePlus,
   Plus,
+  Printer,
   Search,
   SlidersHorizontal,
+  Tag,
+  Trash2,
   X,
+  type LucideIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import {
   InputGroup,
   InputGroupAddon,
@@ -93,6 +112,32 @@ const indeterminateDash =
   "data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-indeterminate:[&_svg]:hidden before:absolute before:hidden before:h-0.5 before:w-2 before:rounded-full before:bg-current data-indeterminate:before:block"
 
 /**
+ * The bulk-action bar's contents. Every entry is a UI-only stub until there is
+ * a backend — they exist so the selection flow can be demoed end to end — so
+ * they carry no handler and are listed as data rather than hand-written twice.
+ * Destructive delete and "clear selection" are rendered separately, set apart
+ * from these by a divider.
+ */
+const bulkActions = [
+  { label: "Export", icon: Download },
+  { label: "Duplicate", icon: Copy },
+  { label: "Archive", icon: Archive },
+] as const
+
+/** The overflow menu — lower-traffic actions, kept out of the bar itself. */
+const bulkMenuActions: {
+  label: string
+  icon: LucideIcon
+  shortcut?: string
+}[] = [
+  { label: "Assign tag", icon: Tag, shortcut: "⌘T" },
+  { label: "Change category", icon: FolderInput },
+  { label: "Adjust stock", icon: PackagePlus },
+  { label: "Print labels", icon: Printer, shortcut: "⌘P" },
+  { label: "Mark as counted", icon: ClipboardCheck },
+] as const
+
+/**
  * Whether a click on a row body means "select this row". Clicking the row is a
  * shortcut for its checkbox, but the row is still ordinary text a user may want
  * to read, copy, or interact with — so three cases opt out:
@@ -165,6 +210,7 @@ export function ListScreen<T>({
     [visibleRows, rowKey]
   )
   const headerState = selectionSummary(selected, visibleKeys)
+  const selectedCount = selected.size
 
   function toggleRowSelection(key: RowKey) {
     setSelected((prev) => toggleRow(prev, key))
@@ -198,7 +244,7 @@ export function ListScreen<T>({
   const hasCreateInput = Object.values(createDraft).some((v) => v.trim() !== "")
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
       <ScreenHeader
         label={label}
         description={description}
@@ -499,6 +545,79 @@ export function ListScreen<T>({
           </TableBody>
         </Table>
       </div>
+
+      {/*
+        Bulk-action bar — floats over the table while at least one row is
+        ticked. The actions are UI-only stubs until a backend exists; only
+        "Clear" does real work.
+      */}
+      {selectedCount > 0 && (
+        <div
+          role="toolbar"
+          aria-label="Bulk actions"
+          className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 animate-in items-center gap-1 rounded-xl border bg-popover p-1 pl-3 shadow-lg fade-in-0 slide-in-from-bottom-2"
+        >
+          <span className="text-sm font-medium tabular-nums">
+            {selectedCount} selected
+          </span>
+          <Separator orientation="vertical" className="mx-1 h-5" />
+          {bulkActions.map(({ label, icon: Icon }) => (
+            <Button key={label} type="button" variant="ghost" size="sm">
+              <Icon />
+              {label}
+            </Button>
+          ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="More actions"
+                />
+              }
+            >
+              <Ellipsis />
+            </DropdownMenuTrigger>
+            {/*
+              The popup defaults to the trigger's width (`w-(--anchor-width)`),
+              which is one icon button wide — so the labels need an explicit
+              width to sit on one line.
+            */}
+            <DropdownMenuContent align="end" side="top" className="w-52">
+              {bulkMenuActions.map(({ label, icon: Icon, shortcut }) => (
+                <DropdownMenuItem key={label}>
+                  <Icon strokeWidth={1.5} />
+                  {label}
+                  {shortcut && (
+                    <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Separator orientation="vertical" className="mx-1 h-5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 />
+            Delete
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear selection"
+            onClick={() => setSelected(emptySelection)}
+          >
+            <X />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
