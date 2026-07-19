@@ -69,6 +69,10 @@ const sections: { heading: string; commands: NavCommand[] }[] = (() => {
 export function HeaderSearch() {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
+  // Controlled so the palette can tell "nothing typed yet" from "typed
+  // something that matches nothing" — cmdk's own filter state is not readable
+  // from here, and the two states want different screens entirely.
+  const [query, setQuery] = React.useState("")
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -76,6 +80,11 @@ export function HeaderSearch() {
       if (e.key.toLowerCase() !== "k" || !(e.metaKey || e.ctrlKey)) return
       e.preventDefault()
       setOpen((prev) => !prev)
+      // Reset on the shortcut too, not just `onOpenChange` — toggling the
+      // palette shut with ⌘K never reaches that handler, and reopening onto a
+      // stale query would show results for something the user cannot see they
+      // typed.
+      setQuery("")
     }
 
     document.addEventListener("keydown", onKeyDown)
@@ -114,7 +123,10 @@ export function HeaderSearch() {
 
       <CommandDialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (!next) setQuery("")
+        }}
         title="Search screens"
         description="Search for a screen and press Enter to open it in a tab."
       >
@@ -124,44 +136,95 @@ export function HeaderSearch() {
           the input and items subscribe to) has to be supplied here.
         */}
         <Command>
-          <CommandInput placeholder="Search screens..." />
+          <CommandInput
+            placeholder="Search screens..."
+            value={query}
+            onValueChange={setQuery}
+          />
           <CommandList>
-            <CommandEmpty>No screens found.</CommandEmpty>
-            {sections.map(({ heading, commands }) => (
-              <CommandGroup key={heading} heading={heading}>
-                {commands.map((command) => {
-                  const { screen, path } = command
-                  // The section heading already names `path[0]`; show only the
-                  // deeper groups, so a 3-level screen still reveals where it
-                  // lives without repeating its section.
-                  const detail = path.slice(1).join(" › ")
-                  return (
-                    <CommandItem
-                      key={screen.type}
-                      value={commandValue(command)}
-                      onSelect={() => onSelect(screen.type)}
-                    >
-                      {screen.icon}
-                      <span>{screen.label}</span>
-                      {detail && (
-                        // The trailing slot: it right-aligns the hint and
-                        // suppresses the item's (unused) check icon, which
-                        // would otherwise compete for the same space.
-                        <CommandShortcut className="tracking-normal">
-                          {detail}
-                        </CommandShortcut>
-                      )}
-                    </CommandItem>
-                  )
-                })}
-              </CommandGroup>
-            ))}
+            {/*
+              Until something is typed the palette shows nothing to pick from.
+              The full list is every screen in the app, which is a wall of
+              options that answers no question the user has asked yet — and it
+              buries the one thing the empty palette should say, which is what
+              to type. `CommandEmpty` stays out of this branch: it means "your
+              search found nothing", which is not what an untouched input is.
+            */}
+            {query.trim() === "" ? (
+              <SearchPrompt />
+            ) : (
+              <>
+                <CommandEmpty>No screens found.</CommandEmpty>
+                {sections.map(({ heading, commands }) => (
+                  <CommandGroup key={heading} heading={heading}>
+                    {commands.map((command) => {
+                      const { screen, path } = command
+                      // The section heading already names `path[0]`; show only the
+                      // deeper groups, so a 3-level screen still reveals where it
+                      // lives without repeating its section.
+                      const detail = path.slice(1).join(" › ")
+                      return (
+                        <CommandItem
+                          key={screen.type}
+                          value={commandValue(command)}
+                          onSelect={() => onSelect(screen.type)}
+                        >
+                          {screen.icon}
+                          <span>{screen.label}</span>
+                          {detail && (
+                            // The trailing slot: it right-aligns the hint and
+                            // suppresses the item's (unused) check icon, which
+                            // would otherwise compete for the same space.
+                            <CommandShortcut className="tracking-normal">
+                              {detail}
+                            </CommandShortcut>
+                          )}
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                ))}
+              </>
+            )}
           </CommandList>
         </Command>
       </CommandDialog>
     </>
   )
 }
+
+/**
+ * What the palette shows before anything is typed: what it searches, and the
+ * two vocabularies that work — a screen's own name, or the group it sits in.
+ *
+ * The examples are pulled from the nav rather than written out, so they cannot
+ * drift into naming a screen or group that no longer exists.
+ */
+function SearchPrompt() {
+  return (
+    <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+      <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+        <Search className="size-4 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-medium">Search screens</p>
+      <p className="max-w-[16rem] text-xs text-balance text-muted-foreground">
+        Start typing to find a screen by name, like{" "}
+        <span className="text-foreground">{exampleScreen}</span>, or by the
+        group it lives in, like{" "}
+        <span className="text-foreground">{exampleGroup}</span>.
+      </p>
+    </div>
+  )
+}
+
+/**
+ * The example screen and group, taken from the first nav leaf that sits inside
+ * a group — both from the *same* entry, so the sentence stays true: the screen
+ * named really does live in the group named beside it.
+ */
+const example = flattenNav(sidebarNav).find((c) => c.path.length > 0)
+const exampleScreen = example?.screen.label ?? "Inventory"
+const exampleGroup = example?.path[0] ?? "Reports"
 
 /**
  * The platform's modifier glyph. Read through `useSyncExternalStore` with a
