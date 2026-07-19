@@ -103,7 +103,7 @@ export function HeaderSearch() {
         // input it stands in for — a button only sizes to its own text, so that
         // width is explicit, and `shrink` (Button is `shrink-0` by default)
         // lets it give way on a narrow header.
-        className="size-8 justify-center p-0 font-normal text-muted-foreground sm:w-80 sm:min-w-0 sm:shrink sm:justify-start sm:px-2"
+        className="size-8 justify-center p-0 font-normal text-muted-foreground sm:w-64 sm:min-w-0 sm:shrink sm:justify-start sm:px-2"
       >
         <Search />
         <span className="hidden sm:inline">Search...</span>
