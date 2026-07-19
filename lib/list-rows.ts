@@ -26,18 +26,142 @@ export type ListColumn<T> = {
 /** Active sort: which column, in which direction. */
 export type SortState = { key: string; dir: "asc" | "desc" }
 
-/** The applied filter query per column key. */
-export type FilterState = Record<string, string>
+/** How a filter value is tested against a column's raw value. */
+export type FilterOperator =
+  | "contains"
+  | "notContains"
+  | "equals"
+  | "notEquals"
+  | "startsWith"
+  | "endsWith"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
 
-/** Case-insensitive "contains" match against a column's raw value. */
+/** One column's filter: the test to apply, and the value to test against. */
+export type FilterCondition = { op: FilterOperator; value: string }
+
+/** The applied filter per column key. */
+export type FilterState = Record<string, FilterCondition>
+
+/**
+ * Whether a column reads as numbers or as text, decided from the first row —
+ * the column's own values are the only evidence available, and a list's rows
+ * are homogeneous. An empty list reads as text, the more permissive default.
+ */
+export function columnKind<T>(
+  column: ListColumn<T>,
+  rows: readonly T[]
+): "number" | "text" {
+  return rows.length > 0 && typeof column.get(rows[0]) === "number"
+    ? "number"
+    : "text"
+}
+
+/**
+ * The operators offered for a column, in menu order. Each carries a `label`
+ * for the menu and a `short` glyph for the inline addon inside the input,
+ * which has room for a word at most.
+ */
+export const operatorsByKind: Record<
+  "number" | "text",
+  readonly { op: FilterOperator; label: string; short: string }[]
+> = {
+  text: [
+    { op: "contains", label: "Contains", short: "contains" },
+    { op: "notContains", label: "Does not contain", short: "excludes" },
+    { op: "equals", label: "Equals", short: "is" },
+    { op: "notEquals", label: "Does not equal", short: "is not" },
+    { op: "startsWith", label: "Starts with", short: "starts" },
+    { op: "endsWith", label: "Ends with", short: "ends" },
+  ],
+  number: [
+    { op: "equals", label: "Equals", short: "=" },
+    { op: "notEquals", label: "Does not equal", short: "≠" },
+    { op: "gt", label: "Greater than", short: ">" },
+    { op: "gte", label: "Greater than or equal", short: "≥" },
+    { op: "lt", label: "Less than", short: "<" },
+    { op: "lte", label: "Less than or equal", short: "≤" },
+    { op: "contains", label: "Contains", short: "contains" },
+  ],
+}
+
+/** The operator a column starts on — the first one it offers. */
+export function defaultOperator<T>(
+  column: ListColumn<T>,
+  rows: readonly T[]
+): FilterOperator {
+  return operatorsByKind[columnKind(column, rows)][0].op
+}
+
+/** A condition only filters once it has a value to test against. */
+export function isActive(condition: FilterCondition | undefined): boolean {
+  return (condition?.value ?? "").trim() !== ""
+}
+
+/** Whether any column currently filters the table. */
+export function hasActiveFilter(state: FilterState): boolean {
+  return Object.values(state).some(isActive)
+}
+
+/**
+ * Compare a cell against a filter value for the ordering operators. Both sides
+ * parse as numbers → numeric comparison, so `stock > 9` doesn't rank "10"
+ * below "9"; otherwise fall back to the same locale-aware string ordering the
+ * sort uses, which keeps `>` meaningful on text columns.
+ */
+function compareToFilter(cell: string | number, value: string): number {
+  const cellNum = typeof cell === "number" ? cell : Number(cell)
+  const valueNum = Number(value)
+  if (
+    !Number.isNaN(cellNum) &&
+    !Number.isNaN(valueNum) &&
+    value.trim() !== ""
+  ) {
+    return cellNum - valueNum
+  }
+  return compare(String(cell), value)
+}
+
+/**
+ * Test one row against one column's condition. A blank value matches
+ * everything — a half-typed filter should not empty the table — and text
+ * comparisons are case-insensitive throughout.
+ */
 export function matches<T>(
   row: T,
   column: ListColumn<T>,
-  query: string
+  condition: FilterCondition | undefined
 ): boolean {
-  const q = query.trim().toLowerCase()
-  if (!q) return true
-  return String(column.get(row)).toLowerCase().includes(q)
+  if (!isActive(condition)) return true
+  const { op, value } = condition!
+  const raw = column.get(row)
+  const cell = String(raw).toLowerCase()
+  const query = value.trim().toLowerCase()
+
+  switch (op) {
+    case "contains":
+      return cell.includes(query)
+    case "notContains":
+      return !cell.includes(query)
+    case "equals":
+      return cell === query
+    case "notEquals":
+      return cell !== query
+    case "startsWith":
+      return cell.startsWith(query)
+    case "endsWith":
+      return cell.endsWith(query)
+    case "gt":
+      return compareToFilter(raw, value.trim()) > 0
+    case "gte":
+      return compareToFilter(raw, value.trim()) >= 0
+    case "lt":
+      return compareToFilter(raw, value.trim()) < 0
+    case "lte":
+      return compareToFilter(raw, value.trim()) <= 0
+  }
 }
 
 /**
@@ -65,12 +189,13 @@ export function deriveRows<T>(
   query = ""
 ): T[] {
   const active = columns.filter(
-    (c) => c.filterable !== false && (applied[c.key] ?? "").trim() !== ""
+    (c) => c.filterable !== false && isActive(applied[c.key])
   )
   // The global query matches a row when *any* filterable column contains it.
   const q = query.trim()
   const searchable =
     q === "" ? [] : columns.filter((c) => c.filterable !== false)
+  const anywhere: FilterCondition = { op: "contains", value: q }
 
   const filtered =
     active.length === 0 && q === ""
@@ -78,7 +203,7 @@ export function deriveRows<T>(
       : rows.filter(
           (row) =>
             active.every((c) => matches(row, c, applied[c.key])) &&
-            (q === "" || searchable.some((c) => matches(row, c, q)))
+            (q === "" || searchable.some((c) => matches(row, c, anywhere)))
         )
 
   if (!sort) return filtered

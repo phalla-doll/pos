@@ -58,6 +58,7 @@ import { ScreenHeader } from "@/components/dashboard/screen-header"
 import {
   cycleSort,
   deriveRows,
+  hasActiveFilter,
   type FilterState,
   type ListColumn,
   type SortState,
@@ -183,7 +184,9 @@ export function ListScreen<T>({
   // text never bleed into each other.
   const [filters, setFilters] = React.useState<FilterState>({})
   const [query, setQuery] = React.useState("")
-  const [createDraft, setCreateDraft] = React.useState<FilterState>({})
+  const [createDraft, setCreateDraft] = React.useState<Record<string, string>>(
+    {}
+  )
   const [sort, setSort] = React.useState<SortState | null>(null)
   const [selected, setSelected] = React.useState<SelectionState>(emptySelection)
 
@@ -220,8 +223,9 @@ export function ListScreen<T>({
     setSort((prev) => cycleSort(prev, key))
   }
 
+  // Every filter typed outside the advanced panel is a plain substring search.
   function setFilter(key: string, value: string) {
-    setFilters((prev) => ({ ...prev, [key]: value }))
+    setFilters((prev) => ({ ...prev, [key]: { op: "contains", value } }))
   }
 
   function clearFilters() {
@@ -240,7 +244,7 @@ export function ListScreen<T>({
     setJustCreated(false)
   }
 
-  const hasActiveFilter = Object.values(filters).some((v) => v.trim() !== "")
+  const filtersActive = hasActiveFilter(filters)
   const hasCreateInput = Object.values(createDraft).some((v) => v.trim() !== "")
 
   return (
@@ -262,14 +266,14 @@ export function ListScreen<T>({
                 }
               >
                 <SlidersHorizontal />
-                {hasActiveFilter && (
+                {filtersActive && (
                   <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
                 )}
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 gap-3">
                 <PopoverHeader className="flex-row items-center justify-between">
                   <PopoverTitle>Advanced search</PopoverTitle>
-                  {hasActiveFilter && (
+                  {filtersActive && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -291,7 +295,7 @@ export function ListScreen<T>({
                       </label>
                       <Input
                         id={`adv-${column.key}`}
-                        value={filters[column.key] ?? ""}
+                        value={filters[column.key]?.value ?? ""}
                         onChange={(event) =>
                           setFilter(column.key, event.target.value)
                         }
@@ -471,17 +475,17 @@ export function ListScreen<T>({
                         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           aria-label={`Search ${column.header}`}
-                          value={filters[column.key] ?? ""}
+                          value={filters[column.key]?.value ?? ""}
                           placeholder={`Search ${column.header.toLowerCase()}…`}
                           onChange={(event) =>
                             setFilter(column.key, event.target.value)
                           }
                           className={cn(
                             "pl-7",
-                            isLastFilter && hasActiveFilter && "pr-7"
+                            isLastFilter && filtersActive && "pr-7"
                           )}
                         />
-                        {isLastFilter && hasActiveFilter && (
+                        {isLastFilter && filtersActive && (
                           <button
                             type="button"
                             onClick={clearFilters}
