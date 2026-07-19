@@ -170,7 +170,7 @@ export function HeaderSearch() {
  * trigger a cascading render). The server snapshot renders "⌘"; the client
  * corrects it to "Ctrl" off-Apple during hydration.
  */
-function MetaKey() {
+export function MetaKey() {
   const isMac = React.useSyncExternalStore(
     subscribeNever,
     () => /Mac|iPhone|iPad|iPod/.test(navigator.platform),
