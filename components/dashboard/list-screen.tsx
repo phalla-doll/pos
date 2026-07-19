@@ -15,6 +15,8 @@ import {
   Download,
   Ellipsis,
   FolderInput,
+  Funnel,
+  FunnelX,
   PackagePlus,
   Plus,
   Printer,
@@ -94,6 +96,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import {
@@ -736,58 +744,16 @@ export function ListScreen<T>({
           <TableHeader className="sticky top-0 z-10 bg-card [&_tr:last-child]:border-b-0 [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)]">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-0">
-                {/*
-                  The chevron sits *after* the checkbox, not before it: the
-                  body's checkboxes start at this column's left edge, so
-                  anything ahead of the header checkbox would push it out of
-                  line with the column of ticks underneath.
-                */}
-                <div className="flex items-center gap-1">
-                  <Checkbox
-                    aria-label="Select all rows"
-                    disabled={pageKeys.length === 0}
-                    checked={headerState === "all"}
-                    indeterminate={headerState === "some"}
-                    onCheckedChange={() =>
-                      setSelected((prev) => toggleAll(prev, pageKeys))
-                    }
-                    className={indeterminateDash}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowFilters((prev) => !prev)}
-                    aria-expanded={showFilters}
-                    aria-controls={filterRowId}
-                    aria-label={
-                      showFilters ? "Hide column search" : "Show column search"
-                    }
-                    className="flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {/*
-                      One rotating chevron rather than swapping two icons, so
-                      the state change is a movement the eye can follow — the
-                      row itself can't animate (see below).
-                    */}
-                    <ChevronDown
-                      className={cn(
-                        "size-3.5 transition-transform",
-                        !showFilters && "-rotate-90"
-                      )}
-                    />
-                  </button>
-                  {/*
-                    Collapsing must not hide a filter silently. The header's
-                    Search button already carries the dot for that, but it is
-                    across the screen from the row that vanished, so the mark
-                    is repeated on the control that did the hiding.
-                  */}
-                  {!showFilters && filtersActive && (
-                    <span
-                      aria-hidden
-                      className="size-1.5 shrink-0 rounded-full bg-primary"
-                    />
-                  )}
-                </div>
+                <Checkbox
+                  aria-label="Select all rows"
+                  disabled={pageKeys.length === 0}
+                  checked={headerState === "all"}
+                  indeterminate={headerState === "some"}
+                  onCheckedChange={() =>
+                    setSelected((prev) => toggleAll(prev, pageKeys))
+                  }
+                  className={indeterminateDash}
+                />
               </TableHead>
               {columns.map((column) => {
                 const active = sort?.key === column.key
@@ -834,18 +800,89 @@ export function ListScreen<T>({
                   </TableHead>
                 )
               })}
+              {/*
+                A trailing gutter column, mirroring the checkbox column on the
+                left: `w-0` so it takes only what the icon needs and the data
+                columns keep the rest. Every row carries an empty cell for it —
+                that is the cost of putting the control here rather than
+                crowding it into the last column's header, where it would sit
+                against that column's sort button and read as part of it.
+              */}
+              <TableHead className="w-0">
+                <div className="flex items-center justify-end gap-1">
+                  {/*
+                    Collapsing must not hide a filter silently. The header's
+                    Search button already carries the dot for that, but it is
+                    across the screen from the row that vanished, so the mark
+                    is repeated on the control that did the hiding. It leads
+                    the icon rather than trailing it, so the icon stays put
+                    against the table edge as the dot comes and goes.
+                  */}
+                  {!showFilters && filtersActive && (
+                    <span
+                      aria-hidden
+                      className="size-1.5 shrink-0 rounded-full bg-primary"
+                    />
+                  )}
+                  {/*
+                    A deliberate delay: this icon sits in the header the eye
+                    crosses on its way to the data, so an instant tooltip
+                    would fire on people who were never asking about it.
+                  */}
+                  <TooltipProvider delay={500}>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <button
+                            type="button"
+                            onClick={() => setShowFilters((prev) => !prev)}
+                            aria-expanded={showFilters}
+                            aria-controls={filterRowId}
+                            aria-label={
+                              showFilters
+                                ? "Hide column search"
+                                : "Show column search"
+                            }
+                            className={cn(
+                              "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground",
+                              showFilters && "text-foreground"
+                            )}
+                          />
+                        }
+                      >
+                        {/*
+                        The icon names what the click will *do*, not what is
+                        currently true: a struck-through funnel while the row
+                        is open reads as "close this", which is the action on
+                        offer — the open row itself already shows the state.
+                      */}
+                        {showFilters ? (
+                          <FunnelX className="size-3.5" />
+                        ) : (
+                          <Funnel className="size-3.5" />
+                        )}
+                      </TooltipTrigger>
+                      <TooltipContent align="end">
+                        {showFilters
+                          ? "Hide column search"
+                          : "Show column search"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </TableHead>
             </TableRow>
             {/*
               The search row: one input per filterable column, filtering the
               table live. It sticks under the header while the body scrolls,
-              and the chevron above collapses it — it starts hidden so the
+              and the filter icon above collapses it — it starts hidden so the
               table leads with data rather than with an empty query form.
 
               Mounted and unmounted rather than animated open: this is a `tr`
               inside a sticky `thead`, where the usual collapse trick (a
               wrapper transitioning `grid-rows-[0fr]` to `[1fr]`) has nowhere
               to live, and animating the row's own height fights the sticky
-              positioning. The chevron carries the motion instead.
+              positioning.
             */}
             {showFilters && (
               <TableRow id={filterRowId} className="hover:bg-transparent">
@@ -889,6 +926,8 @@ export function ListScreen<T>({
                     </TableHead>
                   )
                 })}
+                {/* Spacer under the toggle, matching the gutter column. */}
+                <TableHead className="w-0" />
               </TableRow>
             )}
           </TableHeader>
@@ -896,7 +935,7 @@ export function ListScreen<T>({
             {visibleRows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={columns.length + 1}
+                  colSpan={columns.length + 2}
                   className="h-32 text-center text-muted-foreground"
                 >
                   No results found.
@@ -948,6 +987,8 @@ export function ListScreen<T>({
                           {column.cell ? column.cell(row) : column.get(row)}
                         </TableCell>
                       ))}
+                      {/* Empty gutter cell under the filter toggle. */}
+                      <TableCell className="w-0" />
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-60">
                       {/* Base UI requires a group around a group label. */}
