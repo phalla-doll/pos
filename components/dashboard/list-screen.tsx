@@ -93,6 +93,32 @@ const indeterminateDash =
   "data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-indeterminate:[&_svg]:hidden before:absolute before:hidden before:h-0.5 before:w-2 before:rounded-full before:bg-current data-indeterminate:before:block"
 
 /**
+ * Whether a click on a row body means "select this row". Clicking the row is a
+ * shortcut for its checkbox, but the row is still ordinary text a user may want
+ * to read, copy, or interact with — so three cases opt out:
+ *
+ * - the click ended a drag that highlighted text (the selection is not collapsed)
+ * - it is the second click of a double-click, which selects a word
+ * - it landed on a control inside a cell (a link, button, or field from a custom
+ *   `cell` renderer), whose own behaviour should win
+ *
+ * Left as a DOM predicate rather than a `lib/` module: it is entirely a question
+ * about the event, with no state of ours to reason about.
+ */
+function isSelectionClick(event: React.MouseEvent<HTMLElement>): boolean {
+  if (event.detail > 1) return false
+  if (
+    (event.target as HTMLElement).closest(
+      "a, button, input, select, textarea, [role='checkbox']"
+    )
+  ) {
+    return false
+  }
+  const selection = window.getSelection()
+  return !selection || selection.isCollapsed
+}
+
+/**
  * A registry-driven list page: a screen header and a results table whose first
  * row is a fixed, per-column search bar. Typing in a column's input filters the
  * table live — there is no submit step. Creatable screens also get a "New"
@@ -444,6 +470,10 @@ export function ListScreen<T>({
                   <TableRow
                     key={key}
                     data-state={checked ? "selected" : undefined}
+                    onClick={(event) => {
+                      if (isSelectionClick(event)) toggleRowSelection(key)
+                    }}
+                    className="cursor-pointer"
                   >
                     <TableCell className="w-0">
                       <Checkbox
