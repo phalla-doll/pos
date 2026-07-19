@@ -66,6 +66,7 @@ import {
 import {
   Popover,
   PopoverContent,
+  PopoverDescription,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
@@ -405,13 +406,30 @@ export function ListScreen<T>({
               */}
               <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
                 <form onSubmit={applyAdvanced} className="flex flex-col">
-                  <PopoverHeader className="flex-row items-center justify-between px-4 pt-3 pb-2.5">
-                    <PopoverTitle>Advanced search</PopoverTitle>
+                  {/*
+                    `items-start` rather than `items-center`: the header is now
+                    two lines tall, and Clear belongs beside the title it sits
+                    with, not centred against the description below it.
+                  */}
+                  <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
+                    <div className="flex flex-col gap-1">
+                      <PopoverTitle>Search</PopoverTitle>
+                      {/*
+                        Says the thing the panel does not show on its own: that
+                        the conditions combine rather than replacing each other.
+                      */}
+                      <PopoverDescription>
+                        Match on several columns at once.
+                      </PopoverDescription>
+                    </div>
                     {draftActive && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="xs"
+                        // Shifted up to sit on the title's line, undoing the
+                        // button's own vertical slack against a one-line title.
+                        className="-mt-0.5 shrink-0"
                         onClick={() => setDraft({})}
                       >
                         Clear
