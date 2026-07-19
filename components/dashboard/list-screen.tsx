@@ -185,7 +185,7 @@ const indeterminateDash =
  * end — so they carry no handler and are listed as data rather than
  * hand-written twice, once in the header's Actions menu and once in a row's
  * context menu. Destructive delete is rendered separately, set apart by a
- * divider.
+ * divider — and in the header it is a button of its own beside the menu.
  */
 const bulkActions = [
   { label: "Export", icon: Download },
@@ -476,6 +476,29 @@ export function ListScreen<T>({
                   variant outranks a plain utility, and `cn` sees the two as
                   unrelated keys so it keeps both rather than replacing one.
                 */}
+                {/*
+                  Delete sits out here rather than at the foot of the Actions
+                  menu: it is the one entry there that can't be undone, and
+                  burying the irreversible action two clicks deep alongside
+                  reversible ones made it the hardest to reach and the easiest
+                  to hit by accident on the way past. Out here it is one click,
+                  visibly destructive, and still gated by the confirmation.
+
+                  It rides with the selection block, so it is absent rather
+                  than disabled when nothing is ticked — a permanently visible
+                  Delete is a threat the screen doesn't need to keep making.
+                */}
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="pr-3 pl-2.5"
+                >
+                  <Trash2 />
+                  {/* Just "Delete" — the count is two elements to the left,
+                      so "Delete 3 rows" would say it again in the same breath. */}
+                  Delete
+                </Button>
                 <Separator
                   orientation="vertical"
                   className="h-5 data-vertical:self-center"
@@ -531,14 +554,6 @@ export function ListScreen<T>({
                     </DropdownMenuItem>
                   )
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => setConfirmingDelete(true)}
-                >
-                  <Trash2 strokeWidth={1.5} />
-                  {rowWord("Delete", selectedCount)}
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             {/*
@@ -1101,7 +1116,7 @@ export function ListScreen<T>({
                       {/*
                         The right-click already made the selection match what
                         the menu acts on (`selectionForMenu`), so this opens the
-                        very same confirmation the header's Actions menu does.
+                        very same confirmation the header's Delete button does.
                       */}
                       <ContextMenuItem
                         variant="destructive"
@@ -1232,7 +1247,7 @@ export function ListScreen<T>({
       {/*
         Delete confirmation — the only irreversible action here, so it names
         the rows instead of asking "are you sure?" about an abstract count.
-        Both the header's Actions menu and a row's context menu open this
+        Both the header's Delete button and a row's context menu open this
         same dialog.
       */}
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
