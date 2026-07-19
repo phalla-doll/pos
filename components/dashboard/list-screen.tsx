@@ -17,6 +17,7 @@ import {
   FolderInput,
   Funnel,
   FunnelX,
+  ListChecks,
   PackagePlus,
   Plus,
   Printer,
@@ -55,7 +56,10 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -176,11 +180,12 @@ const indeterminateDash =
   "data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-indeterminate:[&_svg]:hidden before:absolute before:hidden before:h-0.5 before:w-2 before:rounded-full before:bg-current data-indeterminate:before:block"
 
 /**
- * The bulk-action bar's contents. Every entry is a UI-only stub until there is
- * a backend — they exist so the selection flow can be demoed end to end — so
- * they carry no handler and are listed as data rather than hand-written twice.
- * Destructive delete and "clear selection" are rendered separately, set apart
- * from these by a divider.
+ * The primary actions on a selection. Every entry is a UI-only stub until
+ * there is a backend — they exist so the selection flow can be demoed end to
+ * end — so they carry no handler and are listed as data rather than
+ * hand-written twice, once in the header's Actions menu and once in a row's
+ * context menu. Destructive delete is rendered separately, set apart by a
+ * divider.
  */
 const bulkActions = [
   { label: "Export", icon: Download },
@@ -188,7 +193,7 @@ const bulkActions = [
   { label: "Archive", icon: Archive },
 ] as const
 
-/** The overflow menu — lower-traffic actions, kept out of the bar itself. */
+/** Lower-traffic actions, sat below a divider from the primary ones. */
 const bulkMenuActions: {
   label: string
   icon: LucideIcon
@@ -433,12 +438,94 @@ export function ListScreen<T>({
   const hasCreateInput = Object.values(createDraft).some((v) => v.trim() !== "")
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
       <ScreenHeader
         label={label}
         description={description}
         actions={
           <div className="flex items-center gap-2">
+            {/*
+              The selection count and its Clear button appear only when there
+              is a selection: the actions beside them stay put and merely grey
+              out, so this leading pair is the only thing that moves — and a
+              permanent "0 selected" would be an odd thing to read.
+            */}
+            {selectedCount > 0 && (
+              <>
+                <span className="text-sm font-medium tabular-nums">
+                  {selectedCount} selected
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Clear selection"
+                  onClick={() => setSelected(emptySelection)}
+                >
+                  <X />
+                </Button>
+                <Separator orientation="vertical" className="h-5" />
+              </>
+            )}
+            {/*
+              Every bulk action behind one menu rather than a row of buttons:
+              this header already carries Search and New, and spelling the
+              actions out inline wrapped it onto a second line at laptop
+              widths. Disabled rather than hidden when nothing is ticked, so
+              the actions are discoverable before a selection exists.
+            */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={selectedCount === 0}
+                    className="pr-2.5 pl-2.5"
+                  />
+                }
+              >
+                <ListChecks />
+                Actions
+                <ChevronDown className="text-muted-foreground/70" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {/* Base UI requires a group around a group label. */}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-muted-foreground">
+                    {selectedCount > 1
+                      ? `${selectedCount} rows selected`
+                      : "1 row selected"}
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                {bulkActions.map(({ label: action, icon: Icon }) => (
+                  <DropdownMenuItem key={action}>
+                    <Icon strokeWidth={1.5} />
+                    {rowWord(action, selectedCount)}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                {bulkMenuActions.map(
+                  ({ label: action, icon: Icon, shortcut }) => (
+                    <DropdownMenuItem key={action}>
+                      <Icon strokeWidth={1.5} />
+                      {action}
+                      {shortcut && (
+                        <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
+                      )}
+                    </DropdownMenuItem>
+                  )
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  <Trash2 strokeWidth={1.5} />
+                  {rowWord("Delete", selectedCount)}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Popover open={advancedOpen} onOpenChange={openAdvanced}>
               <PopoverTrigger
                 render={
@@ -1010,8 +1097,8 @@ export function ListScreen<T>({
                       </ContextMenuItem>
                       <ContextMenuSeparator />
                       {/*
-                        The same actions the bulk bar offers, so a row's menu
-                        and the bar can't drift apart. Stubs, as there.
+                        The same actions the header's Actions menu offers, so
+                        the two can't drift apart. Stubs, as there.
                       */}
                       {bulkActions.map(({ label, icon: Icon }) => (
                         <ContextMenuItem key={label}>
@@ -1037,7 +1124,7 @@ export function ListScreen<T>({
                       {/*
                         The right-click already made the selection match what
                         the menu acts on (`selectionForMenu`), so this opens the
-                        very same confirmation the bulk bar does.
+                        very same confirmation the header's Actions menu does.
                       */}
                       <ContextMenuItem
                         variant="destructive"
@@ -1163,83 +1250,10 @@ export function ListScreen<T>({
       </div>
 
       {/*
-        Bulk-action bar — floats over the table while at least one row is
-        ticked. The actions are UI-only stubs until a backend exists; only
-        "Clear" does real work.
-      */}
-      {selectedCount > 0 && (
-        <div
-          role="toolbar"
-          aria-label="Bulk actions"
-          className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 animate-in items-center gap-1 rounded-xl border bg-popover p-1 pl-3 shadow-lg fade-in-0 slide-in-from-bottom-2"
-        >
-          <span className="text-sm font-medium tabular-nums">
-            {selectedCount} selected
-          </span>
-          <Separator orientation="vertical" className="mx-1 h-5" />
-          {bulkActions.map(({ label, icon: Icon }) => (
-            <Button key={label} type="button" variant="ghost" size="sm">
-              <Icon />
-              {label}
-            </Button>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-label="More actions"
-                />
-              }
-            >
-              <Ellipsis />
-            </DropdownMenuTrigger>
-            {/*
-              The popup defaults to the trigger's width (`w-(--anchor-width)`),
-              which is one icon button wide — so the labels need an explicit
-              width to sit on one line.
-            */}
-            <DropdownMenuContent align="end" side="top" className="w-52">
-              {bulkMenuActions.map(({ label, icon: Icon, shortcut }) => (
-                <DropdownMenuItem key={label}>
-                  <Icon strokeWidth={1.5} />
-                  {label}
-                  {shortcut && (
-                    <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Separator orientation="vertical" className="mx-1 h-5" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setConfirmingDelete(true)}
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 />
-            Delete
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Clear selection"
-            onClick={() => setSelected(emptySelection)}
-          >
-            <X />
-          </Button>
-        </div>
-      )}
-
-      {/*
         Delete confirmation — the only irreversible action here, so it names
         the rows instead of asking "are you sure?" about an abstract count.
-        Both the bulk bar and a row's context menu open this same dialog.
+        Both the header's Actions menu and a row's context menu open this
+        same dialog.
       */}
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="sm:max-w-md">
