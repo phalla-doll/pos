@@ -121,4 +121,15 @@ describe("real registry ↔ sidebar nav", () => {
       []
     )
   })
+
+  it("carries a full breadcrumb for the 4-level branches", () => {
+    const commands = flattenNav(sidebarNav)
+
+    expect(
+      commands.find((c) => c.screen.type === "balance-sheet")?.path
+    ).toEqual(["Reports", "Financials", "Statements"])
+    expect(
+      commands.find((c) => c.screen.type === "scheduled-jobs")?.path
+    ).toEqual(["Admin Tools", "System", "Maintenance"])
+  })
 })

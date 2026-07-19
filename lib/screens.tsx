@@ -27,6 +27,10 @@ import {
   DatabaseBackup,
   Percent,
   TrendingUp,
+  Scale,
+  CircleDollarSign,
+  Timer,
+  HardDrive,
   type LucideIcon,
 } from "lucide-react"
 
@@ -179,6 +183,16 @@ const screenDefs = {
     DatabaseBackup,
     "Create and restore backups of your data."
   ),
+  "scheduled-jobs": screen(
+    "Scheduled Jobs",
+    Timer,
+    "Review the background jobs queued and their run history."
+  ),
+  "cache-storage": screen(
+    "Cache & Storage",
+    HardDrive,
+    "Inspect cached data and reclaim storage space."
+  ),
   "customer-listing": listScreen(
     "Customer Listing",
     ListOrdered,
@@ -236,6 +250,16 @@ const screenDefs = {
     "Profit & Loss",
     TrendingUp,
     "Compare revenue against costs to see profitability."
+  ),
+  "balance-sheet": screen(
+    "Balance Sheet",
+    Scale,
+    "See assets, liabilities, and equity at a point in time."
+  ),
+  "cash-flow": screen(
+    "Cash Flow",
+    CircleDollarSign,
+    "Follow cash moving in and out over a period."
   ),
   suppliers: screen(
     "Suppliers",

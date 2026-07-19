@@ -1,4 +1,12 @@
-import { BookOpen, Server, Users, Wallet, Wrench } from "lucide-react"
+import {
+  BookOpen,
+  FileSpreadsheet,
+  Hammer,
+  Server,
+  Users,
+  Wallet,
+  Wrench,
+} from "lucide-react"
 
 import { screens, type Screen, type ScreenType } from "@/lib/screens"
 
@@ -7,7 +15,7 @@ import { screens, type Screen, type ScreenType } from "@/lib/screens"
  * collapsible `group`. A group is not tab-able itself — it only expands
  * to reveal its children, which are themselves nav entries. Because
  * children are `NavEntry[]`, groups can nest to any depth (the sidebar
- * renders each level recursively), giving 3-level menus and beyond.
+ * renders each level recursively), giving 3- and 4-level menus and beyond.
  */
 export type NavEntry =
   | { kind: "screen"; screen: Screen }
@@ -42,6 +50,11 @@ export const sidebarNav: NavEntry[] = [
     group("System", <Server strokeWidth={1.5} />, [
       leaf(s["audit-logs"]),
       leaf(s.backups),
+      // 4-level: … › System › Maintenance › { Scheduled Jobs, Cache & Storage }
+      group("Maintenance", <Hammer strokeWidth={1.5} />, [
+        leaf(s["scheduled-jobs"]),
+        leaf(s["cache-storage"]),
+      ]),
     ]),
   ]),
   group("Customers", <Users strokeWidth={1.5} />, [
@@ -57,6 +70,11 @@ export const sidebarNav: NavEntry[] = [
     group("Financials", <Wallet strokeWidth={1.5} />, [
       leaf(s["tax-report"]),
       leaf(s["profit-loss"]),
+      // 4-level: … › Financials › Statements › { Balance Sheet, Cash Flow }
+      group("Statements", <FileSpreadsheet strokeWidth={1.5} />, [
+        leaf(s["balance-sheet"]),
+        leaf(s["cash-flow"]),
+      ]),
     ]),
   ]),
   leaf(s.suppliers),
