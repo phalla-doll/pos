@@ -16,7 +16,12 @@ export function ScreenHeader({
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-primary">
+        {/* Dark mode brightens the title off `--primary` rather than using it
+            directly: the dark token sits at L 0.424, tuned to carry white
+            `--primary-foreground` on a filled button, which leaves it too dim
+            to read as *text* against an L 0.145 background. Same hue, lifted
+            lightness — a call-site override so buttons keep the real token. */}
+        <h1 className="text-2xl font-semibold tracking-tight text-primary dark:text-[oklch(0.72_0.18_265.638)]">
           {label}
         </h1>
         <p className="text-sm text-muted-foreground">{description}</p>
