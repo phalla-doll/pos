@@ -464,7 +464,22 @@ export function ListScreen<T>({
                 >
                   <X />
                 </Button>
-                <Separator orientation="vertical" className="h-5" />
+                {/*
+                  The vendored separator carries `data-vertical:self-stretch`,
+                  for the case where it should span its row. Fixing the height
+                  with `h-5` doesn't undo that alignment — it just pins a 20px
+                  rule to the top of a 32px row, which reads as the count
+                  beside it sitting low.
+
+                  The override has to repeat the `data-vertical:` prefix. A
+                  bare `self-center` loses twice over: an attribute-selector
+                  variant outranks a plain utility, and `cn` sees the two as
+                  unrelated keys so it keeps both rather than replacing one.
+                */}
+                <Separator
+                  orientation="vertical"
+                  className="h-5 data-vertical:self-center"
+                />
               </>
             )}
             {/*
@@ -1117,7 +1132,10 @@ export function ListScreen<T>({
               ? "No rows"
               : `${pagination.from}–${pagination.to} of ${pagination.total}`}
           </span>
-          <Separator orientation="vertical" className="h-4" />
+          <Separator
+            orientation="vertical"
+            className="h-4 data-vertical:self-center"
+          />
           <label htmlFor={pageSizeId} className="shrink-0">
             Rows per page
           </label>
