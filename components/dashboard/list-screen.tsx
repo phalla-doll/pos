@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronsUpDown,
   ChevronUp,
+  Check,
   ClipboardCheck,
   Copy,
   Download,
@@ -36,6 +37,7 @@ import { Separator } from "@/components/ui/separator"
 import {
   InputGroup,
   InputGroupAddon,
+  InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
 import {
@@ -56,9 +58,12 @@ import {
 import { cn } from "@/lib/utils"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import {
+  columnKind,
   cycleSort,
   deriveRows,
   hasActiveFilter,
+  operatorsByKind,
+  type FilterOperator,
   type FilterState,
   type ListColumn,
   type SortState,
@@ -178,8 +183,8 @@ export function ListScreen<T>({
   rowKey,
   creatable,
 }: ListScreenProps<T>) {
-  // `filters` is the live per-column search query and `query` is the global
-  // "search any column" box in the header — both filter the table on every
+  // `filters` is what the table is filtered by right now and `query` is the
+  // global "search any column" box in the header — both apply on every
   // keystroke. `createDraft` is a separate bucket so search text and entry
   // text never bleed into each other.
   const [filters, setFilters] = React.useState<FilterState>({})
@@ -189,6 +194,13 @@ export function ListScreen<T>({
   )
   const [sort, setSort] = React.useState<SortState | null>(null)
   const [selected, setSelected] = React.useState<SelectionState>(emptySelection)
+
+  // The advanced panel edits a *draft* of the same filters and only commits it
+  // on Apply, so a half-built query never disturbs the table underneath. It is
+  // seeded from the live filters each time the panel opens, which is what makes
+  // the two surfaces one filter set rather than two.
+  const [advancedOpen, setAdvancedOpen] = React.useState(false)
+  const [draft, setDraft] = React.useState<FilterState>({})
 
   // The create form is hidden until the user opts in via the "New" button.
   const [showCreate, setShowCreate] = React.useState(false)
@@ -223,13 +235,41 @@ export function ListScreen<T>({
     setSort((prev) => cycleSort(prev, key))
   }
 
-  // Every filter typed outside the advanced panel is a plain substring search.
+  // The inline row is the quick path: it always searches for a substring, so
+  // typing there resets that column to `contains` rather than silently reusing
+  // an operator the user picked in the panel and can't see from here.
   function setFilter(key: string, value: string) {
     setFilters((prev) => ({ ...prev, [key]: { op: "contains", value } }))
   }
 
   function clearFilters() {
     setFilters({})
+    setDraft({})
+  }
+
+  function openAdvanced(open: boolean) {
+    if (open) setDraft(filters)
+    setAdvancedOpen(open)
+  }
+
+  function setDraftValue(key: string, value: string, fallback: FilterOperator) {
+    setDraft((prev) => ({
+      ...prev,
+      [key]: { op: prev[key]?.op ?? fallback, value },
+    }))
+  }
+
+  function setDraftOperator(key: string, op: FilterOperator) {
+    setDraft((prev) => ({
+      ...prev,
+      [key]: { op, value: prev[key]?.value ?? "" },
+    }))
+  }
+
+  function applyAdvanced(event: React.FormEvent) {
+    event.preventDefault()
+    setFilters(draft)
+    setAdvancedOpen(false)
   }
 
   function handleCreateSubmit(event: React.FormEvent) {
@@ -245,6 +285,7 @@ export function ListScreen<T>({
   }
 
   const filtersActive = hasActiveFilter(filters)
+  const draftActive = hasActiveFilter(draft)
   const hasCreateInput = Object.values(createDraft).some((v) => v.trim() !== "")
 
   return (
@@ -254,7 +295,7 @@ export function ListScreen<T>({
         description={description}
         actions={
           <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={advancedOpen} onOpenChange={openAdvanced}>
               <PopoverTrigger
                 render={
                   <Button
@@ -270,40 +311,122 @@ export function ListScreen<T>({
                   <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
                 )}
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 gap-3">
-                <PopoverHeader className="flex-row items-center justify-between">
-                  <PopoverTitle>Advanced search</PopoverTitle>
-                  {filtersActive && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      onClick={clearFilters}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </PopoverHeader>
-                <div className="flex flex-col gap-2.5">
-                  {filterable.map((column) => (
-                    <div key={column.key} className="flex flex-col gap-1.5">
-                      <label
-                        htmlFor={`adv-${column.key}`}
-                        className="text-xs font-medium text-muted-foreground"
+              {/*
+                Each row is one condition — operator and value in a single
+                field, the operator as an inline addon rather than a separate
+                control beside the input. Nothing here touches the table until
+                Apply.
+              */}
+              <PopoverContent align="start" className="w-80 gap-3">
+                <form onSubmit={applyAdvanced} className="flex flex-col gap-3">
+                  <PopoverHeader className="flex-row items-center justify-between">
+                    <PopoverTitle>Advanced search</PopoverTitle>
+                    {draftActive && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => setDraft({})}
                       >
-                        {column.header}
-                      </label>
-                      <Input
-                        id={`adv-${column.key}`}
-                        value={filters[column.key]?.value ?? ""}
-                        onChange={(event) =>
-                          setFilter(column.key, event.target.value)
-                        }
-                        placeholder={`Search ${column.header.toLowerCase()}…`}
-                      />
-                    </div>
-                  ))}
-                </div>
+                        Clear
+                      </Button>
+                    )}
+                  </PopoverHeader>
+                  {/*
+                    A wide table has more columns than fit on screen, so the
+                    conditions scroll and the footer stays put — Apply must
+                    never be the thing that gets pushed out of view.
+                  */}
+                  <div className="flex max-h-[min(24rem,50vh)] flex-col gap-2.5 overflow-y-auto">
+                    {filterable.map((column) => {
+                      const operators =
+                        operatorsByKind[columnKind(column, rows)]
+                      const active =
+                        operators.find((o) => o.op === draft[column.key]?.op) ??
+                        operators[0]
+                      return (
+                        <div key={column.key} className="flex flex-col gap-1.5">
+                          <label
+                            htmlFor={`adv-${column.key}`}
+                            className="text-xs font-medium text-muted-foreground"
+                          >
+                            {column.header}
+                          </label>
+                          <InputGroup>
+                            <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger
+                                  render={
+                                    <InputGroupButton
+                                      aria-label={`${column.header} operator`}
+                                      className="mr-1.5 font-normal"
+                                    />
+                                  }
+                                >
+                                  {active.short}
+                                  <ChevronDown className="text-muted-foreground/70" />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="start"
+                                  className="w-56"
+                                >
+                                  {operators.map((operator) => (
+                                    <DropdownMenuItem
+                                      key={operator.op}
+                                      onClick={() =>
+                                        setDraftOperator(
+                                          column.key,
+                                          operator.op
+                                        )
+                                      }
+                                    >
+                                      <span className="w-14 shrink-0 text-muted-foreground">
+                                        {operator.short}
+                                      </span>
+                                      {operator.label}
+                                      {operator.op === active.op && (
+                                        <Check className="ml-auto" />
+                                      )}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </InputGroupAddon>
+                            <InputGroupInput
+                              id={`adv-${column.key}`}
+                              value={draft[column.key]?.value ?? ""}
+                              onChange={(event) =>
+                                setDraftValue(
+                                  column.key,
+                                  event.target.value,
+                                  active.op
+                                )
+                              }
+                              placeholder={`${column.header} value…`}
+                            />
+                          </InputGroup>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    {filtersActive && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mr-auto"
+                        onClick={clearFilters}
+                      >
+                        Reset all
+                      </Button>
+                    )}
+                    <Button type="submit" size="sm" className="pr-3 pl-2.5">
+                      <Search />
+                      Apply
+                    </Button>
+                  </div>
+                </form>
               </PopoverContent>
             </Popover>
             <InputGroup className="w-56 sm:w-64">
