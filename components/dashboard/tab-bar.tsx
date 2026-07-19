@@ -9,11 +9,17 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { getScreen } from "@/lib/screens"
+import { partitionTabs, type ChipWidths } from "@/lib/tab-overflow"
 import type { Tab } from "@/hooks/use-tabs"
-import { Copy, X, XCircle, SquareX } from "lucide-react"
+import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
 
 /**
  * Height + bottom edge of the tab-bar row. The strip itself is transparent
@@ -21,9 +27,9 @@ import { Copy, X, XCircle, SquareX } from "lucide-react"
  * punches through — its fill + flared corners erase the line beneath it, so it
  * reads as connected to the content below, browser-tab style. The hairline is
  * an *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the
- * content box (border-box), leaving the horizontal ScrollArea's viewport 1px
- * shorter than the strip and forcing a stray vertical scrollbar. A shadow
- * takes no layout space, so the viewport fills the strip exactly, and the
+ * content box (border-box), so the strip's own children would sit 1px shy of
+ * its full height and the h-9 chips would no longer meet the baseline cleanly.
+ * A shadow takes no layout space, so the row fills the strip exactly and the
  * active tab's background simply paints over the inset line — no `-mb-px`
  * overflow needed. Shared so the Suspense fallback (`TabWorkspaceFallback`)
  * matches the bar's size exactly, instead of re-declaring the constant.
@@ -41,10 +47,28 @@ export type TabBarProps = {
   onCloseAll: () => void
 }
 
+/** `gap-1` and `px-2` on the strip, in px — the partitioner needs them numerically. */
+const CHIP_GAP = 4
+const STRIP_PADDING = 16
+
 /**
- * Horizontal strip of open tabs. Each tab shows the screen's icon + label,
- * a hover-revealed "more" button for tab actions, and a close affordance.
- * Overflows horizontally via ScrollArea.
+ * Width assumed for the "More" button before it has ever rendered. Only used on
+ * the single commit where overflow first appears: the button isn't in the DOM
+ * until the partition says it's needed, so its true width can't be known then.
+ * An over-estimate is the safe direction — it hides one chip too many for a
+ * frame rather than overflowing the strip.
+ */
+const MORE_WIDTH_ESTIMATE = 92
+
+/**
+ * Horizontal strip of open tabs. Each tab shows the screen's icon + label and a
+ * close affordance; the rest of the actions live in its right-click menu.
+ *
+ * The strip never scrolls. Tabs that don't fit collapse behind a "More" button
+ * pinned to the end of the run — every tab stays one click away at a fixed
+ * screen position, instead of somewhere along a scroll track the user has to go
+ * find. `partitionTabs` decides the split (and guarantees the active tab is in
+ * the visible half); this component only measures and renders.
  */
 export function TabBar({
   tabs,
@@ -55,34 +79,141 @@ export function TabBar({
   onCloseOthers,
   onCloseAll,
 }: TabBarProps) {
+  const stripRef = React.useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = React.useState(0)
+  const [widths, setWidths] = React.useState<ChipWidths>({})
+  const [moreWidth, setMoreWidth] = React.useState(MORE_WIDTH_ESTIMATE)
+
+  React.useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    const observer = new ResizeObserver(() => {
+      setContainerWidth(strip.clientWidth - STRIP_PADDING)
+    })
+    observer.observe(strip)
+    return () => observer.disconnect()
+  }, [])
+
+  // Record each rendered chip's width against its screen type. Widths are
+  // keyed by type (not tab id) precisely so a type measured once stays known
+  // while other tabs of that type sit in the overflow menu with no box of their
+  // own — see `ChipWidths`. Only a genuinely new width writes state, so this
+  // settles after the first paint instead of looping.
+  const measureChip = React.useCallback((screenType: string, width: number) => {
+    setWidths((prev) =>
+      prev[screenType] === width ? prev : { ...prev, [screenType]: width }
+    )
+  }, [])
+
+  const { visible, overflow } = partitionTabs({
+    tabs,
+    widths,
+    activeId,
+    containerWidth,
+    moreWidth,
+    gap: CHIP_GAP,
+  })
+
   return (
     <div className={cn("flex items-end", TAB_BAR_ROW)}>
-      <ScrollArea className="size-full">
-        {/* Tabs sit flush to the bottom of the strip so the active tab's
-            flared corners can merge into the content area beneath. */}
-        <div className="flex h-10 items-end gap-1 px-2">
-          {tabs.map((tab) => (
-            <TabChip
-              key={tab.id}
-              tab={tab}
-              isActive={tab.id === activeId}
-              onSelect={onSelect}
-              onClose={onClose}
-              onDuplicate={onDuplicate}
-              onCloseOthers={onCloseOthers}
-              onCloseAll={onCloseAll}
-            />
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      {/* Tabs sit flush to the bottom of the strip so the active tab's flared
+          corners can merge into the content area beneath. `overflow-hidden`
+          guards the measuring commit, where every chip renders at once so its
+          width can be read — without it that pass would blow out the layout. */}
+      <div
+        ref={stripRef}
+        className="flex h-10 min-w-0 flex-1 items-end gap-1 overflow-hidden px-2"
+      >
+        {visible.map((tab) => (
+          <TabChip
+            key={tab.id}
+            tab={tab}
+            isActive={tab.id === activeId}
+            onMeasure={measureChip}
+            onSelect={onSelect}
+            onClose={onClose}
+            onDuplicate={onDuplicate}
+            onCloseOthers={onCloseOthers}
+            onCloseAll={onCloseAll}
+          />
+        ))}
+        {overflow.length > 0 && (
+          <OverflowMenu
+            tabs={overflow}
+            onMeasure={setMoreWidth}
+            onSelect={onSelect}
+          />
+        )}
+      </div>
     </div>
+  )
+}
+
+type OverflowMenuProps = {
+  tabs: Tab[]
+  onMeasure: (width: number) => void
+  onSelect: (id: string) => void
+}
+
+/**
+ * The "More" button and its list of collapsed tabs. Selecting one focuses it —
+ * and because `partitionTabs` pins the active tab, the chosen tab immediately
+ * takes a visible slot, so the menu doubles as the way back out of overflow.
+ */
+function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
+  const measure = React.useCallback(
+    (node: HTMLButtonElement | null) => {
+      if (node) onMeasure(node.offsetWidth)
+    },
+    [onMeasure]
+  )
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            ref={measure}
+            type="button"
+            aria-label={`Show ${tabs.length} more ${tabs.length === 1 ? "tab" : "tabs"}`}
+            className="flex h-9 shrink-0 items-center gap-1 rounded-t-lg px-2.5 text-sm font-normal text-muted-foreground transition-colors duration-150 hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+          >
+            <span>More</span>
+            <span className="tabular-nums">{tabs.length}</span>
+            <ChevronDown strokeWidth={1.5} />
+          </button>
+        }
+      />
+      {/* `w-auto` is load-bearing: the menu's default is `w-(--anchor-width)`,
+          which sizes it to its trigger. That suits a select, but here the
+          trigger is a narrow "More n" button, so screen labels would be
+          clipped by the very button that hides them. Size to the labels
+          instead, with a max so one long name can't stretch the menu across
+          the strip — only then does the item's `truncate` come into play. */}
+      <DropdownMenuContent
+        align="end"
+        className="max-h-80 w-auto max-w-72 min-w-44 overflow-y-auto"
+      >
+        {tabs.map((tab) => {
+          const screen = getScreen(tab.screenType)
+          return (
+            <DropdownMenuItem key={tab.id} onClick={() => onSelect(tab.id)}>
+              {screen?.icon}
+              <span className="truncate">
+                {screen?.label ?? tab.screenType}
+              </span>
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
 type TabChipProps = {
   tab: Tab
   isActive: boolean
+  onMeasure: (screenType: string, width: number) => void
   onSelect: (id: string) => void
   onClose: (id: string) => void
   onDuplicate: (id: string) => void
@@ -93,6 +224,7 @@ type TabChipProps = {
 function TabChip({
   tab,
   isActive,
+  onMeasure,
   onSelect,
   onClose,
   onDuplicate,
@@ -103,11 +235,20 @@ function TabChip({
   const label = screen?.label ?? tab.screenType
   const icon = screen?.icon
 
+  const { screenType } = tab
+  const measure = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node) onMeasure(screenType, node.offsetWidth)
+    },
+    [onMeasure, screenType]
+  )
+
   return (
     <ContextMenu>
       <ContextMenuTrigger
         render={
           <div
+            ref={measure}
             data-slot="tab-chip"
             data-active={isActive}
             className={cn(
