@@ -33,13 +33,22 @@ export default function DashboardLayout({
           {/* The header shrinks with the collapsed rail. */}
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
             <div className="flex flex-1 items-center gap-2 px-4">
+              {/* Mobile only. On a desktop the sidebar carries its own
+                  controls — collapse in its header, expand in its footer — so
+                  a third toggle out here is redundant. Below `md` the sidebar
+                  is an off-canvas sheet with nothing on screen to press, which
+                  is the one case that needs an outside way in. The breakpoint
+                  is `useIsMobile`'s 768px, so the trigger appears exactly when
+                  the sidebar becomes that sheet. */}
               <Tooltip>
-                <TooltipTrigger render={<SidebarTrigger className="-ml-1" />} />
+                <TooltipTrigger
+                  render={<SidebarTrigger className="-ml-1 md:hidden" />}
+                />
                 <TooltipContent>Toggle Sidebar</TooltipContent>
               </Tooltip>
               <Separator
                 orientation="vertical"
-                className="mr-2 data-vertical:h-4 data-vertical:self-auto"
+                className="mr-2 md:hidden data-vertical:h-4 data-vertical:self-auto"
               />
               <Breadcrumb>
                 <BreadcrumbList>
