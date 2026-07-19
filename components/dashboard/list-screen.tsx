@@ -510,7 +510,7 @@ export function ListScreen<T>({
                         Reset all
                       </Button>
                     )}
-                    <Button type="submit" size="sm" className="pr-3 pl-2.5">
+                    <Button type="submit" className="pr-3 pl-2.5">
                       <Search />
                       Apply
                     </Button>
