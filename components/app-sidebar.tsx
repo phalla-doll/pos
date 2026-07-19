@@ -5,6 +5,7 @@ import * as React from "react"
 import { NavMain, NavMainLive } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { SidebarBrand } from "@/components/sidebar-brand"
+import { SidebarExpandButton } from "@/components/sidebar-expand"
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +39,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </React.Suspense>
       </SidebarContent>
       <SidebarFooter>
+        <SidebarExpandButton />
         <NavUser user={sidebarUser} />
       </SidebarFooter>
       <SidebarRail />
