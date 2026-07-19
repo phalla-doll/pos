@@ -17,7 +17,6 @@ import {
   Plus,
   Printer,
   Search,
-  SlidersHorizontal,
   SquareCheck,
   Tag,
   Trash2,
@@ -218,12 +217,10 @@ export function ListScreen<T>({
   rowKey,
   creatable,
 }: ListScreenProps<T>) {
-  // `filters` is what the table is filtered by right now and `query` is the
-  // global "search any column" box in the header — both apply on every
-  // keystroke. `createDraft` is a separate bucket so search text and entry
-  // text never bleed into each other.
+  // `filters` is what the table is filtered by right now, applied on every
+  // keystroke of the per-column row. `createDraft` is a separate bucket so
+  // search text and entry text never bleed into each other.
   const [filters, setFilters] = React.useState<FilterState>({})
-  const [query, setQuery] = React.useState("")
   const [createDraft, setCreateDraft] = React.useState<Record<string, string>>(
     {}
   )
@@ -253,8 +250,8 @@ export function ListScreen<T>({
   // The one derivation that answers "which rows, in what order" — used for the
   // count, the empty state, and the table body alike (no filtered/sorted split).
   const visibleRows = React.useMemo(
-    () => deriveRows(rows, columns, filters, sort, query),
-    [rows, columns, filters, sort, query]
+    () => deriveRows(rows, columns, filters, sort),
+    [rows, columns, filters, sort]
   )
 
   // Selection is keyed by row identity, so the header checkbox reflects only
@@ -381,14 +378,23 @@ export function ListScreen<T>({
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    aria-label="Advanced search"
+                    className="pr-3 pl-2.5"
                   />
                 }
               >
-                <SlidersHorizontal />
+                <Search />
+                Search
+                {/*
+                  Inline rather than a corner badge: the dot marks a filter set
+                  that the panel is currently hiding, and reading in the flow of
+                  the label is what makes it a caption on the button instead of
+                  decoration floating beside it.
+                */}
                 {filtersActive && (
-                  <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
+                  <span
+                    aria-hidden
+                    className="size-1.5 rounded-full bg-primary"
+                  />
                 )}
               </PopoverTrigger>
               {/*
@@ -512,17 +518,6 @@ export function ListScreen<T>({
                 </form>
               </PopoverContent>
             </Popover>
-            <InputGroup className="w-56 sm:w-64">
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-              <InputGroupInput
-                aria-label="Search all columns"
-                placeholder="Search…"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </InputGroup>
             {creatable && (
               <Button
                 type="button"
