@@ -41,6 +41,15 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -84,6 +93,7 @@ import {
   type ListColumn,
   type SortState,
 } from "@/lib/list-rows"
+import { deletePlan } from "@/lib/list-delete"
 import {
   emptySelection,
   selectionForMenu,
@@ -220,6 +230,10 @@ export function ListScreen<T>({
   const [sort, setSort] = React.useState<SortState | null>(null)
   const [selected, setSelected] = React.useState<SelectionState>(emptySelection)
 
+  // Delete is the one action that can't be undone by clicking again, so it
+  // goes through a confirmation that spells out exactly which rows it means.
+  const [confirmingDelete, setConfirmingDelete] = React.useState(false)
+
   // The advanced panel edits a *draft* of the same filters and only commits it
   // on Apply, so a half-built query never disturbs the table underneath. It is
   // seeded from the live filters each time the panel opens, which is what makes
@@ -252,6 +266,25 @@ export function ListScreen<T>({
   const headerState = selectionSummary(selected, visibleKeys)
   const selectedCount = selected.size
 
+  // Deletion reaches every selected row, including ones a filter is currently
+  // hiding — so the plan is built from *all* rows, with the visible keys passed
+  // in only so the dialog can warn about the rows off screen.
+  const allKeys = React.useMemo(
+    () => rows.map((row, index) => rowKey?.(row, index) ?? index),
+    [rows, rowKey]
+  )
+  const plan = React.useMemo(
+    () =>
+      deletePlan({
+        rows,
+        keys: allKeys,
+        columns,
+        targets: selected,
+        visible: visibleKeys,
+      }),
+    [rows, allKeys, columns, selected, visibleKeys]
+  )
+
   function toggleRowSelection(key: RowKey) {
     setSelected((prev) => toggleRow(prev, key))
   }
@@ -269,6 +302,13 @@ export function ListScreen<T>({
     } catch {
       // ignored — copying is a convenience, not a state change
     }
+  }
+
+  // UI-only stub, like the rest of the bulk actions: there is no backend to
+  // delete from, so confirming just closes the dialog and drops the selection.
+  function confirmDelete() {
+    setSelected(emptySelection)
+    setConfirmingDelete(false)
   }
 
   function toggleSort(key: string) {
@@ -765,7 +805,15 @@ export function ListScreen<T>({
                         </ContextMenuSubContent>
                       </ContextMenuSub>
                       <ContextMenuSeparator />
-                      <ContextMenuItem variant="destructive">
+                      {/*
+                        The right-click already made the selection match what
+                        the menu acts on (`selectionForMenu`), so this opens the
+                        very same confirmation the bulk bar does.
+                      */}
+                      <ContextMenuItem
+                        variant="destructive"
+                        onClick={() => setConfirmingDelete(true)}
+                      >
                         <Trash2 strokeWidth={1.5} />
                         <span>{rowWord("Delete", targets.length)}</span>
                       </ContextMenuItem>
@@ -834,6 +882,7 @@ export function ListScreen<T>({
             type="button"
             variant="ghost"
             size="sm"
+            onClick={() => setConfirmingDelete(true)}
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 />
@@ -850,6 +899,71 @@ export function ListScreen<T>({
           </Button>
         </div>
       )}
+
+      {/*
+        Delete confirmation — the only irreversible action here, so it names
+        the rows instead of asking "are you sure?" about an abstract count.
+        Both the bulk bar and a row's context menu open this same dialog.
+      */}
+      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{rowWord("Delete", plan.count)}?</DialogTitle>
+            <DialogDescription>
+              {plan.count > 1 ? "These rows" : "This row"} will be removed from{" "}
+              {label}. This can&apos;t be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/*
+            The summary: one plain row per item, separated by rules — the name
+            on the left, enough columns on the right to tell near-identical
+            names apart. Long selections scroll rather than push the buttons
+            off screen.
+          */}
+          <div className="max-h-56 divide-y overflow-y-auto rounded-lg border">
+            {plan.preview.map((row) => (
+              <div
+                key={row.key}
+                className="flex items-baseline justify-between gap-4 px-3 py-2"
+              >
+                <span className="truncate font-medium">{row.primary}</span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {row.details.map((detail) => detail.value).join(" · ")}
+                </span>
+              </div>
+            ))}
+            {plan.more > 0 && (
+              <p className="px-3 py-2 text-xs text-muted-foreground">
+                and {plan.more} more…
+              </p>
+            )}
+          </div>
+
+          {/*
+            Selection outlives filtering, so the dialog can be about rows that
+            aren't on screen. Say so — otherwise the count looks like a bug.
+          */}
+          {plan.hidden > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {plan.hidden === 1
+                ? "1 of these rows is"
+                : `${plan.hidden} of these rows are`}{" "}
+              hidden by the current filters.
+            </p>
+          )}
+
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button type="button" variant="destructive" onClick={confirmDelete}>
+              <Trash2 />
+              {rowWord("Delete", plan.count)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
