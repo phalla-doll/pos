@@ -640,7 +640,17 @@ export function ListScreen<T>({
       )}
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      {/*
+        Body rows sit a notch below the table's `text-sm`: the header, filter
+        row, and controls keep that size, so shrinking only the data lets a
+        wide table fit more per screen without the chrome shrinking with it.
+        The line-height stays inherited, which keeps the rows from tightening.
+
+        `py-1.5` trims the cell padding to match — vertical only, since the
+        horizontal padding is shared with the header cells above and changing
+        it here would knock the columns out of alignment with them.
+      */}
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
@@ -779,7 +789,11 @@ export function ListScreen<T>({
                           onContextMenu={() =>
                             setSelected((prev) => selectionForMenu(prev, key))
                           }
-                          className="cursor-pointer"
+                          // The vendored row hovers at `bg-muted/50`, which
+                          // barely reads against the card. These rows are
+                          // clickable, so the hover is a target indicator
+                          // rather than decoration — full `bg-muted` earns it.
+                          className="cursor-pointer hover:bg-muted"
                         />
                       }
                     >
