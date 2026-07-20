@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Save, X } from "lucide-react"
+import { Eraser, Plus, Save, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -88,6 +88,18 @@ export function RecordForm<T>({
   )
   const [saved, setSaved] = React.useState(false)
 
+  // Whether there is anything to clear. A field the user emptied by hand is
+  // still a key in `values`, so this asks what the inputs actually show rather
+  // than whether the object has been written to.
+  const dirty = Object.values(values).some((value) => value !== "")
+
+  // Back to the blank form the tab opened as — including the "Created" note,
+  // which described values that are no longer on screen.
+  function clearFields() {
+    setValues({})
+    setSaved(false)
+  }
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     // UI-only stub: no persistence yet.
@@ -119,20 +131,44 @@ export function RecordForm<T>({
             : `Editing ${param} in ${label}.`
         }
         actions={
-          // Closing is the workspace's job, so the button only exists inside
-          // one. It never isn't, in practice — but `useWorkspace` is allowed
-          // to answer null and this is cheaper than asserting it can't.
-          workspace && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => workspace.closeTab(tabId)}
-              className="pr-3 pl-2.5"
-            >
-              <X />
-              Close
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            {/*
+              Only on a draft. Here "clear" means one unambiguous thing —
+              empty every field — whereas on an edit form the same word could
+              mean either blanking the record or putting back what it said
+              when the tab opened, and a button that has to be guessed at is
+              worse than no button. Disabled rather than hidden while the form
+              is untouched, so it doesn't appear the moment you start typing.
+            */}
+            {creating && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!dirty}
+                onClick={clearFields}
+                className="pr-3 pl-2.5"
+              >
+                <Eraser />
+                Clear
+              </Button>
+            )}
+            {/*
+              Closing is the workspace's job, so the button only exists inside
+              one. It never isn't, in practice — but `useWorkspace` is allowed
+              to answer null and this is cheaper than asserting it can't.
+            */}
+            {workspace && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => workspace.closeTab(tabId)}
+                className="pr-3 pl-2.5"
+              >
+                <X />
+                Close
+              </Button>
+            )}
+          </div>
         }
       />
 
