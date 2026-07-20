@@ -924,8 +924,23 @@ export function ListScreen<T>({
                           : "descending"
                         : undefined
                     }
+                    // The whole cell is the sort target, so the whole cell is
+                    // what lights up — a hover that stopped at the label made
+                    // the header look like a button sitting in dead space,
+                    // when the dead space was clickable too.
+                    //
+                    // The handler lives here rather than on the button, and
+                    // the button deliberately has none: a click on the label
+                    // bubbles up to exactly one handler, and so does the click
+                    // event the button synthesises for Enter/Space, so the
+                    // keyboard path keeps working without sorting twice.
+                    onClick={
+                      sortable ? () => toggleSort(column.key) : undefined
+                    }
                     className={cn(
-                      column.align === "right" && "text-right tabular-nums"
+                      column.align === "right" && "text-right tabular-nums",
+                      sortable &&
+                        "group/sort cursor-pointer transition-colors select-none hover:bg-muted"
                     )}
                   >
                     {sortable ? (
@@ -933,9 +948,14 @@ export function ListScreen<T>({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => toggleSort(column.key)}
+                        // Its own hover surface is dropped: the cell behind it
+                        // now draws that, and two `bg-muted` layers would stack
+                        // into a darker patch the shape of the label.
                         className={cn(
-                          "-mx-2.5 h-8 font-medium text-muted-foreground hover:text-foreground",
+                          // Keyed off the cell's hover, not its own: the label
+                          // has to darken when the pointer is anywhere in the
+                          // column header, including the padding beside it.
+                          "-mx-2.5 h-8 font-medium text-muted-foreground group-hover/sort:text-foreground hover:bg-transparent",
                           active && "text-foreground"
                         )}
                       >
