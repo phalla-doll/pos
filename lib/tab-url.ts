@@ -31,10 +31,12 @@ const DASHBOARD = "/dashboard"
  * has to encode them; everything else rides the ordinary query-string encoding
  * nuqs applies to the whole value.
  *
- * An unknown screen is still rejected, so nothing outside the registry can
- * enter tab state — exactly what `parseAsStringLiteral` guaranteed before
- * params existed. The param itself is carried through as-is for now; no screen
- * produces one yet, so there is nothing to validate it against.
+ * Validation is the registry's, not this module's: an unknown screen is
+ * rejected, a param on a screen that declares no `detail` is dropped (leaving
+ * the bare screen rather than the whole tab), and a param the screen doesn't
+ * accept — a record that no longer exists, junk from a hand-edited URL — takes
+ * the tab with it. That way nothing invalid can enter tab state, exactly as
+ * `parseAsStringLiteral` guaranteed before params existed.
  */
 const parseAsScreenRef = createParser({
   parse(token: string): ScreenRef | null {
@@ -42,9 +44,12 @@ const parseAsScreenRef = createParser({
     const type = colon === -1 ? token : token.slice(0, colon)
     const screen = getScreen(type)
     if (!screen) return null
-    return colon === -1
-      ? { screenType: screen.type }
-      : { screenType: screen.type, param: token.slice(colon + 1) }
+    if (colon === -1) return { screenType: screen.type }
+
+    const param = token.slice(colon + 1)
+    if (!screen.detail) return { screenType: screen.type }
+    if (!screen.detail.accepts(param)) return null
+    return { screenType: screen.type, param }
   },
   serialize: refKey,
   eq: (a: ScreenRef, b: ScreenRef) => refKey(a) === refKey(b),

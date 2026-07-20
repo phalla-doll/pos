@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 import { getScreen } from "@/lib/screens"
 import { refKey } from "@/lib/tab-identity"
 import { partitionTabs, type ChipWidths } from "@/lib/tab-overflow"
+import { tabTitle } from "@/lib/tab-title"
 import type { Tab } from "@/hooks/use-tabs"
 import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
 
@@ -197,17 +198,12 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
         align="end"
         className="max-h-80 w-auto max-w-72 min-w-44 overflow-y-auto"
       >
-        {tabs.map((tab) => {
-          const screen = getScreen(tab.screenType)
-          return (
-            <DropdownMenuItem key={tab.id} onClick={() => onSelect(tab.id)}>
-              {screen?.icon}
-              <span className="truncate">
-                {screen?.label ?? tab.screenType}
-              </span>
-            </DropdownMenuItem>
-          )
-        })}
+        {tabs.map((tab) => (
+          <DropdownMenuItem key={tab.id} onClick={() => onSelect(tab.id)}>
+            {getScreen(tab.screenType)?.icon}
+            <span className="truncate">{tabTitle(tab)}</span>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -234,9 +230,8 @@ function TabChip({
   onCloseOthers,
   onCloseAll,
 }: TabChipProps) {
-  const screen = getScreen(tab.screenType)
-  const label = screen?.label ?? tab.screenType
-  const icon = screen?.icon
+  const label = tabTitle(tab)
+  const icon = getScreen(tab.screenType)?.icon
 
   const key = refKey(tab)
   const measure = React.useCallback(

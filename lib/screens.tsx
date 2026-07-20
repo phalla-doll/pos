@@ -5,8 +5,10 @@ import {
   ListScreen,
   type ListScreenConfig,
 } from "@/components/dashboard/list-screen"
+import { RecordForm } from "@/components/dashboard/record-form"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import { sampleCustomers, sampleInventory } from "@/lib/fixtures"
+import { isDraft } from "@/lib/record-param"
 
 import {
   Landmark,
@@ -52,7 +54,48 @@ export type Screen = {
   /** Icon node rendered next to the label. */
   icon: React.ReactNode
   /** The component rendered inside the tab when this screen is active. */
-  component: ComponentType
+  component: ComponentType<ScreenProps>
+  /**
+   * The screen's *parameterized* view, opened as a tab of its own: one record,
+   * for creating or editing. Screens without one accept no `param`, and a
+   * `?tabs=` token that supplies one anyway falls back to the bare screen.
+   *
+   * Declared here rather than as separate registry entries because a record
+   * form is not a new screen — it is the same screen's columns over one row,
+   * and giving it its own entry would put it in the sidebar and the ⌘K
+   * palette, where "Inventory record" is not something anyone can open.
+   */
+  detail?: ScreenDetail
+}
+
+/**
+ * What the workspace hands every screen it mounts. Both are facts about the
+ * *tab*, not the screen — which is why they are props rather than something
+ * the registry entry could close over: one registry entry can be open in
+ * several tabs at once, and a screen that opens tabs of its own (a list
+ * opening a record form) has to name itself to do it.
+ *
+ * Screens that need neither simply declare no props; a component that ignores
+ * its arguments still satisfies the type.
+ */
+export type ScreenProps = {
+  screenType: ScreenType
+  tabId: string
+}
+
+/** The parameterized half of a {@link Screen}. */
+export type ScreenDetail = {
+  /** Rendered in place of `component` when the tab carries a param. */
+  component: ComponentType<ScreenProps & { param: string }>
+  /** Tab-bar label for a param — "New item", or the record's own id. */
+  label: (param: string) => string
+  /**
+   * Whether a param is one this screen can actually show. The URL codec calls
+   * it before a token becomes a tab, so junk from a hand-edited link — or a
+   * record that no longer exists — is dropped at the boundary rather than
+   * mounting a form with nothing behind it.
+   */
+  accepts: (param: string) => boolean
 }
 
 /** A screen definition without its `type` — the registry key supplies that. */
@@ -104,6 +147,12 @@ function screen(
  * Build a registry-driven list screen (filter bar + table). Mirrors
  * {@link screen}'s signature — label, icon, and description are declared once
  * and flow to both the screen metadata and the screen's header.
+ *
+ * When the config is `creatable` or `editable`, the screen's {@link
+ * ScreenDetail} is derived from that same config rather than declared: the
+ * form's fields are the list's columns, its records are the list's rows, and
+ * its identity check is the list's `rowKey`. Nothing about the record form is
+ * stated twice, so a column added to the table appears on the form for free.
  */
 function listScreen<T>(
   label: string,
@@ -111,13 +160,51 @@ function listScreen<T>(
   description: string,
   config: ListScreenConfig<T>
 ): ScreenDef {
+  const { creatable, editable, noun = "record", rows } = config
+  const keyOf = config.rowKey ?? ((_row: T, index: number) => index)
+
   return {
     label,
     description,
     icon: <Icon strokeWidth={1.5} />,
-    component: () => (
-      <ListScreen label={label} description={description} {...config} />
+    component: (props) => (
+      <ListScreen
+        label={label}
+        description={description}
+        {...config}
+        {...props}
+      />
     ),
+    detail:
+      creatable || editable
+        ? {
+            component: ({ param, tabId }) => (
+              <RecordForm
+                label={label}
+                noun={noun}
+                columns={config.columns}
+                rows={rows}
+                rowKey={keyOf}
+                param={param}
+                tabId={tabId}
+              />
+            ),
+            // A draft is named for what it will become; an existing record is
+            // named by its own id, which is shorter and already what the user
+            // clicked. Prefixing it with the noun would push the useful half
+            // of "Inventory SKU-001" past the chip's truncation.
+            label: (param) => (isDraft(param) ? `New ${noun}` : param),
+            // Drafts are accepted only where creating is offered, and record
+            // ids only where editing is — and only for a row that is actually
+            // there, so a stale link drops the tab instead of opening a form
+            // over nothing.
+            accepts: (param) =>
+              isDraft(param)
+                ? Boolean(creatable)
+                : Boolean(editable) &&
+                  rows.some((row, i) => String(keyOf(row, i)) === param),
+          }
+        : undefined,
   }
 }
 
@@ -198,6 +285,9 @@ const screenDefs = {
     ListOrdered,
     "Browse and search all of your customer records.",
     {
+      creatable: true,
+      editable: true,
+      noun: "customer",
       rows: sampleCustomers,
       rowKey: (row) => row.id,
       columns: [
@@ -272,6 +362,8 @@ const screenDefs = {
     "Track stock levels, pricing, and product details.",
     {
       creatable: true,
+      editable: true,
+      noun: "item",
       rows: sampleInventory,
       rowKey: (item) => item.sku,
       columns: [

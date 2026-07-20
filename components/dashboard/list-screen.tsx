@@ -17,6 +17,7 @@ import {
   FolderInput,
   ListChecks,
   PackagePlus,
+  PencilLine,
   Plus,
   Printer,
   Search,
@@ -108,6 +109,8 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
+import { useWorkspace } from "@/hooks/use-workspace"
+import type { ScreenProps } from "@/lib/screens"
 import {
   columnKind,
   cycleSort,
@@ -152,24 +155,29 @@ export type ListScreenConfig<T> = {
   /** The rows to display. */
   rows: T[]
   /**
-   * Stable row identity, used for both React keys and selection. Defaults to
-   * the array index — supply a real key if rows can be filtered or sorted, or
-   * a selection will follow positions rather than rows.
+   * Stable row identity, used for React keys, selection, and the `param` of a
+   * record tab. Defaults to the array index — supply a real key if rows can be
+   * filtered or sorted, or a selection will follow positions rather than rows.
    */
   rowKey?: (row: T, index: number) => RowKey
   /**
-   * Show a "New" button that reveals a column-driven create form. Omit for a
-   * read-only screen. Submit is a UI-only stub until a backend exists.
+   * Show a "New" button that opens a blank record form in its own tab. Omit
+   * for a read-only screen. Submit is a UI-only stub until a backend exists.
    */
   creatable?: boolean
+  /** Offer an "Edit" action per row, opening that record in its own tab. */
+  editable?: boolean
+  /** Singular name for one row — "item", "customer". Used by the record form. */
+  noun?: string
 }
 
-export type ListScreenProps<T> = ListScreenConfig<T> & {
-  /** Screen title, shown in the header above the table. */
-  label: string
-  /** One-line summary, shown beneath the title. */
-  description: string
-}
+export type ListScreenProps<T> = ListScreenConfig<T> &
+  ScreenProps & {
+    /** Screen title, shown in the header above the table. */
+    label: string
+    /** One-line summary, shown beneath the title. */
+    description: string
+  }
 
 /**
  * Call-site styling for the header checkbox's indeterminate state: hide the
@@ -254,14 +262,17 @@ export function ListScreen<T>({
   rows,
   rowKey,
   creatable,
+  editable,
+  screenType,
 }: ListScreenProps<T>) {
+  // Creating and editing open as tabs of their own, so this screen needs the
+  // workspace to launch them. Null outside a workspace, in which case those
+  // affordances simply aren't offered — see `useWorkspace`.
+  const workspace = useWorkspace()
+
   // `filters` is what the table is filtered by right now, applied on every
-  // keystroke of the per-column row. `createDraft` is a separate bucket so
-  // search text and entry text never bleed into each other.
+  // keystroke of the per-column row.
   const [filters, setFilters] = React.useState<FilterState>({})
-  const [createDraft, setCreateDraft] = React.useState<Record<string, string>>(
-    {}
-  )
   const [sort, setSort] = React.useState<SortState | null>(null)
   const [selected, setSelected] = React.useState<SelectionState>(emptySelection)
 
@@ -289,10 +300,6 @@ export function ListScreen<T>({
   // rest of the screen's state, which the `key={activeTab.id}` remount implies.
   const [showFilters, setShowFilters] = React.useState(false)
   const filterRowId = React.useId()
-
-  // The create form is hidden until the user opts in via the "New" button.
-  const [showCreate, setShowCreate] = React.useState(false)
-  const [justCreated, setJustCreated] = React.useState(false)
 
   const filterable = React.useMemo(
     () => columns.filter((c) => c.filterable !== false),
@@ -422,21 +429,26 @@ export function ListScreen<T>({
     setAdvancedOpen(false)
   }
 
-  function handleCreateSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    // UI-only stub: no persistence yet. Clear the form and confirm.
-    setCreateDraft({})
-    setJustCreated(true)
-  }
-
-  function toggleCreate() {
-    setShowCreate((prev) => !prev)
-    setJustCreated(false)
+  /**
+   * Open one record in its own tab.
+   *
+   * The two paths differ only in the ref they ask for, and that difference is
+   * the whole "as many as we want" rule: `openDraft` mints a param nothing can
+   * match, so every New is another tab, while an edit passes the row's key, so
+   * a record already open is focused rather than opened a second time — two
+   * tabs disagreeing about one record is not a thing this should be able to
+   * produce.
+   */
+  function openRecord(key: RowKey) {
+    workspace?.openTab({ screenType, param: String(key) })
   }
 
   const filtersActive = hasActiveFilter(filters)
   const draftActive = hasActiveFilter(draft)
-  const hasCreateInput = Object.values(createDraft).some((v) => v.trim() !== "")
+  // Both affordances need a workspace to open a tab into; without one there is
+  // nowhere for the form to go, so neither is rendered.
+  const canCreate = Boolean(creatable) && workspace !== null
+  const canEdit = Boolean(editable) && workspace !== null
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
@@ -786,11 +798,16 @@ export function ListScreen<T>({
                 </PopoverContent>
               </Popover>
             </ButtonGroup>
-            {creatable && (
+            {/*
+              Opens a blank form in a new tab rather than unfolding one above
+              the table. It is no longer a toggle, so it doesn't need a held-
+              down look: each click is another draft, and the tab bar is what
+              shows how many are on the go.
+            */}
+            {canCreate && (
               <Button
                 type="button"
-                variant={showCreate ? "secondary" : "default"}
-                onClick={toggleCreate}
+                onClick={() => workspace?.openDraft(screenType)}
                 className="pr-3 pl-2.5"
               >
                 <Plus />
@@ -800,66 +817,6 @@ export function ListScreen<T>({
           </div>
         }
       />
-
-      {/*
-        Create form — a blank entry form that reuses the same column-driven
-        fields as the search row. Shown only when the user clicks "New" on a
-        creatable screen. Submit is a stub until a backend exists.
-      */}
-      {creatable && showCreate && (
-        <form
-          onSubmit={handleCreateSubmit}
-          className="flex flex-col gap-4 rounded-xl border bg-card p-4"
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filterable.map((column) => (
-              <div key={column.key} className="flex flex-col gap-1.5">
-                <label
-                  htmlFor={`create-${column.key}`}
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  {column.header}
-                </label>
-                <Input
-                  id={`create-${column.key}`}
-                  value={createDraft[column.key] ?? ""}
-                  placeholder={`Enter ${column.header.toLowerCase()}…`}
-                  onChange={(event) => {
-                    setCreateDraft((prev) => ({
-                      ...prev,
-                      [column.key]: event.target.value,
-                    }))
-                    setJustCreated(false)
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            {justCreated && (
-              <p className="mr-auto text-sm text-muted-foreground">
-                Item created — not yet persisted.
-              </p>
-            )}
-            {hasCreateInput && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setCreateDraft({})
-                  setJustCreated(false)
-                }}
-              >
-                Reset
-              </Button>
-            )}
-            <Button type="submit" className="pr-3 pl-2.5">
-              <Plus />
-              Create
-            </Button>
-          </div>
-        </form>
-      )}
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
       {/*
@@ -1061,6 +1018,13 @@ export function ListScreen<T>({
                           onClick={(event) => {
                             if (isSelectionClick(event)) toggleRowSelection(key)
                           }}
+                          // Double-click opens the record. It costs nothing to
+                          // add: `isSelectionClick` already refuses the second
+                          // click of a double-click, so the two gestures were
+                          // never going to fire together.
+                          onDoubleClick={
+                            canEdit ? () => openRecord(key) : undefined
+                          }
                           onContextMenu={() =>
                             setSelected((prev) => selectionForMenu(prev, key))
                           }
@@ -1100,6 +1064,19 @@ export function ListScreen<T>({
                             : String(columns[0].get(row))}
                         </ContextMenuLabel>
                       </ContextMenuGroup>
+                      {/*
+                        Only for a single row: "Edit" over a multi-row
+                        selection would have to either open several forms at
+                        once or silently pick one, and neither is what the
+                        click asked for. Double-clicking the row does the same
+                        thing — this is the discoverable half of that gesture.
+                      */}
+                      {canEdit && targets.length === 1 && (
+                        <ContextMenuItem onClick={() => openRecord(key)}>
+                          <PencilLine strokeWidth={1.5} />
+                          <span>Edit row</span>
+                        </ContextMenuItem>
+                      )}
                       <ContextMenuItem onClick={() => copyRows(targets)}>
                         <ClipboardCopy strokeWidth={1.5} />
                         <span>{rowWord("Copy", targets.length)}</span>

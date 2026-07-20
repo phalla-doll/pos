@@ -14,8 +14,10 @@ import {
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDocumentTitle } from "@/hooks/use-document-title"
-import { useTabs } from "@/hooks/use-tabs"
+import { useTabs, type Tab } from "@/hooks/use-tabs"
+import { WorkspaceProvider } from "@/hooks/use-workspace"
 import { getScreen, screens, type ScreenType } from "@/lib/screens"
+import { tabTitle } from "@/lib/tab-title"
 import { workspaceTitle } from "@/lib/title"
 import { cn } from "@/lib/utils"
 
@@ -28,6 +30,7 @@ import { cn } from "@/lib/utils"
  * `<Suspense>` boundary by its parent.
  */
 export function TabWorkspace() {
+  const api = useTabs()
   const {
     tabs,
     activeId,
@@ -37,31 +40,31 @@ export function TabWorkspace() {
     closeOthers,
     closeAll,
     openTab,
-  } = useTabs()
+  } = api
 
   const activeTab = tabs.find((t) => t.id === activeId) ?? null
-  const activeScreen = activeTab ? getScreen(activeTab.screenType) : null
 
   // The browser tab follows the workspace tab. Switching screens is a shallow
   // URL write, not a navigation, so Next's metadata never re-runs — the label
   // comes off the registry entry, same as the tab bar and screen header.
-  useDocumentTitle(workspaceTitle(activeScreen?.label))
+  useDocumentTitle(workspaceTitle(activeTab ? tabTitle(activeTab) : undefined))
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {tabs.length > 0 && (
-        <TabBar
-          tabs={tabs}
-          activeId={activeId}
-          onSelect={setActive}
-          onClose={closeTab}
-          onDuplicate={duplicateTab}
-          onCloseOthers={closeOthers}
-          onCloseAll={closeAll}
-        />
-      )}
+    <WorkspaceProvider value={api}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {tabs.length > 0 && (
+          <TabBar
+            tabs={tabs}
+            activeId={activeId}
+            onSelect={setActive}
+            onClose={closeTab}
+            onDuplicate={duplicateTab}
+            onCloseOthers={closeOthers}
+            onCloseAll={closeAll}
+          />
+        )}
 
-      {/*
+        {/*
           Every open tab is mounted; the inactive ones are hidden.
 
           This is the rule that makes "open the record in a new tab" worth
@@ -81,11 +84,8 @@ export function TabWorkspace() {
           a flex container, and `display: flex` from the layout classes would
           override the attribute's `display: none`.
         */}
-      {tabs.length > 0 ? (
-        tabs.map((tab) => {
-          const screen = getScreen(tab.screenType)
-          if (!screen) return null
-          return (
+        {tabs.length > 0 ? (
+          tabs.map((tab) => (
             <div
               key={tab.id}
               className={cn(
@@ -93,15 +93,40 @@ export function TabWorkspace() {
                 tab.id !== activeId && "hidden"
               )}
             >
-              <screen.component />
+              <ScreenContent tab={tab} />
             </div>
-          )
-        })
-      ) : (
-        <EmptyState onOpen={(screenType) => openTab({ screenType })} />
-      )}
-    </div>
+          ))
+        ) : (
+          <EmptyState onOpen={(screenType) => openTab({ screenType })} />
+        )}
+      </div>
+    </WorkspaceProvider>
   )
+}
+
+/**
+ * One tab's screen: the registry's `component`, or its `detail.component` when
+ * the tab is narrowed to a record.
+ *
+ * The dispatch lives here rather than inline so the two branches can each be
+ * given exactly the props they take — a detail component needs the `param`,
+ * the plain one has no such field, and a single element with an optional prop
+ * would have to lie about one of them.
+ */
+function ScreenContent({ tab }: { tab: Tab }) {
+  const screen = getScreen(tab.screenType)
+  if (!screen) return null
+
+  if (tab.param !== undefined && screen.detail) {
+    return (
+      <screen.detail.component
+        screenType={tab.screenType}
+        tabId={tab.id}
+        param={tab.param}
+      />
+    )
+  }
+  return <screen.component screenType={tab.screenType} tabId={tab.id} />
 }
 
 /**

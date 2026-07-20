@@ -70,6 +70,8 @@ describe("contentFromSearch", () => {
     expect(contentFromSearch("?i=3")).toEqual(content([], -1))
   })
 
+  // `inventory` is creatable and editable, and `SKU-0001` is a real fixture
+  // row — the registry, not this module, is what decides both.
   it("reads a record tab beside its list", () => {
     expect(contentFromSearch("?tabs=inventory,inventory:SKU-0001&i=1")).toEqual(
       content(["inventory", "inventory:SKU-0001"], 1)
@@ -86,6 +88,20 @@ describe("contentFromSearch", () => {
     expect(contentFromSearch("?tabs=inventory:new-a3f9")).toEqual(
       content(["inventory:new-a3f9"], 0)
     )
+  })
+
+  it("drops a record that no longer exists", () => {
+    // A stale link shouldn't open a form over nothing — better to land on
+    // whatever else was open.
+    expect(contentFromSearch("?tabs=inventory,inventory:GONE-999")).toEqual(
+      content(["inventory"], 0)
+    )
+  })
+
+  it("falls back to the bare screen when it takes no param at all", () => {
+    // `pos` declares no `detail`, so the param is meaningless rather than
+    // wrong — the screen itself is still what the user asked for.
+    expect(contentFromSearch("?tabs=pos:SKU-0001")).toEqual(content(["pos"], 0))
   })
 
   it("round-trips a record tab through the serializer", () => {
