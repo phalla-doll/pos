@@ -2,7 +2,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Both dark themes — neutral `.dark` and blue `.system-dark` — have to drive
+ * the `dark:` utilities, or a dark surface would get light-mode overrides. */
+@custom-variant dark (&:is(.dark *, .system-dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
@@ -55,14 +57,19 @@
 }
 
 :root {
+    /* Declared here rather than by `next-themes` (`enableColorScheme={false}`):
+     * it only understands the literal values `light`/`dark`, so it would fall
+     * back to the default for `.system-dark` and render light form controls on
+     * a dark surface. CSS knows the mapping already. */
+    color-scheme: light;
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.488 0.243 264.376);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
     --accent: oklch(0.97 0 0);
@@ -101,8 +108,8 @@
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.546 0.245 262.881);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.97 0 0);
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
@@ -111,16 +118,21 @@
     --foreground: oklch(0.145 0 0);
 }
 
-.dark {
+/* The dark surface, shared by both dark themes. `.system-dark` below keeps the
+ * accent hue and inherits everything else from here, so the two dark palettes
+ * differ by exactly the six accent variables and nothing else drifts. */
+.dark,
+.system-dark {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.424 0.199 265.638);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.274 0.006 286.033);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
@@ -143,12 +155,44 @@
     --chart-cat-4: oklch(0.66 0.169 299.9);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.623 0.214 259.815);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+    /* Mirrors `--primary`/`--primary-foreground` above. The CLI's neutral theme
+     * emits a blue `--sidebar-primary` here — a leftover from the blue theme's
+     * light block — which would be the one blue left in a neutral palette. */
+    --sidebar-primary: oklch(0.922 0 0);
+    --sidebar-primary-foreground: oklch(0.205 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+}
+
+/*
+ * The blue palette, shown as "System" in the picker — a palette, not an OS
+ * query (see `lib/theme.tsx`). Each block is a diff over the neutral surface
+ * of the same brightness rather than a copy of it: only the accent hue moves,
+ * so the surfaces, borders, validated chart ramps, and status scale are
+ * inherited untouched and stay in step with their neutral counterparts.
+ *
+ * These carry the same specificity as the blocks they override and all match
+ * `<html>`, so source order alone decides the winner — both have to stay
+ * below `:root` and `.dark`, and `theme.test.ts` asserts they do. Only one
+ * theme class is ever present: `next-themes` clears the others on a switch.
+ */
+.system {
+    --primary: oklch(0.488 0.243 264.376);
+    --primary-foreground: oklch(0.97 0.014 254.604);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --sidebar-primary: oklch(0.546 0.245 262.881);
+    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+}
+
+.system-dark {
+    --primary: oklch(0.424 0.199 265.638);
+    --primary-foreground: oklch(0.97 0.014 254.604);
+    --secondary: oklch(0.274 0.006 286.033);
+    --sidebar-primary: oklch(0.623 0.214 259.815);
+    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
 }
 
 @layer base {
