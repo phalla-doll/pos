@@ -37,9 +37,7 @@ describe("documentTitle", () => {
 
 describe("workspaceTitle", () => {
   it("names the active screen", () => {
-    expect(workspaceTitle("Customer Listing")).toBe(
-      `Customer Listing · ${APP_NAME}`
-    )
+    expect(workspaceTitle("Customers")).toBe(`Customers · ${APP_NAME}`)
   })
 
   it.each([null, undefined, "", "  "])(

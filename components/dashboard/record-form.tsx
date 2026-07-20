@@ -13,7 +13,7 @@ import type { RowKey } from "@/lib/list-selection"
 import { isDraft, recordId } from "@/lib/record-param"
 
 export type RecordFormProps<T> = {
-  /** The screen this record belongs to — "Inventory", "Customer Listing". */
+  /** The screen this record belongs to — "Inventory", "Customers". */
   label: string
   /** Singular name for one row, used in the title and the submit button. */
   noun: string

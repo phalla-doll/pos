@@ -281,7 +281,7 @@ const screenDefs = {
     "Inspect cached data and reclaim storage space."
   ),
   "customer-listing": listScreen(
-    "Customer Listing",
+    "Customers",
     ListOrdered,
     "Browse and search all of your customer records.",
     {

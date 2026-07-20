@@ -110,7 +110,7 @@ Tests are `*.test.ts` next to the module, run in a plain Node environment (no DO
 ### Screens with real behavior
 
 - **Dashboard** (`components/dashboard/dashboard-screen.tsx`) — KPI stat cards with period deltas, a Recharts area chart of hourly revenue/transactions/basket/margin, revenue by category, top sellers (`RankedBars`), inventory health and payment mix (`SegmentedBar`), and outstanding customer balances. Everything is derived from `lib/analytics.ts` over `lib/fixtures.tsx`.
-- **List screens** (`components/dashboard/list-screen.tsx`) — a config-driven table: per-column filters with kind-aware operators, click-to-cycle sorting, an advanced filter panel, row selection with bulk actions, a context menu, copy-to-clipboard, and delete confirmation. Powers Customer Listing and Inventory from column configs declared in the registry.
+- **List screens** (`components/dashboard/list-screen.tsx`) — a config-driven table: per-column filters with kind-aware operators, click-to-cycle sorting, an advanced filter panel, row selection with bulk actions, a context menu, copy-to-clipboard, and delete confirmation. Powers Customers and Inventory from column configs declared in the registry.
 
 ### UI conventions (shadcn/ui)
 
