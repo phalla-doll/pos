@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import { useWorkspace } from "@/hooks/use-workspace"
+import { withArticle } from "@/lib/article"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
 import { isDraft, recordId } from "@/lib/record-param"
@@ -94,7 +95,7 @@ export function RecordForm<T>({
         label={creating ? `New ${noun}` : `Edit ${noun}`}
         description={
           creating
-            ? `Add a ${noun} to ${label}.`
+            ? `Add ${withArticle(noun)} to ${label}.`
             : `Editing ${param} in ${label}.`
         }
         actions={
