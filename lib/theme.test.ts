@@ -12,7 +12,7 @@ import {
   themeOptionValues,
   themeOptions,
   themes,
-  toggleBrightness,
+  toggleLightDark,
   type Theme,
   type ThemeOption,
 } from "@/lib/theme"
@@ -109,24 +109,24 @@ describe("checkedOption", () => {
   })
 })
 
-describe("toggleBrightness", () => {
+describe("toggleLightDark", () => {
   const cases: [string | undefined, Theme][] = [
     ["light", "dark"],
     ["dark", "light"],
-    // Flips brightness without knocking the user off the blue palette.
-    ["system", "system-dark"],
-    ["system-dark", "system"],
+    // Takes no interest in the palette: flips brightness, lands on neutral.
+    ["system", "dark"],
+    ["system-dark", "light"],
     [undefined, "dark"],
   ]
 
   it.each(cases)("%s → %s", (from, expected) => {
-    expect(toggleBrightness(from)).toBe(expected)
+    expect(toggleLightDark(from)).toBe(expected)
   })
 
-  it("preserves the palette and is its own inverse", () => {
+  it("always flips the brightness and always lands on neutral", () => {
     for (const theme of themes) {
-      expect(paletteOf(toggleBrightness(theme))).toBe(paletteOf(theme))
-      expect(toggleBrightness(toggleBrightness(theme))).toBe(theme)
+      expect(brightnessOf(toggleLightDark(theme))).not.toBe(brightnessOf(theme))
+      expect(paletteOf(toggleLightDark(theme))).toBe("neutral")
     }
   })
 })

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
 
-import { defaultTheme, themes, toggleBrightness } from "@/lib/theme"
+import { defaultTheme, themes, toggleLightDark } from "@/lib/theme"
 
 /**
  * `enableSystem={false}` is what makes the palettes peers. With it off,
@@ -71,7 +71,7 @@ function ThemeHotkey() {
         return
       }
 
-      setTheme(toggleBrightness(theme))
+      setTheme(toggleLightDark(theme))
     }
 
     window.addEventListener("keydown", onKeyDown)

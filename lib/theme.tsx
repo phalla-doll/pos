@@ -83,18 +83,23 @@ export function checkedOption(theme: string | undefined): ThemeOption {
 }
 
 /**
- * Where the `d` hotkey goes from here: flip the brightness, keep the palette.
- * So it stays a brightness toggle without ever knocking the user off the blue
- * palette they chose.
+ * Where the `d` hotkey goes from here. It is a plain light/dark toggle and
+ * takes no interest in the palette: whatever you are on, it flips the
+ * brightness and lands you on neutral. So from either blue theme it drops you
+ * out of blue rather than switching to the other blue — one key, one meaning,
+ * and the palette is the menu's business.
+ *
+ * `system-dark` is still reachable: pick Dark, then System, which carries the
+ * brightness across (see {@link menuTheme}).
  *
  * Note this reads `theme`, never `resolvedTheme`. `next-themes` computes
  * `resolvedTheme` as `theme === "system" ? systemTheme : theme` *without*
  * gating on `enableSystem`, so on the blue palette it reports the OS's
  * light/dark preference — exactly the signal this app no longer honours.
  */
-export function toggleBrightness(theme: string | undefined): Theme {
+export function toggleLightDark(theme: string | undefined): Theme {
   return composeTheme(
-    paletteOf(theme),
+    "neutral",
     brightnessOf(theme) === "dark" ? "light" : "dark"
   )
 }
