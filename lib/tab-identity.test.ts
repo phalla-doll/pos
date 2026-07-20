@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { reconcileIds, type Tab } from "@/lib/tab-identity"
+import {
+  refKey,
+  reconcileIds,
+  type ScreenRef,
+  type Tab,
+} from "@/lib/tab-identity"
 
 // Screen types are cast because reconcileIds never inspects them — it only
 // compares them for equality.
@@ -13,8 +18,19 @@ function tabs(entries: Array<[id: string, screenType: string]>): Tab[] {
   }))
 }
 
-function types(list: string[]): ScreenType[] {
-  return list as ScreenType[]
+/** Bare screen refs — the shape a paramless tab takes. */
+function types(list: string[]): ScreenRef[] {
+  return list.map((screenType) => ({ screenType: screenType as ScreenType }))
+}
+
+/** `"inventory:SKU-1"` → a ref, so record cases read as they do in the URL. */
+function refs(list: string[]): ScreenRef[] {
+  return list.map((token) => {
+    const [screenType, param] = token.split(":")
+    return param === undefined
+      ? { screenType: screenType as ScreenType }
+      : { screenType: screenType as ScreenType, param }
+  })
 }
 
 /** A deterministic `mint` so cases stay free of randomness. */
@@ -110,5 +126,69 @@ describe("reconcileIds", () => {
   it("empties to no tabs when the URL has none", () => {
     const prev = tabs([["a", "dashboard"]])
     expect(reconcileIds(prev, types([]), minter())).toEqual([])
+  })
+
+  it("keeps two records of one screen apart", () => {
+    // The reason matching is on the whole ref: type-matching alone would let
+    // SKU-2 claim SKU-1's id and hand a refreshed workspace the wrong mount.
+    const prev = reconcileIds(
+      [],
+      refs(["inventory:SKU-1", "inventory:SKU-2"]),
+      minter()
+    )
+    const next = reconcileIds(
+      prev,
+      refs(["inventory:SKU-2", "inventory:SKU-1"]),
+      minter("x")
+    )
+    expect(next.map((t) => t.param)).toEqual(["SKU-2", "SKU-1"])
+    expect(next.map((t) => t.id)).toEqual(["new2", "new1"])
+  })
+
+  it("does not let a list claim its own record tab's id", () => {
+    const prev = tabs([["a", "inventory"]])
+    const next = reconcileIds(prev, refs(["inventory:SKU-1"]), minter())
+    expect(next).toEqual([
+      { id: "new1", screenType: "inventory", param: "SKU-1" },
+    ])
+  })
+
+  it("preserves a record tab's id when a sibling draft is closed", () => {
+    const prev = reconcileIds(
+      [],
+      refs(["inventory", "inventory:new-a", "inventory:SKU-1"]),
+      minter()
+    )
+    const next = reconcileIds(
+      prev,
+      refs(["inventory", "inventory:SKU-1"]),
+      minter("x")
+    )
+    expect(next.map((t) => t.id)).toEqual(["new1", "new3"])
+  })
+})
+
+describe("refKey", () => {
+  it("is the bare screen type without a param", () => {
+    expect(refKey({ screenType: "inventory" as ScreenType })).toBe("inventory")
+  })
+
+  it("distinguishes a screen from its records, and records from each other", () => {
+    const list = refKey({ screenType: "inventory" as ScreenType })
+    const one = refKey({
+      screenType: "inventory" as ScreenType,
+      param: "SKU-1",
+    })
+    const two = refKey({
+      screenType: "inventory" as ScreenType,
+      param: "SKU-2",
+    })
+    expect(new Set([list, one, two]).size).toBe(3)
+  })
+
+  it("agrees for two refs naming the same record", () => {
+    const a = { screenType: "inventory" as ScreenType, param: "SKU-1" }
+    const b = { screenType: "inventory" as ScreenType, param: "SKU-1" }
+    expect(refKey(a)).toBe(refKey(b))
   })
 })

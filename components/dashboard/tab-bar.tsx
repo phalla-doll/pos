@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { getScreen } from "@/lib/screens"
+import { refKey } from "@/lib/tab-identity"
 import { partitionTabs, type ChipWidths } from "@/lib/tab-overflow"
 import type { Tab } from "@/hooks/use-tabs"
 import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
@@ -94,14 +95,16 @@ export function TabBar({
     return () => observer.disconnect()
   }, [])
 
-  // Record each rendered chip's width against its screen type. Widths are
-  // keyed by type (not tab id) precisely so a type measured once stays known
-  // while other tabs of that type sit in the overflow menu with no box of their
-  // own — see `ChipWidths`. Only a genuinely new width writes state, so this
-  // settles after the first paint instead of looping.
-  const measureChip = React.useCallback((screenType: string, width: number) => {
+  // Record each rendered chip's width against its ref. Widths are keyed by ref
+  // (not tab id) precisely so a ref measured once stays known while other tabs
+  // of that ref sit in the overflow menu with no box of their own — and by the
+  // whole ref, not the screen type, because a record tab's label names the
+  // record and so no longer measures like its list — see `ChipWidths`. Only a
+  // genuinely new width writes state, so this settles after the first paint
+  // instead of looping.
+  const measureChip = React.useCallback((key: string, width: number) => {
     setWidths((prev) =>
-      prev[screenType] === width ? prev : { ...prev, [screenType]: width }
+      prev[key] === width ? prev : { ...prev, [key]: width }
     )
   }, [])
 
@@ -213,7 +216,7 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
 type TabChipProps = {
   tab: Tab
   isActive: boolean
-  onMeasure: (screenType: string, width: number) => void
+  onMeasure: (refKey: string, width: number) => void
   onSelect: (id: string) => void
   onClose: (id: string) => void
   onDuplicate: (id: string) => void
@@ -235,12 +238,12 @@ function TabChip({
   const label = screen?.label ?? tab.screenType
   const icon = screen?.icon
 
-  const { screenType } = tab
+  const key = refKey(tab)
   const measure = React.useCallback(
     (node: HTMLDivElement | null) => {
-      if (node) onMeasure(screenType, node.offsetWidth)
+      if (node) onMeasure(key, node.offsetWidth)
     },
-    [onMeasure, screenType]
+    [onMeasure, key]
   )
 
   return (

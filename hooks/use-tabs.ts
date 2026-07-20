@@ -4,7 +4,8 @@ import * as React from "react"
 import { useQueryStates } from "nuqs"
 
 import type { ScreenType } from "@/lib/screens"
-import type { Tab } from "@/lib/tab-identity"
+import { draftParam } from "@/lib/record-param"
+import type { ScreenRef, Tab } from "@/lib/tab-identity"
 import {
   contentFromParams,
   launcherHref,
@@ -20,7 +21,7 @@ import {
   type WorkspaceContent,
 } from "@/lib/tabs-reducer"
 
-export type { Tab }
+export type { ScreenRef, Tab }
 
 export type TabsApi = {
   /** All currently open tabs, in order. */
@@ -30,11 +31,21 @@ export type TabsApi = {
   /** Focus a tab by id. */
   setActive: (id: string) => void
   /**
-   * Open a screen as a tab. If a tab of this `screenType` is already open,
-   * it is focused (reuse). Otherwise a new tab is created and focused.
-   * This is what the sidebar launchers call.
+   * Open a screen as a tab. If a tab for this exact ref is already open, it is
+   * focused (reuse). Otherwise a new tab is created and focused. This is what
+   * the sidebar launchers call, and — with a `param` — what a row's Edit
+   * action calls, so a record already open is revealed rather than duplicated.
    */
-  openTab: (screenType: ScreenType) => void
+  openTab: (ref: ScreenRef) => void
+  /**
+   * Open a *new* record form for a screen — always a fresh tab, never a reuse.
+   *
+   * The distinction from {@link openTab} is the minted draft param: every call
+   * produces a ref nothing else can match, which is what lets several new
+   * records be filled in side by side. Minting lives here rather than in the
+   * reducer for the usual reason — the adapter owns the non-determinism.
+   */
+  openDraft: (screenType: ScreenType) => void
   /** Close a tab. If it was active, a neighbor is focused instead. */
   closeTab: (id: string) => void
   /** Open a fresh tab of the same screen type with a new id. */
@@ -72,11 +83,10 @@ function newId() {
  * `components/app-sidebar.tsx`, which renders the same nav with
  * `freshWorkspaceHref` until the client knows what's open.
  */
-export function useTabLauncherHref(): (screenType: ScreenType) => string {
+export function useTabLauncherHref(): (ref: ScreenRef) => string {
   const [{ tabs, i }] = useQueryStates(tabParsers, tabUrlOptions)
   return React.useCallback(
-    (screenType: ScreenType) =>
-      launcherHref(contentFromParams({ tabs, i }), screenType),
+    (ref: ScreenRef) => launcherHref(contentFromParams({ tabs, i }), ref),
     [tabs, i]
   )
 }
@@ -157,8 +167,17 @@ export function useTabs(): TabsApi {
   )
 
   const openTab = React.useCallback(
+    (ref: ScreenRef) => apply({ type: "open", ref, newId: newId() }),
+    [apply]
+  )
+
+  const openDraft = React.useCallback(
     (screenType: ScreenType) =>
-      apply({ type: "open", screenType, newId: newId() }),
+      apply({
+        type: "open",
+        ref: { screenType, param: draftParam(newId) },
+        newId: newId(),
+      }),
     [apply]
   )
 
@@ -184,6 +203,7 @@ export function useTabs(): TabsApi {
     activeId: current.activeId,
     setActive,
     openTab,
+    openDraft,
     closeTab,
     duplicateTab,
     closeOthers,

@@ -166,3 +166,50 @@ describe("the fill stops rather than skipping ahead", () => {
     ).toEqual({ visible: ["t1"], overflow: ["t2", "t3"] })
   })
 })
+
+describe("record tabs are measured per record, not per screen", () => {
+  // A record tab's label names the record, so two tabs of one screen no longer
+  // measure alike — the width cache is keyed by the whole ref for that reason.
+  const inventory = "inventory" as ScreenType
+  const recordTabs: Tab[] = [
+    { id: "t1", screenType: inventory },
+    { id: "t2", screenType: inventory, param: "SKU-0001" },
+    { id: "t3", screenType: inventory, param: "SKU-0002" },
+  ]
+
+  it("waits for every ref to be measured, not just the screen type", () => {
+    // The list's width alone is not evidence about its records: partitioning
+    // on it would size both forms wrong.
+    expect(
+      partitionTabs({
+        tabs: recordTabs,
+        widths: { inventory: 100 },
+        activeId: "t1",
+        containerWidth: 150,
+        moreWidth: 60,
+        gap: 10,
+      })
+    ).toEqual({ visible: recordTabs, overflow: [] })
+  })
+
+  it("gives each record its own width once measured", () => {
+    // Budget 190: t1 pinned (100), then t2 costs 10 + 200 and doesn't fit.
+    expect(
+      partitionTabs({
+        tabs: recordTabs,
+        widths: {
+          inventory: 100,
+          "inventory:SKU-0001": 200,
+          "inventory:SKU-0002": 200,
+        },
+        activeId: "t1",
+        containerWidth: 260,
+        moreWidth: 60,
+        gap: 10,
+      })
+    ).toEqual({
+      visible: [recordTabs[0]],
+      overflow: [recordTabs[1], recordTabs[2]],
+    })
+  })
+})

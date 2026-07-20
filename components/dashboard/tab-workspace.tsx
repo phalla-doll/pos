@@ -62,24 +62,25 @@ export function TabWorkspace() {
       )}
 
       {/*
-        Every open tab is mounted; the inactive ones are hidden.
+          Every open tab is mounted; the inactive ones are hidden.
 
-        Mounting only the active screen meant switching tabs unmounted the one
-        you left, so coming back reset everything it held — a list's filters,
-        sort, page, and selection all gone because you looked at something
-        else. Keeping the mount alive costs a hidden subtree per open tab and
-        buys back "it's still where I left it" for every screen at once,
-        without any of them having to persist state anywhere.
+          This is the rule that makes "open the record in a new tab" worth
+          doing. Mounting only the active screen meant switching to a form
+          unmounted the list behind it, so coming back reset its filters, sort,
+          page, and selection — the user lost their place in the very list they
+          were editing from. Keeping the mount alive costs a hidden subtree per
+          open tab and buys back "the list is still where I left it" for every
+          screen at once, without any of them having to save state anywhere.
 
-        `key={tab.id}` still holds, and still means what it did: identity is
-        per tab, so a duplicate is a genuinely separate mount and an unrelated
-        close can't disturb the tab being looked at. What changed is only that
-        a mount now survives being switched away from.
+          `key={tab.id}` still holds, and still means what it did: identity is
+          per tab, so a duplicate is a genuinely separate mount and an unrelated
+          close can't disturb the tab being looked at. What changed is only that
+          a mount now survives being switched away from.
 
-        Hidden with a class rather than the `hidden` attribute — the parent is
-        a flex container, and `display: flex` from the layout classes would
-        override the attribute's `display: none`.
-      */}
+          Hidden with a class rather than the `hidden` attribute — the parent is
+          a flex container, and `display: flex` from the layout classes would
+          override the attribute's `display: none`.
+        */}
       {tabs.length > 0 ? (
         tabs.map((tab) => {
           const screen = getScreen(tab.screenType)
@@ -97,7 +98,7 @@ export function TabWorkspace() {
           )
         })
       ) : (
-        <EmptyState onOpen={openTab} />
+        <EmptyState onOpen={(screenType) => openTab({ screenType })} />
       )}
     </div>
   )

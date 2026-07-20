@@ -51,7 +51,7 @@ export function NavMain({
   hrefFor,
 }: {
   items: NavEntry[]
-  hrefFor: (screenType: ScreenType) => string
+  hrefFor: (ref: { screenType: ScreenType }) => string
 }) {
   return (
     <SidebarGroup>
@@ -86,13 +86,13 @@ function NavNode({
 }: {
   entry: NavEntry
   depth: number
-  hrefFor: (screenType: ScreenType) => string
+  hrefFor: (ref: { screenType: ScreenType }) => string
 }) {
   const top = depth === 0
 
   if (entry.kind === "screen") {
     const { screen } = entry
-    const link = <Link href={hrefFor(screen.type)} />
+    const link = <Link href={hrefFor({ screenType: screen.type })} />
     const content = (
       <>
         {screen.icon}

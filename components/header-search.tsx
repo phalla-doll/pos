@@ -95,7 +95,9 @@ export function HeaderSearch() {
     (screenType: ScreenType) => {
       setOpen(false)
       router.push(
-        launcherHref(contentFromSearch(window.location.search), screenType)
+        launcherHref(contentFromSearch(window.location.search), {
+          screenType,
+        })
       )
     },
     [router]

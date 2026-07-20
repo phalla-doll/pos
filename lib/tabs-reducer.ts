@@ -1,5 +1,9 @@
-import type { ScreenType } from "@/lib/screens"
-import { reconcileIds, type Tab } from "@/lib/tab-identity"
+import {
+  refKey,
+  reconcileIds,
+  type ScreenRef,
+  type Tab,
+} from "@/lib/tab-identity"
 
 /**
  * The workspace as the URL can express it: which screens are open, in order,
@@ -7,9 +11,9 @@ import { reconcileIds, type Tab } from "@/lib/tab-identity"
  * serializable data.
  */
 export type WorkspaceContent = {
-  /** The open screens, in tab-bar order. The same screen may appear twice. */
-  types: ScreenType[]
-  /** Index into `types` of the focused tab, or -1 when no tabs are open. */
+  /** The open screens, in tab-bar order. The same ref may appear twice. */
+  refs: ScreenRef[]
+  /** Index into `refs` of the focused tab, or -1 when no tabs are open. */
   activeIndex: number
 }
 
@@ -36,7 +40,7 @@ export const initialWorkspaceState: WorkspaceState = {
   tabs: [],
   activeId: null,
 }
-export const emptyContent: WorkspaceContent = { types: [], activeIndex: -1 }
+export const emptyContent: WorkspaceContent = { refs: [], activeIndex: -1 }
 
 /**
  * Every mutation the workspace can perform. Tabs are addressed by `id`, not by
@@ -55,8 +59,8 @@ export type TabsAction =
    * protect, because the screens involved weren't ours to begin with.
    */
   | { type: "sync"; content: WorkspaceContent; mint: () => string }
-  /** Open a screen as a tab (reuse an existing tab of that type, else create). */
-  | { type: "open"; screenType: ScreenType; newId: string }
+  /** Open a screen as a tab (reuse an existing tab of that ref, else create). */
+  | { type: "open"; ref: ScreenRef; newId: string }
   /** Focus a tab by id. No-op if the id isn't open. */
   | { type: "setActive"; id: string }
   /** Close a tab. If it was active, a neighbor is focused instead. */
@@ -77,21 +81,27 @@ export type TabsAction =
  * Returns the same reference when nothing changes.
  */
 export function normalize(content: WorkspaceContent): WorkspaceContent {
-  if (content.types.length === 0) {
+  if (content.refs.length === 0) {
     return content.activeIndex === -1 ? content : emptyContent
   }
   const clamped = Number.isInteger(content.activeIndex)
-    ? Math.min(Math.max(content.activeIndex, 0), content.types.length - 1)
+    ? Math.min(Math.max(content.activeIndex, 0), content.refs.length - 1)
     : 0
   return clamped === content.activeIndex
     ? content
     : { ...content, activeIndex: clamped }
 }
 
-/** Project runtime state down to the content the URL carries. */
+/**
+ * Project runtime state down to the content the URL carries — everything but
+ * the ids. `param` is dropped when absent rather than carried as `undefined`,
+ * so the projection compares equal to what the URL parses back.
+ */
 export function toContent(state: WorkspaceState): WorkspaceContent {
   return {
-    types: state.tabs.map((tab) => tab.screenType),
+    refs: state.tabs.map(({ screenType, param }) =>
+      param === undefined ? { screenType } : { screenType, param }
+    ),
     activeIndex: state.tabs.findIndex((tab) => tab.id === state.activeId),
   }
 }
@@ -102,9 +112,9 @@ export function toContent(state: WorkspaceState): WorkspaceContent {
  * which project straight back to content — so the ids never escape.
  */
 export function fromContent(content: WorkspaceContent): WorkspaceState {
-  const tabs = content.types.map((screenType, i) => ({
+  const tabs = content.refs.map((ref, i) => ({
     id: `placeholder-${i}`,
-    screenType,
+    ...ref,
   }))
   return { tabs, activeId: tabs[content.activeIndex]?.id ?? null }
 }
@@ -116,26 +126,35 @@ export function contentEquals(
 ): boolean {
   return (
     a.activeIndex === b.activeIndex &&
-    a.types.length === b.types.length &&
-    a.types.every((type, i) => type === b.types[i])
+    a.refs.length === b.refs.length &&
+    a.refs.every((ref, i) => refKey(ref) === refKey(b.refs[i]))
   )
 }
 
 /**
- * Reuse an open tab of `screenType` (focusing it) or create one at the end and
- * focus that. Returns the same state reference when nothing changes.
+ * Reuse an open tab with the same {@link refKey} (focusing it) or create one at
+ * the end and focus that. Returns the same state reference when nothing
+ * changes.
+ *
+ * Matching on the whole ref is what lets a list and its record forms coexist:
+ * opening `inventory` must not focus the `inventory:SKU-001` tab, and vice
+ * versa. It is also the entire reuse policy for record tabs — a draft carries
+ * a freshly minted param and so never matches, giving every "New" its own tab,
+ * while an edit carries the row key and so always matches, keeping one record
+ * to one tab.
  */
 function openOrReuse(
   state: WorkspaceState,
-  screenType: ScreenType,
+  ref: ScreenRef,
   newId: string
 ): WorkspaceState {
-  const existing = state.tabs.find((t) => t.screenType === screenType)
+  const wanted = refKey(ref)
+  const existing = state.tabs.find((t) => refKey(t) === wanted)
   if (existing) {
     if (state.activeId === existing.id) return state
     return { ...state, activeId: existing.id }
   }
-  const tab: Tab = { id: newId, screenType }
+  const tab: Tab = { id: newId, ...ref }
   return { tabs: [...state.tabs, tab], activeId: tab.id }
 }
 
@@ -158,14 +177,14 @@ export function tabsReducer(
   switch (action.type) {
     case "sync": {
       const content = normalize(action.content)
-      const tabs = reconcileIds(state.tabs, content.types, action.mint)
+      const tabs = reconcileIds(state.tabs, content.refs, action.mint)
       const activeId = tabs[content.activeIndex]?.id ?? null
       if (tabs === state.tabs && activeId === state.activeId) return state
       return { tabs, activeId }
     }
 
     case "open":
-      return openOrReuse(state, action.screenType, action.newId)
+      return openOrReuse(state, action.ref, action.newId)
 
     case "setActive": {
       const exists = state.tabs.some((t) => t.id === action.id)
@@ -189,7 +208,9 @@ export function tabsReducer(
       const idx = state.tabs.findIndex((t) => t.id === action.id)
       if (idx === -1) return state
       const source = state.tabs[idx]
-      const copy: Tab = { id: action.newId, screenType: source.screenType }
+      // Ref and all: duplicating a record tab gives a second, independent
+      // mount of the same record — the same thing duplicating a list gives.
+      const copy: Tab = { ...source, id: action.newId }
       // Insert right after the source tab and focus the copy.
       const tabs = [
         ...state.tabs.slice(0, idx + 1),

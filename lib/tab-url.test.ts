@@ -10,11 +10,21 @@ import type { WorkspaceContent } from "@/lib/tabs-reducer"
 
 // Real registry keys — this module validates against the screen registry, so
 // unlike the reducer's tests these can't be arbitrary strings.
-const pos = "pos" as WorkspaceContent["types"][number]
-const users = "users" as WorkspaceContent["types"][number]
+type ScreenType = WorkspaceContent["refs"][number]["screenType"]
+const pos = { screenType: "pos" as ScreenType }
+const users = { screenType: "users" as ScreenType }
 
-function content(types: string[], activeIndex: number): WorkspaceContent {
-  return { types: types as WorkspaceContent["types"], activeIndex }
+/** `"inventory:SKU-0001"` → a ref, mirroring one `?tabs=` token. */
+function content(tokens: string[], activeIndex: number): WorkspaceContent {
+  return {
+    refs: tokens.map((token) => {
+      const [screenType, param] = token.split(":")
+      return param === undefined
+        ? { screenType: screenType as ScreenType }
+        : { screenType: screenType as ScreenType, param }
+    }),
+    activeIndex,
+  }
 }
 
 describe("contentFromSearch", () => {
@@ -59,6 +69,31 @@ describe("contentFromSearch", () => {
   it("ignores a stray index with no tabs", () => {
     expect(contentFromSearch("?i=3")).toEqual(content([], -1))
   })
+
+  it("reads a record tab beside its list", () => {
+    expect(contentFromSearch("?tabs=inventory,inventory:SKU-0001&i=1")).toEqual(
+      content(["inventory", "inventory:SKU-0001"], 1)
+    )
+  })
+
+  it("keeps several records of one screen apart", () => {
+    expect(
+      contentFromSearch("?tabs=inventory:SKU-0001,inventory:SKU-0002")
+    ).toEqual(content(["inventory:SKU-0001", "inventory:SKU-0002"], 0))
+  })
+
+  it("reads a draft token", () => {
+    expect(contentFromSearch("?tabs=inventory:new-a3f9")).toEqual(
+      content(["inventory:new-a3f9"], 0)
+    )
+  })
+
+  it("round-trips a record tab through the serializer", () => {
+    const start = content(["inventory", "inventory:SKU-0001"], 1)
+    const href = workspaceHref(start)
+    expect(href).toBe("/dashboard?tabs=inventory,inventory:SKU-0001&i=1")
+    expect(contentFromSearch(href.split("?")[1] ?? "")).toEqual(start)
+  })
 })
 
 describe("workspaceHref", () => {
@@ -94,7 +129,9 @@ describe("launcherHref", () => {
 
   it("preserves the tabs already open", () => {
     expect(
-      launcherHref(content(["pos", "users"], 0), "reports" as typeof pos)
+      launcherHref(content(["pos", "users"], 0), {
+        screenType: "reports" as ScreenType,
+      })
     ).toBe("/dashboard?tabs=pos,users,reports&i=2")
   })
 

@@ -1,12 +1,13 @@
 import {
   createLoader,
+  createParser,
   createSerializer,
   parseAsArrayOf,
   parseAsInteger,
-  parseAsStringLiteral,
 } from "nuqs/server"
 
-import { screenKeys, type ScreenType } from "@/lib/screens"
+import { getScreen } from "@/lib/screens"
+import { refKey, type ScreenRef } from "@/lib/tab-identity"
 import {
   emptyContent,
   fromContent,
@@ -20,12 +21,41 @@ import {
 const DASHBOARD = "/dashboard"
 
 /**
- * The workspace's URL contract: `?tabs=orders,orders,inventory&i=1` — the open
- * screens in order, plus the index of the focused one.
+ * One tab's token: `inventory`, or `inventory:SKU-001` for a screen narrowed
+ * to a record.
  *
- * Unknown screen names are dropped at parse time (`parseAsStringLiteral`
- * rejects anything outside the registry and `parseAsArrayOf` filters the
- * rejects), so `tabs` is always a real `ScreenType[]`; a missing or
+ * Split on the **first** colon, so a param containing one lands in the tail
+ * intact — screen keys are kebab-case and never contain a colon, which is what
+ * makes the first occurrence unambiguously the delimiter. Commas are the array
+ * separator and are escaped by `parseAsArrayOf` on both legs, so nothing here
+ * has to encode them; everything else rides the ordinary query-string encoding
+ * nuqs applies to the whole value.
+ *
+ * An unknown screen is still rejected, so nothing outside the registry can
+ * enter tab state — exactly what `parseAsStringLiteral` guaranteed before
+ * params existed. The param itself is carried through as-is for now; no screen
+ * produces one yet, so there is nothing to validate it against.
+ */
+const parseAsScreenRef = createParser({
+  parse(token: string): ScreenRef | null {
+    const colon = token.indexOf(":")
+    const type = colon === -1 ? token : token.slice(0, colon)
+    const screen = getScreen(type)
+    if (!screen) return null
+    return colon === -1
+      ? { screenType: screen.type }
+      : { screenType: screen.type, param: token.slice(colon + 1) }
+  },
+  serialize: refKey,
+  eq: (a: ScreenRef, b: ScreenRef) => refKey(a) === refKey(b),
+})
+
+/**
+ * The workspace's URL contract: `?tabs=orders,orders,inventory:SKU-001&i=1` —
+ * the open screens in order, plus the index of the focused one.
+ *
+ * Tokens that don't survive {@link parseAsScreenRef} are dropped by
+ * `parseAsArrayOf`, so `tabs` is always a list of real refs; a missing or
  * out-of-range `i` is {@link normalize}'s problem.
  *
  * Imported from `nuqs/server`, which is React-free — so this module stays pure
@@ -33,13 +63,13 @@ const DASHBOARD = "/dashboard"
  * that touches the router.
  */
 export const tabParsers = {
-  tabs: parseAsArrayOf(parseAsStringLiteral(screenKeys), ",").withDefault([]),
+  tabs: parseAsArrayOf(parseAsScreenRef, ",").withDefault([]),
   i: parseAsInteger.withDefault(0),
 }
 
 /** The raw `{ tabs, i }` values as they appear in the URL. */
 export type TabParams = {
-  tabs: ScreenType[]
+  tabs: ScreenRef[]
   i: number
 }
 
@@ -52,14 +82,14 @@ const serializeTabParams = createSerializer(tabParsers, {
 /** Turn workspace content back into URL values, clearing what isn't needed. */
 export function toTabParams(content: WorkspaceContent) {
   return {
-    tabs: content.types.length > 0 ? content.types : null,
+    tabs: content.refs.length > 0 ? content.refs : null,
     i: content.activeIndex >= 0 ? content.activeIndex : null,
   }
 }
 
 /** Read normalized workspace content out of URL values. */
 export function contentFromParams(params: TabParams): WorkspaceContent {
-  return normalize({ types: params.tabs, activeIndex: params.i })
+  return normalize({ refs: params.tabs, activeIndex: params.i })
 }
 
 /** Read normalized workspace content straight out of a query string. */
@@ -73,9 +103,9 @@ export function workspaceHref(content: WorkspaceContent): string {
 }
 
 /**
- * Where a launcher should go: the given content with `screenType` opened —
- * reusing an already-open tab of that type, exactly like the in-workspace
- * launchers, because it runs the same `open` action through the same reducer.
+ * Where a launcher should go: the given content with `ref` opened — reusing an
+ * already-open tab for that ref, exactly like the in-workspace launchers,
+ * because it runs the same `open` action through the same reducer.
  *
  * The reducer works in tabs-with-identity, and a launcher has none to offer
  * (it only ever saw the URL), so the content is lifted into placeholder ids
@@ -84,11 +114,11 @@ export function workspaceHref(content: WorkspaceContent): string {
  */
 export function launcherHref(
   content: WorkspaceContent,
-  screenType: ScreenType
+  ref: ScreenRef
 ): string {
   const opened = tabsReducer(fromContent(content), {
     type: "open",
-    screenType,
+    ref,
     newId: "placeholder-new",
   })
   return workspaceHref(toContent(opened))
@@ -102,6 +132,6 @@ export function launcherHref(
  * read the URL — a correct, working link that simply doesn't preserve tabs it
  * can't see yet. See the Suspense fallback in `components/app-sidebar.tsx`.
  */
-export function freshWorkspaceHref(screenType: ScreenType): string {
-  return launcherHref(emptyContent, screenType)
+export function freshWorkspaceHref(ref: ScreenRef): string {
+  return launcherHref(emptyContent, ref)
 }

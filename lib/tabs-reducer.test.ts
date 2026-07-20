@@ -14,7 +14,7 @@ import {
 
 // Small builders so cases read as data. Screen types are cast because the
 // reducer never inspects them — it only compares them for equality.
-type ScreenType = WorkspaceContent["types"][number]
+type ScreenType = WorkspaceContent["refs"][number]["screenType"]
 
 function state(
   tabs: Array<[id: string, screenType: string]>,
@@ -29,8 +29,20 @@ function state(
   }
 }
 
-function content(types: string[], activeIndex: number): WorkspaceContent {
-  return { types: types as ScreenType[], activeIndex }
+/**
+ * `content(["inventory", "inventory:SKU-1"], 0)` — a bare token is a screen,
+ * a `type:param` token is that screen narrowed to one record.
+ */
+function content(tokens: string[], activeIndex: number): WorkspaceContent {
+  return {
+    refs: tokens.map((token) => {
+      const [screenType, param] = token.split(":")
+      return param === undefined
+        ? { screenType: screenType as ScreenType }
+        : { screenType: screenType as ScreenType, param }
+    }),
+    activeIndex,
+  }
 }
 
 const inventory = "inventory" as ScreenType
@@ -46,7 +58,7 @@ describe("open (reuse-or-create)", () => {
   it("creates and focuses a new tab when none of that type is open", () => {
     const next = tabsReducer(initialWorkspaceState, {
       type: "open",
-      screenType: inventory,
+      ref: { screenType: inventory },
       newId: "a",
     })
     expect(next.tabs).toEqual([{ id: "a", screenType: inventory }])
@@ -63,7 +75,7 @@ describe("open (reuse-or-create)", () => {
     )
     const next = tabsReducer(start, {
       type: "open",
-      screenType: inventory,
+      ref: { screenType: inventory },
       newId: "unused",
     })
     expect(next.tabs).toHaveLength(2)
@@ -73,8 +85,90 @@ describe("open (reuse-or-create)", () => {
   it("returns the same reference when reusing the already-active tab", () => {
     const start = state([["a", "inventory"]], "a")
     expect(
-      tabsReducer(start, { type: "open", screenType: inventory, newId: "x" })
+      tabsReducer(start, {
+        type: "open",
+        ref: { screenType: inventory },
+        newId: "x",
+      })
     ).toBe(start)
+  })
+
+  it("opens a record tab beside its list rather than reusing it", () => {
+    const start = state([["a", "inventory"]], "a")
+    const next = tabsReducer(start, {
+      type: "open",
+      ref: { screenType: inventory, param: "SKU-1" },
+      newId: "b",
+    })
+    expect(next.tabs).toEqual([
+      { id: "a", screenType: inventory },
+      { id: "b", screenType: inventory, param: "SKU-1" },
+    ])
+    expect(next.activeId).toBe("b")
+  })
+
+  it("does not let the list reuse an open record tab", () => {
+    const start = {
+      tabs: [{ id: "a", screenType: inventory, param: "SKU-1" }],
+      activeId: "a",
+    }
+    const next = tabsReducer(start, {
+      type: "open",
+      ref: { screenType: inventory },
+      newId: "b",
+    })
+    expect(next.tabs).toHaveLength(2)
+    expect(next.activeId).toBe("b")
+  })
+
+  it("focuses the tab a record is already open in", () => {
+    // One record, one tab: two tabs disagreeing about the same row is the
+    // thing this rule exists to prevent.
+    const start = {
+      tabs: [
+        { id: "a", screenType: inventory, param: "SKU-1" },
+        { id: "b", screenType: dashboard },
+      ],
+      activeId: "b",
+    }
+    const next = tabsReducer(start, {
+      type: "open",
+      ref: { screenType: inventory, param: "SKU-1" },
+      newId: "unused",
+    })
+    expect(next.tabs).toHaveLength(2)
+    expect(next.activeId).toBe("a")
+  })
+
+  it("opens a second tab for a different record of the same screen", () => {
+    const start = {
+      tabs: [{ id: "a", screenType: inventory, param: "SKU-1" }],
+      activeId: "a",
+    }
+    const next = tabsReducer(start, {
+      type: "open",
+      ref: { screenType: inventory, param: "SKU-2" },
+      newId: "b",
+    })
+    expect(next.tabs.map((t) => t.param)).toEqual(["SKU-1", "SKU-2"])
+    expect(next.activeId).toBe("b")
+  })
+
+  it("gives every draft its own tab", () => {
+    // The "as many as we want" rule: drafts carry freshly minted params, so
+    // nothing they could match already exists and each New stacks up.
+    const drafts = ["new-1", "new-2", "new-3"]
+    const end = drafts.reduce(
+      (acc, param, i) =>
+        tabsReducer(acc, {
+          type: "open",
+          ref: { screenType: inventory, param },
+          newId: `t${i}`,
+        }),
+      initialWorkspaceState
+    )
+    expect(end.tabs.map((t) => t.param)).toEqual(drafts)
+    expect(end.activeId).toBe("t2")
   })
 })
 

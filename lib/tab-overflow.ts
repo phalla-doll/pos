@@ -1,18 +1,22 @@
-import type { Tab } from "@/lib/tab-identity"
+import { refKey, type Tab } from "@/lib/tab-identity"
 
 /**
- * Chip widths, keyed by `screenType` rather than tab id. A chip's width is a
- * pure function of its screen: the label comes from the registry, and the
+ * Chip widths, keyed by {@link refKey} rather than tab id. A chip's width is a
+ * pure function of its ref: the label comes from the registry, and the
  * active/inactive weight swap is already width-neutral (see the ghost `<span>`
- * in `TabChip`). So two tabs of the same type always measure the same, and one
+ * in `TabChip`). So two tabs of the same ref always measure the same, and one
  * measurement serves every duplicate — including tabs currently hidden inside
  * the overflow menu, which have no box to measure.
+ *
+ * The whole ref, not the screen type: a record tab's label names the record
+ * ("SKU-001"), so two tabs of one screen no longer measure alike and a
+ * type-keyed cache would hand every record the first one's width.
  */
 export type ChipWidths = Partial<Record<string, number>>
 
 export type PartitionInput = {
   tabs: Tab[]
-  /** Measured chip widths by `screenType`. */
+  /** Measured chip widths by {@link refKey}. */
   widths: ChipWidths
   activeId: string | null
   /** Content width available to the strip, padding already subtracted. */
@@ -65,11 +69,11 @@ export function partitionTabs({
 }: PartitionInput): Partition {
   if (tabs.length === 0) return allVisible(tabs)
   if (containerWidth <= 0) return allVisible(tabs)
-  if (tabs.some((tab) => widths[tab.screenType] === undefined)) {
+  if (tabs.some((tab) => widths[refKey(tab)] === undefined)) {
     return allVisible(tabs)
   }
 
-  const widthOf = (tab: Tab) => widths[tab.screenType] ?? 0
+  const widthOf = (tab: Tab) => widths[refKey(tab)] ?? 0
   const total =
     tabs.reduce((sum, tab) => sum + widthOf(tab), 0) + gap * (tabs.length - 1)
   if (total <= containerWidth) return allVisible(tabs)
