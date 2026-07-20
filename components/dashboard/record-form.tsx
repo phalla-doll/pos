@@ -17,6 +17,12 @@ export type RecordFormProps<T> = {
   label: string
   /** Singular name for one row, used in the title and the submit button. */
   noun: string
+  /**
+   * The heading for a new record — "New Inventory", "New customer". Resolved
+   * by the registry rather than built here, so this phrase and the tab chip
+   * showing it are literally the same string.
+   */
+  draftLabel: string
   /** The same columns the list renders, reused as the form's fields. */
   columns: ListColumn<T>[]
   /** All rows, searched for the one being edited. */
@@ -49,6 +55,7 @@ export type RecordFormProps<T> = {
 export function RecordForm<T>({
   label,
   noun,
+  draftLabel,
   columns,
   rows,
   rowKey,
@@ -91,8 +98,21 @@ export function RecordForm<T>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
+      {/*
+        The two headings are built from different halves on purpose.
+
+        Creating uses the registry's draft label — "New Inventory", or
+        whatever a screen whose label doesn't sit well after "New" declared
+        instead. It is also the tab chip and the browser tab title, and those
+        are read on their own — in the overflow menu, or in a browser tab strip
+        — with no Inventory tab beside them to say which item is meant.
+
+        Editing names the *row*: "Edit item". Its chip already carries the
+        record's own id ("SKU-0001"), so this heading is never read alone, and
+        "Edit Inventory" would claim to be editing the screen itself.
+      */}
       <ScreenHeader
-        label={creating ? `New ${noun}` : `Edit ${noun}`}
+        label={creating ? draftLabel : `Edit ${noun}`}
         description={
           creating
             ? `Add ${withArticle(noun)} to ${label}.`

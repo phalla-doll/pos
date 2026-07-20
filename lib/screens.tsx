@@ -162,6 +162,10 @@ function listScreen<T>(
 ): ScreenDef {
   const { creatable, editable, noun = "record", rows } = config
   const keyOf = config.rowKey ?? ((_row: T, index: number) => index)
+  // Resolved once here so the tab chip and the form's heading can't drift:
+  // they are the same phrase in two places, and a user switching between them
+  // should not see the tab renamed.
+  const draftLabel = config.draftLabel ?? `New ${label}`
 
   return {
     label,
@@ -182,6 +186,7 @@ function listScreen<T>(
               <RecordForm
                 label={label}
                 noun={noun}
+                draftLabel={draftLabel}
                 columns={config.columns}
                 rows={rows}
                 rowKey={keyOf}
@@ -189,11 +194,16 @@ function listScreen<T>(
                 tabId={tabId}
               />
             ),
-            // A draft is named for what it will become; an existing record is
-            // named by its own id, which is shorter and already what the user
-            // clicked. Prefixing it with the noun would push the useful half
-            // of "Inventory SKU-001" past the chip's truncation.
-            label: (param) => (isDraft(param) ? `New ${noun}` : param),
+            // A draft is named for the screen it will add to, not for the row
+            // noun: "New item" leans on the Inventory tab beside it to say
+            // which item, and a chip has to survive being read on its own —
+            // in the overflow menu, or as the browser tab's title.
+            //
+            // An existing record is named by its own id instead, which is
+            // shorter and already what the user clicked. Prefixing it with the
+            // screen would push the useful half of "Inventory SKU-0001" past
+            // the chip's truncation.
+            label: (param) => (isDraft(param) ? draftLabel : param),
             // Drafts are accepted only where creating is offered, and record
             // ids only where editing is — and only for a row that is actually
             // there, so a stale link drops the tab instead of opening a form
@@ -288,6 +298,9 @@ const screenDefs = {
       creatable: true,
       editable: true,
       noun: "customer",
+      // "New Customers" would claim to be creating several — the label is a
+      // plural because the sidebar wants one, and "New …" wants a singular.
+      draftLabel: "New customer",
       rows: sampleCustomers,
       rowKey: (row) => row.id,
       columns: [

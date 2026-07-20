@@ -169,6 +169,15 @@ export type ListScreenConfig<T> = {
   editable?: boolean
   /** Singular name for one row — "item", "customer". Used by the record form. */
   noun?: string
+  /**
+   * What a new record's tab and heading are called. Defaults to `New {label}`,
+   * which suits a screen whose label reads as a singular subject ("New
+   * Inventory") but not one whose label is a plural ("New Customers" claims to
+   * be creating several). Such a screen declares the phrase it wants —
+   * `"New customer"` — and the rest keep the default rather than restating a
+   * label they are already happy with.
+   */
+  draftLabel?: string
 }
 
 export type ListScreenProps<T> = ListScreenConfig<T> &

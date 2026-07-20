@@ -16,11 +16,17 @@ describe("tabTitle", () => {
     expect(tabTitle(ref("inventory"))).toBe("Inventory")
   })
 
-  it("names a draft for what it will become", () => {
-    expect(tabTitle(ref("inventory", "new-a3f9"))).toBe("New item")
+  it("names a draft for the screen it will add to", () => {
+    // Not "New item": a chip is read on its own in the overflow menu and as
+    // the browser tab's title, where there is no Inventory tab beside it to
+    // say which item. The row noun carries the sentences inside the form.
+    expect(tabTitle(ref("inventory", "new-a3f9"))).toBe("New Inventory")
   })
 
-  it("uses each screen's own noun", () => {
+  it("lets a screen override a draft label that reads wrong", () => {
+    // The default would be "New Customers", which claims to be creating
+    // several. The label is plural because the sidebar wants a plural, so the
+    // screen declares the singular phrase for this one position.
     expect(tabTitle(ref("customer-listing", "new-a3f9"))).toBe("New customer")
   })
 
