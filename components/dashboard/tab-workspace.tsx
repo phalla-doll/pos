@@ -61,14 +61,41 @@ export function TabWorkspace() {
         />
       )}
 
-      {activeScreen ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-zinc-50 dark:bg-zinc-900">
-          {/*
-            keying on the tab id guarantees a fresh remount whenever the
-            user switches tabs (or duplicates) — per the fresh-remount rule.
-          */}
-          <activeScreen.component key={activeTab!.id} />
-        </div>
+      {/*
+        Every open tab is mounted; the inactive ones are hidden.
+
+        Mounting only the active screen meant switching tabs unmounted the one
+        you left, so coming back reset everything it held — a list's filters,
+        sort, page, and selection all gone because you looked at something
+        else. Keeping the mount alive costs a hidden subtree per open tab and
+        buys back "it's still where I left it" for every screen at once,
+        without any of them having to persist state anywhere.
+
+        `key={tab.id}` still holds, and still means what it did: identity is
+        per tab, so a duplicate is a genuinely separate mount and an unrelated
+        close can't disturb the tab being looked at. What changed is only that
+        a mount now survives being switched away from.
+
+        Hidden with a class rather than the `hidden` attribute — the parent is
+        a flex container, and `display: flex` from the layout classes would
+        override the attribute's `display: none`.
+      */}
+      {tabs.length > 0 ? (
+        tabs.map((tab) => {
+          const screen = getScreen(tab.screenType)
+          if (!screen) return null
+          return (
+            <div
+              key={tab.id}
+              className={cn(
+                "flex min-h-0 flex-1 flex-col overflow-auto bg-zinc-50 dark:bg-zinc-900",
+                tab.id !== activeId && "hidden"
+              )}
+            >
+              <screen.component />
+            </div>
+          )
+        })
       ) : (
         <EmptyState onOpen={openTab} />
       )}
