@@ -186,6 +186,7 @@ const indeterminateDash =
  * hand-written twice, once in the header's Actions menu and once in a row's
  * context menu. Destructive delete is rendered separately, set apart by a
  * divider — and in the header it is a button of its own beside the menu.
+ * Nothing derives from that split; it is only where each surface puts it.
  */
 const bulkActions = [
   { label: "Export", icon: Download },
@@ -476,29 +477,6 @@ export function ListScreen<T>({
                   variant outranks a plain utility, and `cn` sees the two as
                   unrelated keys so it keeps both rather than replacing one.
                 */}
-                {/*
-                  Delete sits out here rather than at the foot of the Actions
-                  menu: it is the one entry there that can't be undone, and
-                  burying the irreversible action two clicks deep alongside
-                  reversible ones made it the hardest to reach and the easiest
-                  to hit by accident on the way past. Out here it is one click,
-                  visibly destructive, and still gated by the confirmation.
-
-                  It rides with the selection block, so it is absent rather
-                  than disabled when nothing is ticked — a permanently visible
-                  Delete is a threat the screen doesn't need to keep making.
-                */}
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => setConfirmingDelete(true)}
-                  className="pr-3 pl-2.5"
-                >
-                  <Trash2 />
-                  {/* Just "Delete" — the count is two elements to the left,
-                      so "Delete 3 rows" would say it again in the same breath. */}
-                  Delete
-                </Button>
                 <Separator
                   orientation="vertical"
                   className="h-5 data-vertical:self-center"
@@ -556,6 +534,26 @@ export function ListScreen<T>({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            {/*
+              Delete is out of that menu and beside it: it is the one action
+              here that can't be undone, and burying it at the foot of a list
+              of reversible ones made the irreversible one both the hardest to
+              reach and the easiest to hit on the way past. It follows the same
+              disabled-not-hidden rule as Actions, so the header keeps a fixed
+              set of controls and only the count to their left comes and goes.
+            */}
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={selectedCount === 0}
+              onClick={() => setConfirmingDelete(true)}
+              className="pr-3 pl-2.5"
+            >
+              <Trash2 />
+              {/* Just "Delete" — with a selection the count is already spelled
+                  out to the left, and with none there is no number to give. */}
+              Delete
+            </Button>
             {/*
               Two halves of one control, so they read as the same idea at two
               depths: Search opens the per-column row in the table, the sliders
