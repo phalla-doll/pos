@@ -43,7 +43,7 @@ New logic without a test is incomplete. Tests are `*.test.ts` next to the module
 
 ### Tab/URL flow
 
-`app/dashboard/page.tsx` → `<Suspense>` → `TabWorkspace` → `useTabs()`. The URL carries the **whole** workspace, not just the active screen: `?tabs=orders,orders,inventory&i=1` holds the open screens in order plus the focused index, so a refresh or a shared link restores every tab. [nuqs](https://github.com/47ng/nuqs) owns the router write (`useQueryStates`, `history: "replace"`, both params in one atomic update) — there is no hand-rolled mirror effect.
+`app/dashboard/page.tsx` → `<Suspense>` → `TabWorkspace` → `useTabs()`. The URL carries the **whole** workspace, not just the active screen: `?tabs=orders,orders,inventory:SKU-0001&i=1` holds the open screens (each optionally narrowed to one record) in order plus the focused index, so a refresh or a shared link restores every tab. [nuqs](https://github.com/47ng/nuqs) owns the router write (`useQueryStates`, `history: "replace"`, both params in one atomic update) — there is no hand-rolled mirror effect.
 
 **The split that matters: the URL is authoritative for _content_ (which screens, in what order, which is focused); `useTabs` state is authoritative for _identity_ (which tab is which).** `?tabs=orders,orders` is two identical strings, so identity is not expressible there and must never be re-derived from it on a normal mutation — that's how closing one of two identical tabs used to remount the survivor and destroy what the user had typed. Instead the open tabs (ids and all) live in React state, mutations run through the reducer, and the URL is written as a projection of the result.
 
@@ -53,11 +53,31 @@ The pieces:
 
 - `lib/tabs-reducer.ts` — the algebra over `{ tabs: Tab[], activeId }`, addressing tabs by **id** (the UI knows which tab it means; discarding that is what made closes ambiguous). Also owns the `WorkspaceContent` projection and `normalize`, which makes anything the URL hands us safe (clamps `i`, enforces "open tabs ⟹ exactly one focused").
 - `lib/tab-url.ts` — the URL codec (parsers, `contentFromSearch`, `launcherHref`). Imports `nuqs/server`, which is React-free, so it stays a pure Node-testable module.
-- `lib/tab-identity.ts` — `reconcileIds`, the external-change guess. Greedy type-matching; the `sync` path is its **only** caller by design.
+- `lib/tab-identity.ts` — `ScreenRef`/`Tab`, `refKey`, and `reconcileIds`, the external-change guess. Greedy ref-matching; the `sync` path is its **only** caller by design.
+- `lib/record-param.ts` — draft-vs-record-id algebra for a tab's `param`.
+- `lib/tab-title.ts` — what a tab is called, for the chip, the overflow menu, and the document title alike.
 
 `use-tabs.ts` reconciles only when the URL *changed* **and** the new content doesn't already match what it projected. Both halves are load-bearing: reacting to any state/URL divergence would undo our own mutation before the URL caught up, and reacting to every URL change would reconcile against the URL we just wrote — the lossy path this design exists to avoid.
 
-The active screen renders with `key={activeTab.id}` so every tab switch/duplicate is a fresh remount — this is a deliberate rule. Only the active screen is mounted, so a background tab holds no state to lose; the identity work protects the tab you're *looking at* from unrelated closes.
+Every open tab is mounted, keyed by `tab.id`, with the inactive ones hidden by a class (not the `hidden` attribute — the container is `flex`, which would override it). So `key={tab.id}` still means what it always did — identity is per tab, a duplicate is a genuinely separate mount, and an unrelated close can't disturb the tab you're looking at — but a mount now *survives* being switched away from.
+
+That is a deliberate reversal of the earlier "only the active screen is mounted" rule, and it is what makes record tabs worth having: unmounting the list to show a record form reset its filters, sort, page, and selection, so the user lost their place in the very list they were editing from. The cost is a hidden subtree per open tab; the alternative was making every screen persist its own state somewhere.
+
+### Record tabs (create / edit)
+
+A tab points at a `ScreenRef`, not a bare screen: `{ screenType, param? }`, serialized as one `?tabs=` token — `inventory`, `inventory:new-a3f9`, `inventory:SKU-0001`. Split on the **first** colon; screen keys are kebab-case and never contain one.
+
+Create and edit are **not** registry entries of their own — that would put "Inventory record" in the sidebar and ⌘K. They are the same entry's `detail`: a parameterized companion view, derived by `listScreen()` from the very config the table uses, so the form's fields *are* the list's columns and nothing is stated twice.
+
+`refKey` is the single matching rule, and it decides the reuse policy that "as many tabs as we want" rests on:
+
+- **Drafts** carry a param minted per click (`openDraft`), so nothing already open can match and every "New" stacks up another tab.
+- **Edits** carry the row key, so a record already open is focused rather than opened twice — two tabs disagreeing about one record is not something this can produce.
+- A list and its record forms never match each other, so opening `inventory` doesn't steal focus from `inventory:SKU-0001`.
+
+The registry's `detail.accepts` is called by the URL codec *before* a token becomes a tab, so a hand-edited link naming a record that doesn't exist drops that tab, and a param on a screen with no `detail` degrades to the bare screen. Validation stays in the registry; the codec only asks.
+
+Screens reach the workspace through `useWorkspace()`, not `useTabs()` — `useTabs` holds identity in `useState`, so a second caller would be a second, divergent workspace. `TabWorkspace` is the only caller and provides its one instance. `useWorkspace()` answers `null` outside a workspace (the sidebar, ⌘K), and screens hide their tab-opening affordances rather than throwing.
 
 **Launchers** (sidebar, ⌘K search) live in the dashboard *layout*, outside the workspace, so they can't call `useTabs`; they navigate instead, building the target with the same reuse-or-create `open` action so they add to the open tabs rather than replace them. The sidebar needs an href at render, so `NavMainLive` reads the URL and `app-sidebar.tsx` wraps it in `<Suspense>` — the fallback is the same `NavMain` with `freshWorkspaceHref`, a working degraded sidebar that prerenders. The ⌘K palette renders no href, so it reads the live URL at click time and needs no boundary. Anything that reads search params at render must sit inside a Suspense boundary or `/dashboard` stops prerendering.
 
