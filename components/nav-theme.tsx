@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react"
 import { useTheme } from "next-themes"
-import { Sun, Moon, Monitor } from "lucide-react"
+import { Sun } from "lucide-react"
 
 import {
   DropdownMenuRadioGroup,
@@ -11,12 +11,13 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu"
-
-const themes = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Monitor },
-] as const
+import {
+  checkedOption,
+  menuTheme,
+  themeOptionValues,
+  themeOptions,
+  type ThemeOption,
+} from "@/lib/theme"
 
 const emptySubscribe = () => () => {}
 
@@ -36,6 +37,11 @@ function useHydrated() {
  * ({@link NavUser}). The active theme lives in localStorage — unknown to the
  * server — so nothing is marked selected until hydrated, keeping the checkmark
  * out of the SSR markup.
+ *
+ * The menu shows palettes, not themes: a theme also carries a brightness, and
+ * `system-dark` checks the same System entry as `system`. `menuTheme` and
+ * `checkedOption` are the two halves of that projection, so picking System
+ * keeps whichever brightness the user was already on.
  */
 export function ThemeMenuSub() {
   const { theme, setTheme } = useTheme()
@@ -49,15 +55,21 @@ export function ThemeMenuSub() {
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         <DropdownMenuRadioGroup
-          value={hydrated ? theme : undefined}
-          onValueChange={(value) => setTheme(String(value))}
+          value={hydrated ? checkedOption(theme) : undefined}
+          onValueChange={(value) =>
+            setTheme(menuTheme(String(value) as ThemeOption, theme))
+          }
         >
-          {themes.map(({ value, label, icon: Icon }) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              <Icon strokeWidth={1.5} />
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
+          {themeOptionValues.map((option) => {
+            const { label, icon: Icon } = themeOptions[option]
+
+            return (
+              <DropdownMenuRadioItem key={option} value={option}>
+                <Icon strokeWidth={1.5} />
+                {label}
+              </DropdownMenuRadioItem>
+            )
+          })}
         </DropdownMenuRadioGroup>
       </DropdownMenuSubContent>
     </DropdownMenuSub>
