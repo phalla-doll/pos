@@ -847,7 +847,18 @@ export function ListScreen<T>({
         header had nothing to stick to and scrolled away with the rows.
         Neutralising it hands both axes back to this container.
       */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      {/*
+        The checkbox column is padded on both sides. The vendored table zeroes
+        the right padding of any cell holding a checkbox, so the column read as
+        4px of gutter left of the tick and only the next cell's 8px to its
+        right — the tick sat nearer its label than the table edge. `pr-2` puts
+        the same 16px on both sides of it.
+
+        It has to be spelled as the same kind of descendant override as the
+        `pl-4` beside it: the vendored rule is `:has([role=checkbox])`, which
+        outranks a bare utility on the cell itself.
+      */}
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         <Table>
           {/*
             The bottom rule is drawn as an inset shadow on the last header
