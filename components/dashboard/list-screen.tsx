@@ -915,7 +915,19 @@ export function ListScreen<T>({
                       sortable ? () => toggleSort(column.key) : undefined
                     }
                     className={cn(
-                      column.align === "right" && "text-right tabular-nums",
+                      // Headers are centred over their column while the data
+                      // stays left-aligned: the label names the column rather
+                      // than starting its text, and centring is what reads as
+                      // a caption on the whole width. `text-center` is enough
+                      // for both branches below — the sort button is
+                      // inline-flex, so text alignment places it, and its
+                      // symmetric `-mx-2.5` doesn't shift that.
+                      //
+                      // Numeric columns are the exception: their right edge is
+                      // where the digits line up, so the header follows them.
+                      column.align === "right"
+                        ? "text-right tabular-nums"
+                        : "text-center",
                       sortable &&
                         "group/sort cursor-pointer transition-colors select-none hover:bg-muted"
                     )}
