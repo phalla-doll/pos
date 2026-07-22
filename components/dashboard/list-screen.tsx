@@ -8,7 +8,6 @@ import {
   ChevronRight,
   ChevronsUpDown,
   ChevronUp,
-  Check,
   ClipboardCopy,
   ClipboardCheck,
   Copy,
@@ -16,13 +15,11 @@ import {
   Ellipsis,
   Filter,
   FolderInput,
-  ListChecks,
   PackagePlus,
   PencilLine,
   Plus,
   Printer,
   Search,
-  SlidersHorizontal,
   SquareCheck,
   Tag,
   Trash2,
@@ -68,12 +65,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group"
-import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -87,14 +78,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
   Table,
   TableBody,
   TableCell,
@@ -102,23 +85,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { useWorkspace } from "@/hooks/use-workspace"
 import type { ScreenProps } from "@/lib/screens"
 import {
-  columnKind,
   cycleSort,
   deriveRows,
   hasActiveFilter,
-  operatorsByKind,
   toClipboardText,
-  type FilterOperator,
   type FilterState,
   type ListColumn,
   type SortState,
@@ -290,13 +264,6 @@ export function ListScreen<T>({
   // goes through a confirmation that spells out exactly which rows it means.
   const [confirmingDelete, setConfirmingDelete] = React.useState(false)
 
-  // The advanced panel edits a *draft* of the same filters and only commits it
-  // on Apply, so a half-built query never disturbs the table underneath. It is
-  // seeded from the live filters each time the panel opens, which is what makes
-  // the two surfaces one filter set rather than two.
-  const [advancedOpen, setAdvancedOpen] = React.useState(false)
-  const [draft, setDraft] = React.useState<FilterState>({})
-
   // Only the *request* is stored. `paginate` clamps it against the row count
   // on every render, so a filter that shrinks the results simply answers a
   // lower page — no effect has to notice and reset anything after the fact.
@@ -409,9 +376,8 @@ export function ListScreen<T>({
     setSort((prev) => cycleSort(prev, key))
   }
 
-  // The inline row is the quick path: it always searches for a substring, so
-  // typing there resets that column to `contains` rather than silently reusing
-  // an operator the user picked in the panel and can't see from here.
+  // Every column searches for a substring: the row is the whole filter surface
+  // now, so there is no operator to carry over from anywhere else.
   function setFilter(key: string, value: string) {
     setFilters((prev) => ({ ...prev, [key]: { op: "contains", value } }))
   }
@@ -427,32 +393,6 @@ export function ListScreen<T>({
 
   function clearFilters() {
     setFilters({})
-    setDraft({})
-  }
-
-  function openAdvanced(open: boolean) {
-    if (open) setDraft(filters)
-    setAdvancedOpen(open)
-  }
-
-  function setDraftValue(key: string, value: string, fallback: FilterOperator) {
-    setDraft((prev) => ({
-      ...prev,
-      [key]: { op: prev[key]?.op ?? fallback, value },
-    }))
-  }
-
-  function setDraftOperator(key: string, op: FilterOperator) {
-    setDraft((prev) => ({
-      ...prev,
-      [key]: { op, value: prev[key]?.value ?? "" },
-    }))
-  }
-
-  function applyAdvanced(event: React.FormEvent) {
-    event.preventDefault()
-    setFilters(draft)
-    setAdvancedOpen(false)
   }
 
   /**
@@ -470,7 +410,6 @@ export function ListScreen<T>({
   }
 
   const filtersActive = hasActiveFilter(filters)
-  const draftActive = hasActiveFilter(draft)
   // Both affordances need a workspace to open a tab into; without one there is
   // nowhere for the form to go, so neither is rendered.
   const canCreate = Boolean(creatable) && workspace !== null
@@ -529,319 +468,179 @@ export function ListScreen<T>({
           </>
         )}
         {/*
-              Every bulk action behind one menu rather than a row of buttons:
-              this header already carries Search and New, and spelling the
-              actions out inline wrapped it onto a second line at laptop
-              widths. Disabled rather than hidden when nothing is ticked, so
-              the actions are discoverable before a selection exists.
-            */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                type="button"
-                variant="outline"
-                disabled={selectedCount === 0}
-                className="pr-2.5 pl-2.5"
-              />
-            }
-          >
-            <ListChecks />
-            Actions
-            <ChevronDown className="text-muted-foreground/70" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            {/* Base UI requires a group around a group label. */}
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-muted-foreground">
-                {selectedCount > 1
-                  ? `${selectedCount} rows selected`
-                  : "1 row selected"}
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            {bulkActions.map(({ label: action, icon: Icon }) => (
-              <DropdownMenuItem key={action}>
-                <Icon strokeWidth={1.5} />
-                {rowWord(action, selectedCount)}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            {bulkMenuActions.map(({ label: action, icon: Icon, shortcut }) => (
-              <DropdownMenuItem key={action}>
-                <Icon strokeWidth={1.5} />
-                {action}
-                {shortcut && (
-                  <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {/*
-              Delete is out of that menu and beside it: it is the one action
-              here that can't be undone, and burying it at the foot of a list
-              of reversible ones made the irreversible one both the hardest to
-              reach and the easiest to hit on the way past. It follows the same
-              disabled-not-hidden rule as Actions, so the header keeps a fixed
-              set of controls and only the count to their left comes and goes.
-            */}
-        <Button
-          type="button"
-          variant="destructive"
-          disabled={selectedCount === 0}
-          onClick={() => setConfirmingDelete(true)}
-          className="pr-3 pl-2.5"
-        >
-          <Trash2 />
-          {/* Just "Delete" — with a selection the count is already spelled
-                  out to the left, and with none there is no number to give. */}
-          Delete
-        </Button>
-        {/*
-              Two halves of one control, so they read as the same idea at two
-              depths: Search opens the per-column row in the table, the sliders
-              open the panel that can do more than a substring match. Both edit
-              the same `filters`, which is why they share a group rather than
-              sitting apart as unrelated buttons.
-            */}
+          One segmented group rather than four buttons spaced apart: every
+          segment in it acts on rows — makes one, edits one, deletes them, or
+          opens the menu of the rest — so joining them says they are one kind
+          of thing. Search, which changes what the table shows rather than what
+          it holds, stands outside it.
+
+          Everything in it is `outline`, which is what a segmented group needs
+          to draw one continuous outline. The two that used to stand out carry
+          their meaning in their content instead: Delete keeps destructive
+          *text*, and New keeps the only `+` in the row.
+        */}
         <ButtonGroup>
+          {/*
+            Opens a blank form in a new tab rather than unfolding one above the
+            table. It is no longer a toggle, so it doesn't need a held-down
+            look: each click is another draft, and the tab bar is what shows
+            how many are on the go.
+          */}
+          {canCreate && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => workspace?.openDraft(screenType)}
+              className="pr-3 pl-2.5"
+            >
+              <Plus />
+              New
+            </Button>
+          )}
+          {/*
+            The toolbar half of a gesture the table already had: double-click a
+            row, or right-click it and pick Edit. This is the discoverable one,
+            and it exists so a row reached by keyboard can be opened without
+            knowing either.
+
+            Enabled only at exactly one selected row. "Edit" over several would
+            have to open a form per row or silently pick one, and neither is
+            what the click asked for — the same reason the context menu hides
+            it for a multi-row selection.
+          */}
+          {canEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={selectedCount !== 1}
+              onClick={() => {
+                const [key] = [...selected]
+                if (key !== undefined) openRecord(key)
+              }}
+              className="pr-3 pl-2.5"
+            >
+              <PencilLine />
+              Edit
+            </Button>
+          )}
+          {/*
+            Delete is out of that menu and beside it: it is the one action here
+            that can't be undone, and burying it at the foot of a list of
+            reversible ones made the irreversible one both the hardest to reach
+            and the easiest to hit on the way past. It follows the same
+            disabled-not-hidden rule the More menu does, so the toolbar keeps a
+            fixed set of controls and only the count to their left comes and
+            goes.
+
+            `outline` like its neighbours, since a filled red segment in the
+            middle of the group would break the outline the group draws — the
+            warning moves to the text and icon, which is enough for a button
+            that only opens a confirmation.
+          */}
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              // No column asked for this one, so nothing should steal
-              // focus — the row opens and the caret stays put.
-              setFocusColumn(null)
-              setShowFilters((prev) => !prev)
-            }}
-            aria-expanded={showFilters}
-            aria-controls={filterRowId}
-            // The search row is either open or shut, so the button is a
-            // toggle and has to look held down while it is on — `bg-accent`
-            // is the same surface its own hover uses.
-            className={cn("pr-3 pl-2.5", showFilters && "bg-accent")}
+            disabled={selectedCount === 0}
+            onClick={() => setConfirmingDelete(true)}
+            className="pr-3 pl-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
-            <Search />
-            Search
-            {/*
-                  Inline rather than a corner badge: the dot marks a filter set
-                  that neither surface is currently showing, and reading in the
-                  flow of the label is what makes it a caption on the button
-                  instead of decoration floating beside it.
-                */}
-            {filtersActive && (
-              <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-            )}
+            <Trash2 />
+            {/* Just "Delete" — with a selection the count is already spelled
+                out to the left, and with none there is no number to give. */}
+            Delete
           </Button>
-          <Popover open={advancedOpen} onOpenChange={openAdvanced}>
-            {/*
-                  Icon-only, so it needs a name — and the delay matches the
-                  rest of this header's tooltips.
-                */}
-            <TooltipProvider delay={500}>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <PopoverTrigger
-                      render={
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          aria-label="Advanced search"
-                        />
-                      }
-                    />
-                  }
-                >
-                  <SlidersHorizontal />
-                </TooltipTrigger>
-                <TooltipContent align="end">Advanced search</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {/*
-                Each row is one condition — operator and value in a single
-                field, the operator as an inline addon rather than a separate
-                control beside the input. Nothing here touches the table until
-                Apply.
-              */}
-            <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
-              <form onSubmit={applyAdvanced} className="flex flex-col">
-                {/*
-                    `items-start` rather than `items-center`: the header is now
-                    two lines tall, and Clear belongs beside the title it sits
-                    with, not centred against the description below it.
-                  */}
-                <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
-                  <div className="flex flex-col gap-1">
-                    {/* Named for the trigger that opens it, not for what
-                            it does: "Search" alone repeated the word on the
-                            button an inch above, leaving nothing to say this
-                            is the deeper of the two surfaces. */}
-                    <PopoverTitle>Advanced search</PopoverTitle>
-                    {/*
-                        Says the thing the panel does not show on its own: that
-                        the conditions combine rather than replacing each other.
-                      */}
-                    <PopoverDescription>
-                      Match on several columns at once.
-                    </PopoverDescription>
-                  </div>
-                  {draftActive && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      // Shifted up to sit on the title's line, undoing the
-                      // button's own vertical slack against a one-line title.
-                      className="-mt-0.5 shrink-0"
-                      onClick={() => setDraft({})}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </PopoverHeader>
-                {/*
-                    A wide table has more columns than fit on screen, so the
-                    conditions scroll and the footer stays put — Apply must
-                    never be the thing that gets pushed out of view.
-                  */}
-                {/*
-                    One grid rather than a stack of per-row flexes: the label
-                    column is shared, so every field starts at the same x no
-                    matter how long its header is.
+          {/*
+            Every bulk action behind one menu rather than a row of buttons:
+            this toolbar already carries New, Edit, Delete and Search, and
+            spelling the rest out inline wrapped it onto a second line at
+            laptop widths.
+            Disabled rather than hidden when nothing is ticked, so the actions
+            are discoverable before a selection exists.
 
-                    `fit-content(8rem)` sizes that column to the longest label
-                    instead of a fixed width. A fixed one sets the gap to
-                    `width - label + gap`, so it grew as labels got shorter and
-                    "SKU" sat nearly twice as far from its field as "Category"
-                    did. Sizing to content makes the *widest* label define the
-                    column, so the tightest row is exactly `gap-x` and no row
-                    is arbitrarily loose. The 8rem cap keeps one long header
-                    from eating the input's width; `truncate` handles the rest.
-
-                    `minmax(0,1fr)` lets the input column actually shrink — a
-                    bare `1fr` floors at the input's intrinsic width and would
-                    push the panel wider.
-                  */}
-                <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4">
-                  {filterable.map((column) => {
-                    const operators = operatorsByKind[columnKind(column, rows)]
-                    const active =
-                      operators.find((o) => o.op === draft[column.key]?.op) ??
-                      operators[0]
-                    return (
-                      <React.Fragment key={column.key}>
-                        {/*
-                            `text-sm`, matching the input beside it. At `text-xs`
-                            the label read as a caption *about* the field rather
-                            than the field's name — which is what it was when it
-                            sat above the input, but not what it is on a shared
-                            row where the eye compares the two directly.
-                          */}
-                        <label
-                          htmlFor={`adv-${column.key}`}
-                          className="truncate text-sm font-medium"
-                        >
-                          {column.header}
-                        </label>
-                        <InputGroup>
-                          <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                render={
-                                  <InputGroupButton
-                                    aria-label={`${column.header} operator`}
-                                    // A fixed width so every field's divider
-                                    // lands in the same place — "=" and
-                                    // "contains" must not stagger the inputs.
-                                    className="mr-1.5 w-20 justify-between font-normal"
-                                  />
-                                }
-                              >
-                                {active.short}
-                                <ChevronDown className="text-muted-foreground/70" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="start"
-                                className="w-56"
-                              >
-                                {operators.map((operator) => (
-                                  <DropdownMenuItem
-                                    key={operator.op}
-                                    onClick={() =>
-                                      setDraftOperator(column.key, operator.op)
-                                    }
-                                  >
-                                    <span className="w-14 shrink-0 text-muted-foreground">
-                                      {operator.short}
-                                    </span>
-                                    {operator.label}
-                                    {operator.op === active.op && (
-                                      <Check className="ml-auto" />
-                                    )}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </InputGroupAddon>
-                          <InputGroupInput
-                            id={`adv-${column.key}`}
-                            value={draft[column.key]?.value ?? ""}
-                            onChange={(event) =>
-                              setDraftValue(
-                                column.key,
-                                event.target.value,
-                                active.op
-                              )
-                            }
-                            // The label beside it already names the column,
-                            // so repeating the header here would say the
-                            // same word twice on one row.
-                            placeholder="Value…"
-                          />
-                        </InputGroup>
-                      </React.Fragment>
-                    )
-                  })}
-                </div>
-                <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-                  {filtersActive && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="mr-auto"
-                      onClick={clearFilters}
-                    >
-                      Reset all
-                    </Button>
-                  )}
-                  <Button type="submit" className="pr-3 pl-2.5">
-                    <Search />
-                    Apply
-                  </Button>
-                </div>
-              </form>
-            </PopoverContent>
-          </Popover>
+            Last in the group, where an overflow menu belongs: the named
+            actions come first and the leftovers trail them. "More" with an
+            ellipsis says that on its own, so the chevron a named trigger
+            needed is dropped — an ellipsis beside a caret is the same
+            promise twice.
+          */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={selectedCount === 0}
+                  className="pr-2.5 pl-2.5"
+                />
+              }
+            >
+              <Ellipsis />
+              More
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {/* Base UI requires a group around a group label. */}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-muted-foreground">
+                  {selectedCount > 1
+                    ? `${selectedCount} rows selected`
+                    : "1 row selected"}
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
+              {bulkActions.map(({ label: action, icon: Icon }) => (
+                <DropdownMenuItem key={action}>
+                  <Icon strokeWidth={1.5} />
+                  {rowWord(action, selectedCount)}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              {bulkMenuActions.map(
+                ({ label: action, icon: Icon, shortcut }) => (
+                  <DropdownMenuItem key={action}>
+                    <Icon strokeWidth={1.5} />
+                    {action}
+                    {shortcut && (
+                      <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
+                    )}
+                  </DropdownMenuItem>
+                )
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </ButtonGroup>
         {/*
-              Opens a blank form in a new tab rather than unfolding one above
-              the table. It is no longer a toggle, so it doesn't need a held-
-              down look: each click is another draft, and the tab bar is what
-              shows how many are on the go.
-            */}
-        {canCreate && (
-          <Button
-            type="button"
-            onClick={() => workspace?.openDraft(screenType)}
-            className="pr-3 pl-2.5"
-          >
-            <Plus />
-            New
-          </Button>
-        )}
+          Search sits apart from the group on purpose: everything in the group
+          acts on rows — makes one, edits one, deletes them — while this one
+          changes what the table shows. Joining them would have said the two
+          were the same kind of thing.
+        */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            // No column asked for this one, so nothing should steal focus —
+            // the row opens and the caret stays put.
+            setFocusColumn(null)
+            setShowFilters((prev) => !prev)
+          }}
+          aria-expanded={showFilters}
+          aria-controls={filterRowId}
+          // The search row is either open or shut, so the button is a toggle
+          // and has to look held down while it is on — `bg-accent` is the same
+          // surface its own hover uses.
+          className={cn("pr-3 pl-2.5", showFilters && "bg-accent")}
+        >
+          <Search />
+          Search
+          {/*
+            Inline rather than a corner badge: the dot marks a filter the
+            search row is not currently showing, and reading in the flow of the
+            label is what makes it a caption on the button instead of
+            decoration floating beside it.
+          */}
+          {filtersActive && (
+            <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+          )}
+        </Button>
       </div>
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
