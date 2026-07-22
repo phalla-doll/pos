@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ChevronsUpDown,
   ChevronUp,
+  Check,
   ClipboardCopy,
   ClipboardCheck,
   Copy,
@@ -66,6 +67,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group"
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -90,10 +97,13 @@ import { cn } from "@/lib/utils"
 import { useWorkspace } from "@/hooks/use-workspace"
 import type { ScreenProps } from "@/lib/screens"
 import {
+  columnKind,
   cycleSort,
   deriveRows,
   hasActiveFilter,
+  operatorsByKind,
   toClipboardText,
+  type FilterOperator,
   type FilterState,
   type ListColumn,
   type SortState,
@@ -286,6 +296,14 @@ export function ListScreen<T>({
   // chase the field after the fact.
   const [focusColumn, setFocusColumn] = React.useState<string | null>(null)
 
+  // The advanced card edits a *draft* of the same filters and only commits it
+  // on Apply, so a half-built query never disturbs the table underneath. It is
+  // seeded from the live filters each time the card opens, which is what makes
+  // the two surfaces one filter set rather than two.
+  const [advancedOpen, setAdvancedOpen] = React.useState(false)
+  const [draft, setDraft] = React.useState<FilterState>({})
+  const advancedId = React.useId()
+
   const filterable = React.useMemo(
     () => columns.filter((c) => c.filterable !== false),
     [columns]
@@ -394,6 +412,32 @@ export function ListScreen<T>({
 
   function clearFilters() {
     setFilters({})
+    setDraft({})
+  }
+
+  function openAdvanced(open: boolean) {
+    if (open) setDraft(filters)
+    setAdvancedOpen(open)
+  }
+
+  function setDraftValue(key: string, value: string, fallback: FilterOperator) {
+    setDraft((prev) => ({
+      ...prev,
+      [key]: { op: prev[key]?.op ?? fallback, value },
+    }))
+  }
+
+  function setDraftOperator(key: string, op: FilterOperator) {
+    setDraft((prev) => ({
+      ...prev,
+      [key]: { op, value: prev[key]?.value ?? "" },
+    }))
+  }
+
+  function applyAdvanced(event: React.FormEvent) {
+    event.preventDefault()
+    setFilters(draft)
+    setAdvancedOpen(false)
   }
 
   /**
@@ -411,6 +455,7 @@ export function ListScreen<T>({
   }
 
   const filtersActive = hasActiveFilter(filters)
+  const draftActive = hasActiveFilter(draft)
   // Both affordances need a workspace to open a tab into; without one there is
   // nowhere for the form to go, so neither is rendered.
   const canCreate = Boolean(creatable) && workspace !== null
@@ -447,8 +492,8 @@ export function ListScreen<T>({
 
           Everything in it is `outline`, which is what a segmented group needs
           to draw one continuous outline. The two that used to stand out carry
-          their meaning in their content instead: Delete keeps destructive
-          *text*, and New keeps the only `+` in the row.
+          their meaning in their content instead — New keeps the only `+` in
+          the row.
         */}
         <ButtonGroup>
           {/*
@@ -514,38 +559,15 @@ export function ListScreen<T>({
             Approve
           </Button>
           {/*
-            Delete is out of that menu and beside it: it is the one action here
-            that can't be undone, and burying it at the foot of a list of
-            reversible ones made the irreversible one both the hardest to reach
-            and the easiest to hit on the way past. It follows the same
-            disabled-not-hidden rule the More menu does, so the toolbar keeps a
-            fixed set of controls and only the count to their left comes and
-            goes.
-
-            `outline` like its neighbours, since a filled red segment in the
-            middle of the group would break the outline the group draws — the
-            warning moves to the text and icon, which is enough for a button
-            that only opens a confirmation.
-          */}
-          <Button
-            type="button"
-            variant="outline"
-            disabled={selectedCount === 0}
-            onClick={() => setConfirmingDelete(true)}
-            className="pr-3 pl-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 />
-            {/* Just "Delete" — with a selection the count is already spelled
-                out to the left, and with none there is no number to give. */}
-            Delete
-          </Button>
-          {/*
             Every bulk action behind one menu rather than a row of buttons:
-            this toolbar already carries New, Edit, Delete and Search, and
+            this toolbar already carries New, Edit, Approve and Search, and
             spelling the rest out inline wrapped it onto a second line at
-            laptop widths.
-            Disabled rather than hidden when nothing is ticked, so the actions
-            are discoverable before a selection exists.
+            laptop widths. Disabled rather than hidden when nothing is ticked,
+            so the actions are discoverable before a selection exists.
+
+            Deleting is not offered here at all: it stays on a row's context
+            menu, which is a deliberate gesture at a particular row rather than
+            a button sitting one slip away from Approve.
 
             Last in the group, where an overflow menu belongs: the named
             actions come first and the leftovers trail them. "More" with an
@@ -599,32 +621,32 @@ export function ListScreen<T>({
         </ButtonGroup>
         {/*
           Search sits apart from the group on purpose: everything in the group
-          acts on rows — makes one, edits one, deletes them — while this one
-          changes what the table shows. Joining them would have said the two
-          were the same kind of thing.
+          acts on rows — makes one, edits one, approves or deletes them — while
+          this one changes what the table shows. Joining them would have said
+          the two were the same kind of thing.
+
+          It opens the advanced card below rather than the per-column row: the
+          funnel on each header already owns that row, and one button opening
+          the surface the other one opens is a button with nothing of its own
+          to do.
         */}
         <Button
           type="button"
           variant="outline"
-          onClick={() => {
-            // No column asked for this one, so nothing should steal focus —
-            // the row opens and the caret stays put.
-            setFocusColumn(null)
-            setShowFilters((prev) => !prev)
-          }}
-          aria-expanded={showFilters}
-          aria-controls={filterRowId}
-          // The search row is either open or shut, so the button is a toggle
-          // and has to look held down while it is on — `bg-accent` is the same
-          // surface its own hover uses.
-          className={cn("pr-3 pl-2.5", showFilters && "bg-accent")}
+          onClick={() => openAdvanced(!advancedOpen)}
+          aria-expanded={advancedOpen}
+          aria-controls={advancedId}
+          // The card is either open or shut, so the button is a toggle and has
+          // to look held down while it is on — `bg-accent` is the same surface
+          // its own hover uses.
+          className={cn("pr-3 pl-2.5", advancedOpen && "bg-accent")}
         >
           <Search />
           Search
           {/*
-            Inline rather than a corner badge: the dot marks a filter the
-            search row is not currently showing, and reading in the flow of the
-            label is what makes it a caption on the button instead of
+            Inline rather than a corner badge: the dot marks a filter that
+            neither surface is currently showing, and reading in the flow of
+            the label is what makes it a caption on the button instead of
             decoration floating beside it.
           */}
           {filtersActive && (
@@ -632,6 +654,181 @@ export function ListScreen<T>({
           )}
         </Button>
       </div>
+
+      {/*
+        The advanced card — the same conditions the old popover held, now a
+        panel of its own above the table: at this width the fields can breathe
+        two abreast, and a surface you keep referring back to while reading
+        results has no business being a popover that shuts on the first click
+        outside it.
+
+        Mounted and unmounted rather than hidden, so `autoFocus` and the draft
+        seeding both key off the open.
+      */}
+      {advancedOpen && (
+        <div id={advancedId} className="rounded-xl border bg-card">
+          <form onSubmit={applyAdvanced} className="flex flex-col">
+            {/*
+              `items-start` rather than `items-center`: the header is two lines
+              tall, and Clear belongs beside the title it sits with, not centred
+              against the description below it.
+            */}
+            <div className="flex flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
+              <div className="flex flex-col gap-1">
+                {/* Named for the button that opens it, not for what it does:
+                    "Search" alone repeated the word on the button an inch
+                    above, leaving nothing to say this is the deeper of the two
+                    surfaces. */}
+                <p className="text-sm font-semibold">Advanced search</p>
+                {/*
+                  Says the thing the card does not show on its own: that the
+                  conditions combine rather than replacing each other.
+                */}
+                <p className="text-sm text-muted-foreground">
+                  Match on several columns at once.
+                </p>
+              </div>
+              {draftActive && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  // Shifted up to sit on the title's line, undoing the button's
+                  // own vertical slack against a one-line title.
+                  className="-mt-0.5 shrink-0"
+                  onClick={() => setDraft({})}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            {/*
+              One grid rather than a stack of per-row flexes: the label column
+              is shared, so every field starts at the same x no matter how long
+              its header is.
+
+              `fit-content(8rem)` sizes that column to the longest label instead
+              of a fixed width. A fixed one sets the gap to `width - label +
+              gap`, so it grew as labels got shorter and "SKU" sat nearly twice
+              as far from its field as "Category" did. Sizing to content makes
+              the *widest* label define the column, so the tightest row is
+              exactly `gap-x` and no row is arbitrarily loose. The 8rem cap
+              keeps one long header from eating the input's width; `truncate`
+              handles the rest.
+
+              `minmax(0,1fr)` lets the input column actually shrink — a bare
+              `1fr` floors at the input's intrinsic width and would push the
+              card wider.
+
+              The pair repeats at `lg`: the popover was 28rem wide and had one
+              condition per line, but a full-width card would stretch each
+              field across the screen to say the same thing.
+            */}
+            <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
+              {filterable.map((column) => {
+                const operators = operatorsByKind[columnKind(column, rows)]
+                const active =
+                  operators.find((o) => o.op === draft[column.key]?.op) ??
+                  operators[0]
+                return (
+                  <React.Fragment key={column.key}>
+                    {/*
+                      `text-sm`, matching the input beside it. At `text-xs` the
+                      label read as a caption *about* the field rather than the
+                      field's name — which is what it was when it sat above the
+                      input, but not what it is on a shared row where the eye
+                      compares the two directly.
+                    */}
+                    <label
+                      htmlFor={`adv-${column.key}`}
+                      className="truncate text-sm font-medium"
+                    >
+                      {column.header}
+                    </label>
+                    <InputGroup>
+                      <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <InputGroupButton
+                                aria-label={`${column.header} operator`}
+                                // A fixed width so every field's divider lands
+                                // in the same place — "=" and "contains" must
+                                // not stagger the inputs.
+                                className="mr-1.5 w-20 justify-between font-normal"
+                              />
+                            }
+                          >
+                            {active.short}
+                            <ChevronDown className="text-muted-foreground/70" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56">
+                            {operators.map((operator) => (
+                              <DropdownMenuItem
+                                key={operator.op}
+                                onClick={() =>
+                                  setDraftOperator(column.key, operator.op)
+                                }
+                              >
+                                <span className="w-14 shrink-0 text-muted-foreground">
+                                  {operator.short}
+                                </span>
+                                {operator.label}
+                                {operator.op === active.op && (
+                                  <Check className="ml-auto" />
+                                )}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id={`adv-${column.key}`}
+                        value={draft[column.key]?.value ?? ""}
+                        onChange={(event) =>
+                          setDraftValue(
+                            column.key,
+                            event.target.value,
+                            active.op
+                          )
+                        }
+                        // The label beside it already names the column, so
+                        // repeating the header here would say the same word
+                        // twice on one row.
+                        placeholder="Value…"
+                      />
+                    </InputGroup>
+                  </React.Fragment>
+                )
+              })}
+            </div>
+            {/*
+              Apply leads the footer, under the first condition rather than
+              across the card from it: the fields start at the left, so that is
+              where the eye is when the last one is filled. Reset all keeps the
+              far end — the two are opposites, and putting them side by side
+              invites the wrong one.
+            */}
+            <div className="flex items-center gap-2 border-t px-4 py-3">
+              <Button type="submit" className="pr-3 pl-2.5">
+                <Search />
+                Apply
+              </Button>
+              {filtersActive && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={clearFilters}
+                >
+                  Reset all
+                </Button>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
       {/*
@@ -1067,7 +1264,8 @@ export function ListScreen<T>({
                       {/*
                         The right-click already made the selection match what
                         the menu acts on (`selectionForMenu`), so this opens the
-                        very same confirmation the header's Delete button does.
+                        confirmation below, which is now the only way to reach
+                        it.
                       */}
                       <ContextMenuItem
                         variant="destructive"
@@ -1197,9 +1395,9 @@ export function ListScreen<T>({
 
       {/*
         Delete confirmation — the only irreversible action here, so it names
-        the rows instead of asking "are you sure?" about an abstract count.
-        Both the header's Delete button and a row's context menu open this
-        same dialog.
+        the rows instead of asking "are you sure?" about an abstract count. A
+        row's context menu is what opens it; the toolbar offers no Delete of
+        its own.
       */}
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="sm:max-w-md">
