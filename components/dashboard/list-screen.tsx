@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   Archive,
+  BadgeCheck,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -430,43 +431,13 @@ export function ListScreen<T>({
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="sr-only">{label}</h1>
         {/*
-              The selection count and its Clear button appear only when there
-              is a selection: the actions beside them stay put and merely grey
-              out, so this leading pair is the only thing that moves — and a
-              permanent "0 selected" would be an odd thing to read.
-            */}
-        {selectedCount > 0 && (
-          <>
-            <span className="text-sm font-medium tabular-nums">
-              {selectedCount} selected
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Clear selection"
-              onClick={() => setSelected(emptySelection)}
-            >
-              <X />
-            </Button>
-            {/*
-                  The vendored separator carries `data-vertical:self-stretch`,
-                  for the case where it should span its row. Fixing the height
-                  with `h-5` doesn't undo that alignment — it just pins a 20px
-                  rule to the top of a 32px row, which reads as the count
-                  beside it sitting low.
-
-                  The override has to repeat the `data-vertical:` prefix. A
-                  bare `self-center` loses twice over: an attribute-selector
-                  variant outranks a plain utility, and `cn` sees the two as
-                  unrelated keys so it keeps both rather than replacing one.
-                */}
-            <Separator
-              orientation="vertical"
-              className="h-5 data-vertical:self-center"
-            />
-          </>
-        )}
+          No selection count and no Clear beside it: the count moved the whole
+          toolbar sideways the moment a row was ticked, and the ticks that
+          created a selection are the obvious way back out of one — the header
+          checkbox clears the page in a click. What the selection is still gets
+          said where it matters: the More menu heads itself with it, and the
+          delete confirmation names the rows one by one.
+        */}
         {/*
           One segmented group rather than four buttons spaced apart: every
           segment in it acts on rows — makes one, edits one, deletes them, or
@@ -523,6 +494,25 @@ export function ListScreen<T>({
               Edit
             </Button>
           )}
+          {/*
+            A UI-only stub like the bulk actions in the More menu — there is no
+            backend to approve against yet, so it carries no handler. It is out
+            here rather than in that menu because approving is the one thing a
+            reviewer does over and over, and a two-click path for the common
+            case is the wrong way round.
+
+            Enabled from one row up: unlike Edit, approving several at once is
+            a coherent thing to ask for.
+          */}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={selectedCount === 0}
+            className="pr-3 pl-2.5"
+          >
+            <BadgeCheck />
+            Approve
+          </Button>
           {/*
             Delete is out of that menu and beside it: it is the one action here
             that can't be undone, and burying it at the foot of a list of
