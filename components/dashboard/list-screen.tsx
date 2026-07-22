@@ -977,10 +977,17 @@ export function ListScreen<T>({
                     canFilter &&
                     filterable[filterable.length - 1]?.key === column.key
                   return (
-                    <TableHead key={column.key} className="py-1.5">
+                    <TableHead key={column.key} className="py-1">
                       {canFilter ? (
                         <div className="relative">
-                          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                          {/*
+                            A notch below the vendored `h-8`/`text-sm`, matching
+                            the body rows underneath rather than the header
+                            controls above: this row sits *in* the table, so it
+                            should read at the table's density, not the
+                            toolbar's.
+                          */}
                           <Input
                             aria-label={`Search ${column.header}`}
                             value={filters[column.key]?.value ?? ""}
@@ -989,7 +996,7 @@ export function ListScreen<T>({
                               setFilter(column.key, event.target.value)
                             }
                             className={cn(
-                              "pl-7",
+                              "h-7 pl-6.5 text-[0.8125rem] md:text-[0.8125rem]",
                               isLastFilter && filtersActive && "pr-7"
                             )}
                           />
