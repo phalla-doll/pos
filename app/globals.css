@@ -206,3 +206,85 @@
     @apply font-sans;
     }
 }
+
+/* A scrollbar that stays out of the way: thin, and coloured in only while the
+ * pointer is over the thing that scrolls. Anything long enough to need one is
+ * usually something you are reading, and a permanent bar down the edge of a
+ * table competes with the rows for the eye.
+ *
+ * Two mechanisms, one per scheme, because neither works in both:
+ *
+ * - Light gets the WebKit pseudo-elements, the only lever for an exact width
+ *   (`scrollbar-width` offers `thin` and nothing finer), so the bar is 6px.
+ * - Dark gets the standard properties. Blink will not paint an author-styled
+ *   `::-webkit-scrollbar` on a dark surface — verified by giving the thumb a
+ *   flat red and getting nothing — so the pseudo-elements would ship an
+ *   invisible scrollbar. `thin` is wider than 6px but it is drawn.
+ *
+ * They must not be declared together: Blink ignores the pseudo-element rules
+ * whenever the element also carries a `scrollbar-width`, even `auto`. Hence
+ * the standard properties live inside the dark selector rather than beside
+ * the pseudo-elements, and the `@supports not` block — for engines with no
+ * pseudo-elements at all (Firefox, Safari before 18.2) — repeats them.
+ *
+ * `:focus-within` keeps the bar up while a control inside has the keyboard, so
+ * tabbing into a scrolled region doesn't leave it invisible when it is the
+ * very thing about to move. */
+@utility scrollbar-subtle {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: transparent;
+  }
+
+  /* Not `--border`: that is the colour of the rules between the rows, so a
+   * thumb wearing it disappears into the table it sits beside. */
+  &:hover::-webkit-scrollbar-thumb,
+  &:focus-within::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  }
+
+  &:hover::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  }
+
+  /* Dark needs more of the colour, not the same amount of it: a translucent
+   * grey loses contrast far faster against a dark card than a light one. */
+  &:is(.dark *, .system-dark *) {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    &:hover,
+    &:focus-within {
+      scrollbar-color: color-mix(
+          in oklab,
+          var(--muted-foreground) 75%,
+          transparent
+        )
+        transparent;
+    }
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+
+    &:hover,
+    &:focus-within {
+      scrollbar-color: color-mix(
+          in oklab,
+          var(--muted-foreground) 45%,
+          transparent
+        )
+        transparent;
+    }
+  }
+}
