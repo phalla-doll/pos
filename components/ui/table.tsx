@@ -23,7 +23,9 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      // `[&_tr]` beats the row's own `even:` stripe on specificity, which is
+      // what keeps the alternation to the body.
+      className={cn("[&_tr]:border-b [&_tr]:bg-transparent", className)}
       {...props}
     />
   )
@@ -57,7 +59,17 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        // Zebra striping. A bare `even:` on purpose, though it is the row's
+        // position in *any* section: it has to lose to the hover and selected
+        // backgrounds beside it, and those are decided by source order at
+        // equal specificity — Tailwind emits structural variants before
+        // `hover:` and `data-[state=…]:`, which a compound like
+        // `in-data-[slot=table-body]:even:` would sort after, leaving a
+        // striped row that ignored the pointer.
+        //
+        // `TableHeader` opts its own rows back out, since a header is not part
+        // of the alternation the eye is following.
+        "border-b transition-colors even:bg-muted/30 hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
         className
       )}
       {...props}
