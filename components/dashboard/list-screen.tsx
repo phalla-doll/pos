@@ -872,7 +872,7 @@ export function ListScreen<T>({
         `min-h-0` + `overflow-auto` hand it back its own scrollbar — which is
         also what the sticky header measures itself against.
       */}
-      <div className="min-h-0 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      <div className="min-h-0 overflow-auto rounded-md border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
