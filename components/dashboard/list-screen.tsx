@@ -859,7 +859,23 @@ export function ListScreen<T>({
         outranks a bare utility on the cell itself.
       */}
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
-        <Table>
+        {/*
+          The separated border model, against Tailwind's `border-collapse:
+          collapse` default. A collapsed table paints in two passes — every
+          background first, then every foreground — and a sticky section is not
+          given a layer of its own, so the body's *text* drew over the header's
+          cell backgrounds however they were coloured: rows sliding under the
+          header showed through the band between the labels and the search
+          inputs. Separating the borders is what earns the header its own paint
+          order.
+
+          The cost is that row borders are ignored in this model, so the
+          separators move to the cells. `TableRow`'s `border-b` and
+          `TableBody`'s last-row exemption are both vendored, and both are now
+          inert — these two rules restate them one level down rather than
+          editing `table.tsx`.
+        */}
+        <Table className="border-separate border-spacing-0 [&_tbody_td]:border-b [&_tbody_tr:last-child_td]:border-b-0">
           {/*
             The bottom rule is drawn as an inset shadow on the last header
             row's cells, not with the `border-b` the rows already carry: the
@@ -874,7 +890,25 @@ export function ListScreen<T>({
             body, so it keeps the ordinary border that separates the two
             header rows from each other.
           */}
-          <TableHeader className="sticky top-0 z-10 bg-card [&_tr:last-child]:border-b-0 [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)]">
+          {/*
+            The background is on the cells, not on this `thead`. A sticky row
+            group is lifted out of the table's painting order, but its own
+            background isn't lifted with it — so the rows scrolling underneath
+            showed through wherever a header cell left space, most visibly in
+            the padding between the label row and the search row.
+
+            Cell backgrounds *are* painted with the sticky group, so `[&_th]`
+            covers the whole header. It stays out of the way of the sort
+            hover: `.[&_th]:bg-card th` scores (0,1,1) against
+            `.hover:bg-muted:hover` at (0,2,0), so the hover still wins.
+
+            The rules between and beneath the header rows are drawn on the
+            cells for the same reason the body's are — see the `Table` above.
+            The bottom one stays an inset shadow rather than a border: it is
+            the edge the scrolling body meets, and a shadow can't be mistaken
+            for part of the table's border geometry.
+          */}
+          <TableHeader className="sticky top-0 z-10 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-0">
                 <Checkbox
