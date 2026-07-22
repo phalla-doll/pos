@@ -14,6 +14,7 @@ import {
   Copy,
   Download,
   Ellipsis,
+  Filter,
   FolderInput,
   ListChecks,
   PackagePlus,
@@ -310,6 +311,13 @@ export function ListScreen<T>({
   const [showFilters, setShowFilters] = React.useState(false)
   const filterRowId = React.useId()
 
+  // Which column asked for the row, so its input can take focus when the row
+  // mounts. Null when the header's Search button opened it — that one is about
+  // the row as a whole and has no column to land on. Read by `autoFocus`, which
+  // fires on mount, and the row *is* mounted and unmounted, so no effect has to
+  // chase the field after the fact.
+  const [focusColumn, setFocusColumn] = React.useState<string | null>(null)
+
   const filterable = React.useMemo(
     () => columns.filter((c) => c.filterable !== false),
     [columns]
@@ -406,6 +414,15 @@ export function ListScreen<T>({
   // an operator the user picked in the panel and can't see from here.
   function setFilter(key: string, value: string) {
     setFilters((prev) => ({ ...prev, [key]: { op: "contains", value } }))
+  }
+
+  // A header's funnel opens the same row the Search button does — one search
+  // row, reachable from either place. What the funnel adds is where you land:
+  // the row comes up with that column's field already focused, so a filter is
+  // one click and typing rather than a click, a hunt, and a click.
+  function toggleColumnFilter(key: string) {
+    setFocusColumn(key)
+    setShowFilters((prev) => !prev)
   }
 
   function clearFilters() {
@@ -586,7 +603,12 @@ export function ListScreen<T>({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowFilters((prev) => !prev)}
+                onClick={() => {
+                  // No column asked for this one, so nothing should steal
+                  // focus — the row opens and the caret stays put.
+                  setFocusColumn(null)
+                  setShowFilters((prev) => !prev)
+                }}
                 aria-expanded={showFilters}
                 aria-controls={filterRowId}
                 // The search row is either open or shut, so the button is a
@@ -908,7 +930,7 @@ export function ListScreen<T>({
             the edge the scrolling body meets, and a shadow can't be mistaken
             for part of the table's border geometry.
           */}
-          <TableHeader className="sticky top-0 z-10 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
+          <TableHeader className="sticky top-0 z-10 [&_th]:h-8 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-0">
                 <Checkbox
@@ -925,6 +947,8 @@ export function ListScreen<T>({
               {columns.map((column) => {
                 const active = sort?.key === column.key
                 const sortable = column.sortable !== false
+                const canFilter = column.filterable !== false
+                const columnFiltered = Boolean(filters[column.key]?.value)
                 return (
                   <TableHead
                     key={column.key}
@@ -966,36 +990,87 @@ export function ListScreen<T>({
                         "group/sort cursor-pointer transition-colors select-none hover:bg-muted"
                     )}
                   >
-                    {sortable ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        // Its own hover surface is dropped: the cell behind it
-                        // now draws that, and two `bg-muted` layers would stack
-                        // into a darker patch the shape of the label.
-                        className={cn(
-                          // Keyed off the cell's hover, not its own: the label
-                          // has to darken when the pointer is anywhere in the
-                          // column header, including the padding beside it.
-                          "-mx-2.5 h-8 font-medium text-muted-foreground group-hover/sort:text-foreground hover:bg-transparent",
-                          active && "text-foreground"
-                        )}
-                      >
-                        {column.header}
-                        {active ? (
-                          sort.dir === "asc" ? (
-                            <ChevronUp />
+                    {/*
+                      Label, sort icon, funnel — one flex row so the pair
+                      centres as a unit and the funnel keeps its place however
+                      long the header is.
+                    */}
+                    <div
+                      className={cn(
+                        "flex items-center gap-0.5",
+                        column.align === "right"
+                          ? "justify-end"
+                          : "justify-center"
+                      )}
+                    >
+                      {sortable ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          // Its own hover surface is dropped: the cell behind it
+                          // now draws that, and two `bg-muted` layers would stack
+                          // into a darker patch the shape of the label.
+                          className={cn(
+                            // Keyed off the cell's hover, not its own: the label
+                            // has to darken when the pointer is anywhere in the
+                            // column header, including the padding beside it.
+                            "-mx-2.5 h-7 font-medium text-muted-foreground group-hover/sort:text-foreground hover:bg-transparent",
+                            active && "text-foreground"
+                          )}
+                        >
+                          {column.header}
+                          {active ? (
+                            sort.dir === "asc" ? (
+                              <ChevronUp />
+                            ) : (
+                              <ChevronDown />
+                            )
                           ) : (
-                            <ChevronDown />
-                          )
-                        ) : (
-                          <ChevronsUpDown className="text-muted-foreground/50" />
-                        )}
-                      </Button>
-                    ) : (
-                      column.header
-                    )}
+                            <ChevronsUpDown className="text-muted-foreground/50" />
+                          )}
+                        </Button>
+                      ) : (
+                        column.header
+                      )}
+                      {canFilter && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Filter ${column.header}`}
+                          aria-expanded={showFilters}
+                          aria-controls={filterRowId}
+                          // The cell around it sorts. This is the one thing
+                          // inside it that means something else, so it has to
+                          // stop the click travelling — otherwise opening a
+                          // column's search also re-sorts the table under it.
+                          // Enter/Space arrive as a synthesised click on this
+                          // same button, so the keyboard path is covered too.
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            toggleColumnFilter(column.key)
+                          }}
+                          className={cn(
+                            // Quiet until wanted: a funnel per column at full
+                            // strength would out-shout the labels it sits
+                            // beside. It comes up on hover, while the row is
+                            // open, and — the case worth seeing from across
+                            // the table — whenever that column is filtering.
+                            "text-muted-foreground/50 group-hover/sort:text-muted-foreground hover:bg-transparent hover:text-foreground",
+                            showFilters && "text-muted-foreground",
+                            columnFiltered &&
+                              "text-primary group-hover/sort:text-primary hover:text-primary"
+                          )}
+                        >
+                          <Filter
+                            // Filled once the column is actually filtering, so
+                            // the state reads as a shape and not only a colour.
+                            fill={columnFiltered ? "currentColor" : "none"}
+                          />
+                        </Button>
+                      )}
+                    </div>
                   </TableHead>
                 )
               })}
@@ -1003,8 +1078,10 @@ export function ListScreen<T>({
             {/*
               The search row: one input per filterable column, filtering the
               table live. It sticks under the header while the body scrolls,
-              and the header's Search button toggles it — it starts hidden so the
-              table leads with data rather than with an empty query form.
+              and either the header's Search button or any column's funnel
+              toggles it — the funnel differing only in focusing its own field.
+              It starts hidden so the table leads with data rather than with an
+              empty query form.
 
               Mounted and unmounted rather than animated open: this is a `tr`
               inside a sticky `thead`, where the usual collapse trick (a
@@ -1023,7 +1100,11 @@ export function ListScreen<T>({
                     canFilter &&
                     filterable[filterable.length - 1]?.key === column.key
                   return (
-                    <TableHead key={column.key} className="py-1">
+                    // `py-0.5` around the `h-7` input puts this row at the same
+                    // 32px as the label row above it — the two read as one
+                    // header rather than a header with a taller strip bolted
+                    // under it.
+                    <TableHead key={column.key} className="py-0.5">
                       {canFilter ? (
                         <div className="relative">
                           <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -1036,6 +1117,9 @@ export function ListScreen<T>({
                           */}
                           <Input
                             aria-label={`Search ${column.header}`}
+                            // Only when this column's funnel is what opened
+                            // the row — see `focusColumn`.
+                            autoFocus={column.key === focusColumn}
                             value={filters[column.key]?.value ?? ""}
                             placeholder={`Search ${column.header.toLowerCase()}…`}
                             onChange={(event) =>
