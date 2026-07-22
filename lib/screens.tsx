@@ -171,14 +171,9 @@ function listScreen<T>(
     label,
     description,
     icon: <Icon strokeWidth={1.5} />,
-    component: (props) => (
-      <ListScreen
-        label={label}
-        description={description}
-        {...config}
-        {...props}
-      />
-    ),
+    // No `description`: a list screen draws no title block, so the summary
+    // stays where the sidebar and ⌘K read it — on the registry entry above.
+    component: (props) => <ListScreen label={label} {...config} {...props} />,
     detail:
       creatable || editable
         ? {

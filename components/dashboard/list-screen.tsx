@@ -109,7 +109,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { ScreenHeader } from "@/components/dashboard/screen-header"
 import { useWorkspace } from "@/hooks/use-workspace"
 import type { ScreenProps } from "@/lib/screens"
 import {
@@ -148,7 +147,7 @@ export type { ListColumn }
 /**
  * The data shape of a list screen: its columns and rows. The screen's
  * title/description are not repeated here — they live once on the screen
- * registry entry and are passed to {@link ListScreen} as header props.
+ * registry entry, which is also what names the tab.
  */
 export type ListScreenConfig<T> = {
   /** Column definitions — drive both the filter row and the table. */
@@ -183,10 +182,12 @@ export type ListScreenConfig<T> = {
 
 export type ListScreenProps<T> = ListScreenConfig<T> &
   ScreenProps & {
-    /** Screen title, shown in the header above the table. */
+    /**
+     * Screen title. Not drawn above the table — the tab chip names the screen
+     * — but it is the page's `sr-only` heading and the noun the delete
+     * confirmation removes rows from.
+     */
     label: string
-    /** One-line summary, shown beneath the title. */
-    description: string
   }
 
 /**
@@ -267,7 +268,6 @@ function isSelectionClick(event: React.MouseEvent<HTMLElement>): boolean {
  */
 export function ListScreen<T>({
   label,
-  description,
   columns,
   rows,
   rowKey,
@@ -478,32 +478,39 @@ export function ListScreen<T>({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
-      <ScreenHeader
-        label={label}
-        description={description}
-        actions={
-          <div className="flex items-center gap-2">
-            {/*
+      {/*
+        No title block: the tab chip above already names the screen, and a
+        heading repeating it cost a third of the screen's height before the
+        first row. The toolbar takes its place and leads from the left, where
+        a row of controls reads from.
+
+        The heading survives as `sr-only` — it is what gives the screen a
+        level-1 landmark, and dropping it outright would leave a page whose
+        name only exists as a tab label.
+      */}
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="sr-only">{label}</h1>
+        {/*
               The selection count and its Clear button appear only when there
               is a selection: the actions beside them stay put and merely grey
               out, so this leading pair is the only thing that moves — and a
               permanent "0 selected" would be an odd thing to read.
             */}
-            {selectedCount > 0 && (
-              <>
-                <span className="text-sm font-medium tabular-nums">
-                  {selectedCount} selected
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Clear selection"
-                  onClick={() => setSelected(emptySelection)}
-                >
-                  <X />
-                </Button>
-                {/*
+        {selectedCount > 0 && (
+          <>
+            <span className="text-sm font-medium tabular-nums">
+              {selectedCount} selected
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Clear selection"
+              onClick={() => setSelected(emptySelection)}
+            >
+              <X />
+            </Button>
+            {/*
                   The vendored separator carries `data-vertical:self-stretch`,
                   for the case where it should span its row. Fixing the height
                   with `h-5` doesn't undo that alignment — it just pins a 20px
@@ -515,64 +522,62 @@ export function ListScreen<T>({
                   variant outranks a plain utility, and `cn` sees the two as
                   unrelated keys so it keeps both rather than replacing one.
                 */}
-                <Separator
-                  orientation="vertical"
-                  className="h-5 data-vertical:self-center"
-                />
-              </>
-            )}
-            {/*
+            <Separator
+              orientation="vertical"
+              className="h-5 data-vertical:self-center"
+            />
+          </>
+        )}
+        {/*
               Every bulk action behind one menu rather than a row of buttons:
               this header already carries Search and New, and spelling the
               actions out inline wrapped it onto a second line at laptop
               widths. Disabled rather than hidden when nothing is ticked, so
               the actions are discoverable before a selection exists.
             */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={selectedCount === 0}
-                    className="pr-2.5 pl-2.5"
-                  />
-                }
-              >
-                <ListChecks />
-                Actions
-                <ChevronDown className="text-muted-foreground/70" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                {/* Base UI requires a group around a group label. */}
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-muted-foreground">
-                    {selectedCount > 1
-                      ? `${selectedCount} rows selected`
-                      : "1 row selected"}
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
-                {bulkActions.map(({ label: action, icon: Icon }) => (
-                  <DropdownMenuItem key={action}>
-                    <Icon strokeWidth={1.5} />
-                    {rowWord(action, selectedCount)}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                {bulkMenuActions.map(
-                  ({ label: action, icon: Icon, shortcut }) => (
-                    <DropdownMenuItem key={action}>
-                      <Icon strokeWidth={1.5} />
-                      {action}
-                      {shortcut && (
-                        <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
-                      )}
-                    </DropdownMenuItem>
-                  )
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                disabled={selectedCount === 0}
+                className="pr-2.5 pl-2.5"
+              />
+            }
+          >
+            <ListChecks />
+            Actions
+            <ChevronDown className="text-muted-foreground/70" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            {/* Base UI requires a group around a group label. */}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-muted-foreground">
+                {selectedCount > 1
+                  ? `${selectedCount} rows selected`
+                  : "1 row selected"}
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            {bulkActions.map(({ label: action, icon: Icon }) => (
+              <DropdownMenuItem key={action}>
+                <Icon strokeWidth={1.5} />
+                {rowWord(action, selectedCount)}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            {bulkMenuActions.map(({ label: action, icon: Icon, shortcut }) => (
+              <DropdownMenuItem key={action}>
+                <Icon strokeWidth={1.5} />
+                {action}
+                {shortcut && (
+                  <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
                 )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/*
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {/*
               Delete is out of that menu and beside it: it is the one action
               here that can't be undone, and burying it at the foot of a list
               of reversible ones made the irreversible one both the hardest to
@@ -580,131 +585,128 @@ export function ListScreen<T>({
               disabled-not-hidden rule as Actions, so the header keeps a fixed
               set of controls and only the count to their left comes and goes.
             */}
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={selectedCount === 0}
-              onClick={() => setConfirmingDelete(true)}
-              className="pr-3 pl-2.5"
-            >
-              <Trash2 />
-              {/* Just "Delete" — with a selection the count is already spelled
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={selectedCount === 0}
+          onClick={() => setConfirmingDelete(true)}
+          className="pr-3 pl-2.5"
+        >
+          <Trash2 />
+          {/* Just "Delete" — with a selection the count is already spelled
                   out to the left, and with none there is no number to give. */}
-              Delete
-            </Button>
-            {/*
+          Delete
+        </Button>
+        {/*
               Two halves of one control, so they read as the same idea at two
               depths: Search opens the per-column row in the table, the sliders
               open the panel that can do more than a substring match. Both edit
               the same `filters`, which is why they share a group rather than
               sitting apart as unrelated buttons.
             */}
-            <ButtonGroup>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  // No column asked for this one, so nothing should steal
-                  // focus — the row opens and the caret stays put.
-                  setFocusColumn(null)
-                  setShowFilters((prev) => !prev)
-                }}
-                aria-expanded={showFilters}
-                aria-controls={filterRowId}
-                // The search row is either open or shut, so the button is a
-                // toggle and has to look held down while it is on — `bg-accent`
-                // is the same surface its own hover uses.
-                className={cn("pr-3 pl-2.5", showFilters && "bg-accent")}
-              >
-                <Search />
-                Search
-                {/*
+        <ButtonGroup>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              // No column asked for this one, so nothing should steal
+              // focus — the row opens and the caret stays put.
+              setFocusColumn(null)
+              setShowFilters((prev) => !prev)
+            }}
+            aria-expanded={showFilters}
+            aria-controls={filterRowId}
+            // The search row is either open or shut, so the button is a
+            // toggle and has to look held down while it is on — `bg-accent`
+            // is the same surface its own hover uses.
+            className={cn("pr-3 pl-2.5", showFilters && "bg-accent")}
+          >
+            <Search />
+            Search
+            {/*
                   Inline rather than a corner badge: the dot marks a filter set
                   that neither surface is currently showing, and reading in the
                   flow of the label is what makes it a caption on the button
                   instead of decoration floating beside it.
                 */}
-                {filtersActive && (
-                  <span
-                    aria-hidden
-                    className="size-1.5 rounded-full bg-primary"
-                  />
-                )}
-              </Button>
-              <Popover open={advancedOpen} onOpenChange={openAdvanced}>
-                {/*
+            {filtersActive && (
+              <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+            )}
+          </Button>
+          <Popover open={advancedOpen} onOpenChange={openAdvanced}>
+            {/*
                   Icon-only, so it needs a name — and the delay matches the
                   rest of this header's tooltips.
                 */}
-                <TooltipProvider delay={500}>
-                  <Tooltip>
-                    <TooltipTrigger
+            <TooltipProvider delay={500}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <PopoverTrigger
                       render={
-                        <PopoverTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              aria-label="Advanced search"
-                            />
-                          }
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="Advanced search"
                         />
                       }
-                    >
-                      <SlidersHorizontal />
-                    </TooltipTrigger>
-                    <TooltipContent align="end">Advanced search</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                {/*
+                    />
+                  }
+                >
+                  <SlidersHorizontal />
+                </TooltipTrigger>
+                <TooltipContent align="end">Advanced search</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {/*
                 Each row is one condition — operator and value in a single
                 field, the operator as an inline addon rather than a separate
                 control beside the input. Nothing here touches the table until
                 Apply.
               */}
-                <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
-                  <form onSubmit={applyAdvanced} className="flex flex-col">
-                    {/*
+            <PopoverContent align="start" className="w-[28rem] gap-0 p-0">
+              <form onSubmit={applyAdvanced} className="flex flex-col">
+                {/*
                     `items-start` rather than `items-center`: the header is now
                     two lines tall, and Clear belongs beside the title it sits
                     with, not centred against the description below it.
                   */}
-                    <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
-                      <div className="flex flex-col gap-1">
-                        {/* Named for the trigger that opens it, not for what
+                <PopoverHeader className="flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
+                  <div className="flex flex-col gap-1">
+                    {/* Named for the trigger that opens it, not for what
                             it does: "Search" alone repeated the word on the
                             button an inch above, leaving nothing to say this
                             is the deeper of the two surfaces. */}
-                        <PopoverTitle>Advanced search</PopoverTitle>
-                        {/*
+                    <PopoverTitle>Advanced search</PopoverTitle>
+                    {/*
                         Says the thing the panel does not show on its own: that
                         the conditions combine rather than replacing each other.
                       */}
-                        <PopoverDescription>
-                          Match on several columns at once.
-                        </PopoverDescription>
-                      </div>
-                      {draftActive && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="xs"
-                          // Shifted up to sit on the title's line, undoing the
-                          // button's own vertical slack against a one-line title.
-                          className="-mt-0.5 shrink-0"
-                          onClick={() => setDraft({})}
-                        >
-                          Clear
-                        </Button>
-                      )}
-                    </PopoverHeader>
-                    {/*
+                    <PopoverDescription>
+                      Match on several columns at once.
+                    </PopoverDescription>
+                  </div>
+                  {draftActive && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      // Shifted up to sit on the title's line, undoing the
+                      // button's own vertical slack against a one-line title.
+                      className="-mt-0.5 shrink-0"
+                      onClick={() => setDraft({})}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </PopoverHeader>
+                {/*
                     A wide table has more columns than fit on screen, so the
                     conditions scroll and the footer stays put — Apply must
                     never be the thing that gets pushed out of view.
                   */}
-                    {/*
+                {/*
                     One grid rather than a stack of per-row flexes: the label
                     column is shared, so every field starts at the same x no
                     matter how long its header is.
@@ -722,132 +724,125 @@ export function ListScreen<T>({
                     bare `1fr` floors at the input's intrinsic width and would
                     push the panel wider.
                   */}
-                    <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4">
-                      {filterable.map((column) => {
-                        const operators =
-                          operatorsByKind[columnKind(column, rows)]
-                        const active =
-                          operators.find(
-                            (o) => o.op === draft[column.key]?.op
-                          ) ?? operators[0]
-                        return (
-                          <React.Fragment key={column.key}>
-                            {/*
+                <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4">
+                  {filterable.map((column) => {
+                    const operators = operatorsByKind[columnKind(column, rows)]
+                    const active =
+                      operators.find((o) => o.op === draft[column.key]?.op) ??
+                      operators[0]
+                    return (
+                      <React.Fragment key={column.key}>
+                        {/*
                             `text-sm`, matching the input beside it. At `text-xs`
                             the label read as a caption *about* the field rather
                             than the field's name — which is what it was when it
                             sat above the input, but not what it is on a shared
                             row where the eye compares the two directly.
                           */}
-                            <label
-                              htmlFor={`adv-${column.key}`}
-                              className="truncate text-sm font-medium"
-                            >
-                              {column.header}
-                            </label>
-                            <InputGroup>
-                              <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger
-                                    render={
-                                      <InputGroupButton
-                                        aria-label={`${column.header} operator`}
-                                        // A fixed width so every field's divider
-                                        // lands in the same place — "=" and
-                                        // "contains" must not stagger the inputs.
-                                        className="mr-1.5 w-20 justify-between font-normal"
-                                      />
+                        <label
+                          htmlFor={`adv-${column.key}`}
+                          className="truncate text-sm font-medium"
+                        >
+                          {column.header}
+                        </label>
+                        <InputGroup>
+                          <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                render={
+                                  <InputGroupButton
+                                    aria-label={`${column.header} operator`}
+                                    // A fixed width so every field's divider
+                                    // lands in the same place — "=" and
+                                    // "contains" must not stagger the inputs.
+                                    className="mr-1.5 w-20 justify-between font-normal"
+                                  />
+                                }
+                              >
+                                {active.short}
+                                <ChevronDown className="text-muted-foreground/70" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="start"
+                                className="w-56"
+                              >
+                                {operators.map((operator) => (
+                                  <DropdownMenuItem
+                                    key={operator.op}
+                                    onClick={() =>
+                                      setDraftOperator(column.key, operator.op)
                                     }
                                   >
-                                    {active.short}
-                                    <ChevronDown className="text-muted-foreground/70" />
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="start"
-                                    className="w-56"
-                                  >
-                                    {operators.map((operator) => (
-                                      <DropdownMenuItem
-                                        key={operator.op}
-                                        onClick={() =>
-                                          setDraftOperator(
-                                            column.key,
-                                            operator.op
-                                          )
-                                        }
-                                      >
-                                        <span className="w-14 shrink-0 text-muted-foreground">
-                                          {operator.short}
-                                        </span>
-                                        {operator.label}
-                                        {operator.op === active.op && (
-                                          <Check className="ml-auto" />
-                                        )}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </InputGroupAddon>
-                              <InputGroupInput
-                                id={`adv-${column.key}`}
-                                value={draft[column.key]?.value ?? ""}
-                                onChange={(event) =>
-                                  setDraftValue(
-                                    column.key,
-                                    event.target.value,
-                                    active.op
-                                  )
-                                }
-                                // The label beside it already names the column,
-                                // so repeating the header here would say the
-                                // same word twice on one row.
-                                placeholder="Value…"
-                              />
-                            </InputGroup>
-                          </React.Fragment>
-                        )
-                      })}
-                    </div>
-                    <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-                      {filtersActive && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mr-auto"
-                          onClick={clearFilters}
-                        >
-                          Reset all
-                        </Button>
-                      )}
-                      <Button type="submit" className="pr-3 pl-2.5">
-                        <Search />
-                        Apply
-                      </Button>
-                    </div>
-                  </form>
-                </PopoverContent>
-              </Popover>
-            </ButtonGroup>
-            {/*
+                                    <span className="w-14 shrink-0 text-muted-foreground">
+                                      {operator.short}
+                                    </span>
+                                    {operator.label}
+                                    {operator.op === active.op && (
+                                      <Check className="ml-auto" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </InputGroupAddon>
+                          <InputGroupInput
+                            id={`adv-${column.key}`}
+                            value={draft[column.key]?.value ?? ""}
+                            onChange={(event) =>
+                              setDraftValue(
+                                column.key,
+                                event.target.value,
+                                active.op
+                              )
+                            }
+                            // The label beside it already names the column,
+                            // so repeating the header here would say the
+                            // same word twice on one row.
+                            placeholder="Value…"
+                          />
+                        </InputGroup>
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+                  {filtersActive && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mr-auto"
+                      onClick={clearFilters}
+                    >
+                      Reset all
+                    </Button>
+                  )}
+                  <Button type="submit" className="pr-3 pl-2.5">
+                    <Search />
+                    Apply
+                  </Button>
+                </div>
+              </form>
+            </PopoverContent>
+          </Popover>
+        </ButtonGroup>
+        {/*
               Opens a blank form in a new tab rather than unfolding one above
               the table. It is no longer a toggle, so it doesn't need a held-
               down look: each click is another draft, and the tab bar is what
               shows how many are on the go.
             */}
-            {canCreate && (
-              <Button
-                type="button"
-                onClick={() => workspace?.openDraft(screenType)}
-                className="pr-3 pl-2.5"
-              >
-                <Plus />
-                New
-              </Button>
-            )}
-          </div>
-        }
-      />
+        {canCreate && (
+          <Button
+            type="button"
+            onClick={() => workspace?.openDraft(screenType)}
+            className="pr-3 pl-2.5"
+          >
+            <Plus />
+            New
+          </Button>
+        )}
+      </div>
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
       {/*
