@@ -880,7 +880,18 @@ export function ListScreen<T>({
         `pl-4` beside it: the vendored rule is `:has([role=checkbox])`, which
         outranks a bare utility on the cell itself.
       */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      {/*
+        Sized to its rows, not to the space available: no `flex-1`, so a short
+        table is a short card and the pager beneath it rides up with the last
+        row instead of being pinned to the bottom of the screen with a field of
+        empty card between them.
+
+        It still can't outgrow the screen. Flex items shrink by default, and
+        this column is height-bounded, so a long table hits the ceiling and
+        `min-h-0` + `overflow-auto` hand it back its own scrollbar — which is
+        also what the sticky header measures itself against.
+      */}
+      <div className="min-h-0 overflow-auto rounded-xl border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
