@@ -424,7 +424,10 @@ function SidebarBody({
               key={view}
               className="flex animate-in flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground duration-200 fade-in-0 slide-in-from-right-4"
             >
-              <placeholder.Icon className="size-6 opacity-60" />
+              <placeholder.Icon
+                strokeWidth={1.5}
+                className="size-6 opacity-60"
+              />
               <p>{placeholder.label} — coming soon</p>
             </div>
           ) : (
