@@ -354,7 +354,6 @@ function SidebarBody({
               <SidebarMenu className="gap-1">
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    tooltip={{ children: "Menu", hidden: false }}
                     aria-label="Menu"
                     isActive={open && !inFavorites && !inPlaceholder}
                     className={railButton}
@@ -365,7 +364,6 @@ function SidebarBody({
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    tooltip={{ children: "Favorites", hidden: false }}
                     aria-label="Favorites"
                     isActive={open && inFavorites}
                     className={railButton}
@@ -377,7 +375,6 @@ function SidebarBody({
                 {RAIL_VIEWS.map(({ view: v, label, Icon }) => (
                   <SidebarMenuItem key={v}>
                     <SidebarMenuButton
-                      tooltip={{ children: label, hidden: false }}
                       aria-label={label}
                       isActive={open && view === v}
                       className={railButton}
