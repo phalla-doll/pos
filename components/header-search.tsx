@@ -13,7 +13,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandShortcut,
 } from "@/components/ui/command"
 import { Kbd } from "@/components/ui/kbd"
 import {
@@ -29,9 +28,13 @@ import { launcherHref, contentFromSearch } from "@/lib/tab-url"
 const UNGROUPED = "Screens"
 
 /**
- * The palette's sections, derived from the nav tree: one per top-level group,
- * plus a leading section for screens that live at the root. Sections appear in
- * first-seen order, so the palette reads in the same order as the sidebar.
+ * The palette's sections, derived from the nav tree: one per distinct
+ * breadcrumb path (`Reports › Financials`), plus a leading section for screens
+ * that live at the root. Grouping by the *full* path means a screen's location
+ * reads once, as the heading above it, instead of being crammed into a
+ * right-aligned hint on every row where a long trail just truncates. Sections
+ * appear in first-seen order, so the palette reads in the same order as the
+ * sidebar.
  *
  * Computed once at module scope — `sidebarNav` is static, so there is nothing
  * to recompute per render.
@@ -39,7 +42,8 @@ const UNGROUPED = "Screens"
 const sections: { heading: string; commands: NavCommand[] }[] = (() => {
   const bySection = new Map<string, NavCommand[]>()
   for (const command of flattenNav(sidebarNav)) {
-    const heading = command.path[0] ?? UNGROUPED
+    const heading =
+      command.path.length > 0 ? command.path.join(" › ") : UNGROUPED
     const existing = bySection.get(heading)
     if (existing) existing.push(command)
     else bySection.set(heading, [command])
@@ -160,11 +164,10 @@ export function HeaderSearch() {
                 {sections.map(({ heading, commands }) => (
                   <CommandGroup key={heading} heading={heading}>
                     {commands.map((command) => {
-                      const { screen, path } = command
-                      // The section heading already names `path[0]`; show only the
-                      // deeper groups, so a 3-level screen still reveals where it
-                      // lives without repeating its section.
-                      const detail = path.slice(1).join(" › ")
+                      const { screen } = command
+                      // Location lives in the group heading now, so a row is
+                      // just its icon and name — no trailing breadcrumb to
+                      // truncate.
                       return (
                         <CommandItem
                           key={screen.type}
@@ -173,14 +176,6 @@ export function HeaderSearch() {
                         >
                           {screen.icon}
                           <span>{screen.label}</span>
-                          {detail && (
-                            // The trailing slot: it right-aligns the hint and
-                            // suppresses the item's (unused) check icon, which
-                            // would otherwise compete for the same space.
-                            <CommandShortcut className="tracking-normal">
-                              {detail}
-                            </CommandShortcut>
-                          )}
                         </CommandItem>
                       )
                     })}
