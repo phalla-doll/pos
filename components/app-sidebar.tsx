@@ -40,7 +40,12 @@ import { groupAtPath } from "@/lib/nav-section"
 import type { ScreenType } from "@/lib/screens"
 import { freshWorkspaceHref } from "@/lib/tab-url"
 import { sidebarUser, sidebarWorkspace } from "@/lib/fixtures"
-import { ChevronLeftIcon, MenuIcon, PinIcon, SearchIcon } from "lucide-react"
+import {
+  ChevronLeftIcon,
+  Grid2x2Plus,
+  PinIcon,
+  SearchIcon,
+} from "lucide-react"
 
 /**
  * The sidebar, in two shapes for two form factors:
@@ -263,7 +268,7 @@ function SidebarBody({
                     className={railButton}
                     onClick={toggleMenu}
                   >
-                    <MenuIcon />
+                    <Grid2x2Plus />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
