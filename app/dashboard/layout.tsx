@@ -1,11 +1,12 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+// Breadcrumb hidden for now — restore alongside the header trail below.
+// import {
+//   Breadcrumb,
+//   BreadcrumbItem,
+//   BreadcrumbLink,
+//   BreadcrumbList,
+//   BreadcrumbPage,
+//   BreadcrumbSeparator,
+// } from "@/components/ui/breadcrumb"
 import { HeaderNotifications } from "@/components/header-notifications"
 import { HeaderSearch } from "@/components/header-search"
 import { Separator } from "@/components/ui/separator"
@@ -53,6 +54,7 @@ export default function DashboardLayout({
               />
               <TooltipContent>Toggle Sidebar</TooltipContent>
             </Tooltip>
+            {/* Breadcrumb hidden for now — restore when the real trail lands.
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
@@ -66,6 +68,7 @@ export default function DashboardLayout({
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+            */}
             <div className="ml-auto flex items-center gap-2">
               <HeaderNotifications />
               <HeaderSearch />
