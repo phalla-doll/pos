@@ -9,7 +9,7 @@
 // } from "@/components/ui/breadcrumb"
 import { HeaderNotifications } from "@/components/header-notifications"
 import { HeaderSearch } from "@/components/header-search"
-import { Separator } from "@/components/ui/separator"
+// import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { SidebarShell } from "@/components/sidebar-shell"
 import {
@@ -41,10 +41,12 @@ export default function DashboardLayout({
                 {sidebarWorkspace.name}
               </span>
             </div>
+            {/* Separator hidden with the breadcrumb — restore alongside it.
             <Separator
               orientation="vertical"
               className="mx-1 data-vertical:h-4 data-vertical:self-auto"
             />
+            */}
             {/* Mobile only: below `md` the sidebar is an off-canvas sheet with
                 nothing on screen to press, so it needs an outside way in. On a
                 desktop the rail carries its own controls, so this is hidden. */}
