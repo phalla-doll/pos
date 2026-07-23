@@ -24,7 +24,9 @@ import type { ScreenRef } from "@/lib/tab-identity"
  * panel drills rather than toggles:
  *
  * - A **leaf** is a launcher: a real link that opens the screen as a tab, and
- *   reads as active when it's the focused one.
+ *   reads as active when it's the focused one. Clicking one also calls
+ *   `onNavigate`, which is how an unpinned panel gets out of the way once a
+ *   screen is picked.
  * - A **group** is a step deeper: clicking it pushes onto the panel's path
  *   (`onDrill`), so its own children take over the panel. The trailing chevron
  *   points *right* to say "opens a level", not down to say "expands here".
@@ -34,11 +36,13 @@ export function NavPanel({
   hrefFor,
   onDrill,
   focusedType,
+  onNavigate,
 }: {
   items: NavEntry[]
   hrefFor: (ref: ScreenRef) => string
   onDrill: (label: string) => void
   focusedType: ScreenType | null
+  onNavigate?: () => void
 }) {
   return (
     <SidebarGroup>
@@ -50,7 +54,10 @@ export function NavPanel({
                 className="h-10"
                 isActive={focusedType === child.screen.type}
                 render={
-                  <Link href={hrefFor({ screenType: child.screen.type })} />
+                  <Link
+                    href={hrefFor({ screenType: child.screen.type })}
+                    onClick={onNavigate}
+                  />
                 }
               >
                 {child.screen.icon}
@@ -86,10 +93,12 @@ export function NavSearchResults({
   commands,
   hrefFor,
   focusedType,
+  onNavigate,
 }: {
   commands: NavCommand[]
   hrefFor: (ref: ScreenRef) => string
   focusedType: ScreenType | null
+  onNavigate?: () => void
 }) {
   if (commands.length === 0) {
     return (
@@ -107,7 +116,12 @@ export function NavSearchResults({
             <SidebarMenuButton
               className="h-10"
               isActive={focusedType === screen.type}
-              render={<Link href={hrefFor({ screenType: screen.type })} />}
+              render={
+                <Link
+                  href={hrefFor({ screenType: screen.type })}
+                  onClick={onNavigate}
+                />
+              }
             >
               {screen.icon}
               <span>{screen.label}</span>
