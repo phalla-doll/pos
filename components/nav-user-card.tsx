@@ -1,19 +1,11 @@
 "use client"
 
-import { Landmark } from "lucide-react"
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { userInitials } from "@/lib/user-initials"
 
 /**
  * The identity section at the top of pane 2 — an inline card (not a popover)
- * showing who is signed in, their email, and the active company, with
- * a quick "Switch Company" affordance.
+ * showing who is signed in and their email.
  *
  * `components/app-sidebar.tsx` renders it above the menu search and only at the
  * top level: once you drill into a section the card gives way to the list.
@@ -29,8 +21,6 @@ export function NavUserCard({
     name: string
     email: string
     avatar: string
-    company: string
-    companyCode: string
   }
 }) {
   return (
@@ -51,28 +41,6 @@ export function NavUserCard({
           </p>
         </div>
       </div>
-
-      {/* Company row: a hover reveals it switches the active company. */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <button
-              type="button"
-              aria-label="Switch company"
-              className="-mx-1 mt-3 flex w-[calc(100%+0.5rem)] items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-muted"
-            >
-              <Landmark
-                strokeWidth={1.5}
-                className="size-4 shrink-0 text-muted-foreground"
-              />
-              <span className="truncate">
-                {user.company} ({user.companyCode})
-              </span>
-            </button>
-          }
-        />
-        <TooltipContent>Switch Company</TooltipContent>
-      </Tooltip>
     </div>
   )
 }
