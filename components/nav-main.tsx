@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/sidebar"
 import { useTabLauncherHref } from "@/hooks/use-tabs"
 import { cn } from "@/lib/utils"
-import { collapsedRailButton } from "@/lib/sidebar-metrics"
 import type { NavEntry } from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
 import { ChevronRight } from "lucide-react"
@@ -45,17 +44,23 @@ export function NavMainLive({ items }: { items: NavEntry[] }) {
  * Presentational: `hrefFor` is injected so this renders identically with or
  * without the URL in hand — which is what lets it serve as its own Suspense
  * fallback.
+ *
+ * `label` heads the group; pass `null` to omit it — pane 2 of the two-pane
+ * sidebar names the section in its own header, so a "Platform" label there
+ * would just say it twice.
  */
 export function NavMain({
   items,
   hrefFor,
+  label = "Platform",
 }: {
   items: NavEntry[]
   hrefFor: (ref: { screenType: ScreenType }) => string
+  label?: string | null
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      {label !== null && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu className="gap-0.5">
         {items.map((item) => (
           <NavNode
@@ -103,7 +108,7 @@ function NavNode({
       <SidebarMenuItem>
         <SidebarMenuButton
           tooltip={screen.label}
-          className={cn("h-10", collapsedRailButton)}
+          className="h-10"
           render={link}
         >
           {content}
@@ -161,7 +166,7 @@ function NavNode({
           render={
             <SidebarMenuButton
               tooltip={entry.label}
-              className={cn("group/collapsible h-10", collapsedRailButton)}
+              className="group/collapsible h-10"
             >
               {triggerContent}
             </SidebarMenuButton>

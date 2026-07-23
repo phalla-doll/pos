@@ -1,12 +1,6 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { cn } from "@/lib/utils"
-import {
-  collapsedRailButton,
-  collapsedRailLabel,
-  collapsedRailTile,
-} from "@/lib/sidebar-metrics"
 import { ThemeMenuSub } from "@/components/nav-theme"
 import {
   DropdownMenu,
@@ -23,14 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import {
-  ChevronsUpDown,
-  Sparkles,
-  BadgeCheck,
-  CreditCard,
-  Bell,
-  LogOut,
-} from "lucide-react"
+import { Sparkles, BadgeCheck, CreditCard, Bell, LogOut } from "lucide-react"
 
 export function NavUser({
   user,
@@ -46,28 +33,21 @@ export function NavUser({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
+          {/* Avatar-only, to sit in the narrow icon rail. The name and email
+              still head the menu below, where there is room for them. */}
           <DropdownMenuTrigger
+            aria-label={user.name}
             render={
               <SidebarMenuButton
                 size="lg"
-                className={cn("aria-expanded:bg-muted", collapsedRailButton)}
+                className="size-10! justify-center p-0! aria-expanded:bg-muted"
               />
             }
           >
-            <Avatar className={collapsedRailTile}>
+            <Avatar className="size-8 rounded-lg">
               <AvatarImage src={user.avatar} alt={user.name} />
               <AvatarFallback>CN</AvatarFallback>
             </Avatar>
-            <div
-              className={cn(
-                "grid flex-1 text-left text-sm leading-tight",
-                collapsedRailLabel
-              )}
-            >
-              <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs">{user.email}</span>
-            </div>
-            <ChevronsUpDown strokeWidth={1.5} className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-60"

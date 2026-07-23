@@ -71,8 +71,14 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
         // caller that means "open", not "toggle".
         onOpenChange={(next) => setPinned(next)}
         className="h-svh overflow-hidden"
+        // The expanded sidebar is the icon rail plus the detail panel, so it
+        // runs wider than a one-column sidebar. `--sidebar-width-icon` is the
+        // rail alone — the width the whole thing collapses to.
         style={
-          { "--sidebar-width-icon": SIDEBAR_WIDTH_ICON } as React.CSSProperties
+          {
+            "--sidebar-width": "19rem",
+            "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+          } as React.CSSProperties
         }
       >
         <AppSidebar />
