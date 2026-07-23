@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   collectScreenTypes,
   commandValue,
+  filterNavCommands,
   findNavIssues,
   flattenNav,
   sidebarNav,
@@ -131,5 +132,56 @@ describe("real registry ↔ sidebar nav", () => {
     expect(
       commands.find((c) => c.screen.type === "scheduled-jobs")?.path
     ).toEqual(["Admin Tools", "System", "Maintenance"])
+  })
+})
+
+describe("filterNavCommands", () => {
+  const all = flattenNav(sidebarNav)
+
+  it("returns [] for an empty or whitespace query", () => {
+    expect(filterNavCommands(all, "")).toEqual([])
+    expect(filterNavCommands(all, "   ")).toEqual([])
+  })
+
+  it("matches a screen by its own label, case-insensitively", () => {
+    const hits = filterNavCommands(all, "TAX").map((c) => c.screen.type)
+    expect(hits).toContain("tax-report")
+  })
+
+  it("matches by breadcrumb, so a group name surfaces its screens", () => {
+    const hits = filterNavCommands(all, "financials").map((c) => c.screen.type)
+    // Every screen under Reports › Financials, and nothing outside it.
+    expect(hits).toEqual(
+      expect.arrayContaining([
+        "tax-report",
+        "profit-loss",
+        "balance-sheet",
+        "cash-flow",
+      ])
+    )
+    expect(hits).not.toContain("dashboard")
+  })
+
+  it("requires every token, so a multi-word query narrows", () => {
+    const hits = filterNavCommands(all, "cash flow").map((c) => c.screen.type)
+    expect(hits).toEqual(["cash-flow"])
+  })
+
+  it("returns [] when nothing matches", () => {
+    expect(filterNavCommands(all, "zzznope")).toEqual([])
+  })
+
+  it("scopes to whatever commands it is given", () => {
+    // Flattening a subtree yields only that branch, so a search over it can't
+    // reach screens elsewhere in the tree.
+    const admin = sidebarNav.find(
+      (e): e is Extract<NavEntry, { kind: "group" }> =>
+        e.kind === "group" && e.label === "Admin Tools"
+    )!
+    const within = flattenNav(admin.children)
+    expect(filterNavCommands(within, "tax")).toEqual([])
+    expect(
+      filterNavCommands(within, "audit").map((c) => c.screen.type)
+    ).toEqual(["audit-logs"])
   })
 })

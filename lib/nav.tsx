@@ -131,6 +131,28 @@ export function commandValue(command: NavCommand): string {
 }
 
 /**
+ * The commands whose {@link commandValue} contains every whitespace-separated
+ * token of `query`, case-insensitively — the sidebar menu's inline filter. An
+ * empty or whitespace-only query returns `[]`, the signal for the caller to
+ * show the browse list instead of a (would-be full) result list.
+ *
+ * Matching runs over the same label-plus-breadcrumb text the ⌘K palette uses,
+ * so typing a group name surfaces the screens inside it; requiring *all* tokens
+ * lets a multi-word query ("cash flow") narrow rather than widen.
+ */
+export function filterNavCommands(
+  commands: NavCommand[],
+  query: string
+): NavCommand[] {
+  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (tokens.length === 0) return []
+  return commands.filter((command) => {
+    const haystack = commandValue(command).toLowerCase()
+    return tokens.every((token) => haystack.includes(token))
+  })
+}
+
+/**
  * Check the registry ↔ nav invariant: every screen is reachable from the nav
  * exactly once. Returns the screens missing from the nav (`unreachable`) and
  * any listed more than once (`duplicated`). Pure and data-only, so it is
