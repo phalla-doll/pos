@@ -267,7 +267,7 @@ function SidebarBody({
         </SidebarHeader>
         <SidebarContent className="overflow-x-hidden">
           {/* Search sits at the very top and filters the level in view. */}
-          <div className="px-3 pt-3 pb-1">
+          <div className="px-3 pt-3 pb-3">
             <InputGroup>
               <InputGroupAddon>
                 <SearchIcon strokeWidth={1.5} />
@@ -284,7 +284,7 @@ function SidebarBody({
               drilled into a section the list takes the space. A divider sets it
               apart from the list below. */}
           {path.length === 0 && (
-            <div className="border-b px-3 pt-1 pb-3">
+            <div className="border-b px-3 pb-4">
               <NavUserCard user={sidebarUser} />
             </div>
           )}
