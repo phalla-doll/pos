@@ -266,15 +266,7 @@ function SidebarBody({
           <PinButton pinned={pinned} onClick={togglePin} />
         </SidebarHeader>
         <SidebarContent className="overflow-x-hidden">
-          {/* The identity card heads the top level only — once drilled into a
-              section the list takes the space. Its own padding plus a divider
-              set it apart from the search that follows. */}
-          {path.length === 0 && (
-            <div className="border-b p-3">
-              <NavUserCard user={sidebarUser} />
-            </div>
-          )}
-          {/* Search sits above the list and filters the level in view. */}
+          {/* Search sits at the very top and filters the level in view. */}
           <div className="px-3 pt-3 pb-1">
             <InputGroup>
               <InputGroupAddon>
@@ -288,6 +280,14 @@ function SidebarBody({
               />
             </InputGroup>
           </div>
+          {/* The identity row follows the search at the top level only — once
+              drilled into a section the list takes the space. A divider sets it
+              apart from the list below. */}
+          {path.length === 0 && (
+            <div className="border-b px-3 pt-1 pb-3">
+              <NavUserCard user={sidebarUser} />
+            </div>
+          )}
           {searching ? (
             <NavSearchResults
               commands={results}

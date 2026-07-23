@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { userInitials } from "@/lib/user-initials"
 
 /**
- * The identity section at the top of pane 2 — an inline card (not a popover)
+ * The identity row at the top of pane 2 — an inline block (not a popover)
  * showing who is signed in and their email.
  *
  * `components/app-sidebar.tsx` renders it above the menu search and only at the
@@ -24,7 +24,7 @@ export function NavUserCard({
   }
 }) {
   return (
-    <div className="rounded-lg border p-4 text-sm">
+    <div className="text-sm">
       <div className="flex items-center gap-3">
         <Avatar className="size-10 shrink-0">
           <AvatarImage src={user.avatar} alt={user.name} />
