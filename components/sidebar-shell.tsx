@@ -100,6 +100,11 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
           setPinned(next)
           if (!next) setTransientOpen(false)
         }}
+        // Open-but-unpinned = overlay: the panel floats over the page rather
+        // than reflowing it. `app/globals.css` reads this off the wrapper to
+        // hold the layout gap at the rail width while the panel is up. Pinning
+        // clears it, so a pinned panel pushes the content as before.
+        data-panel-overlay={open && !pinned ? "true" : undefined}
         className="h-svh overflow-hidden"
         // The expanded sidebar is the icon rail plus the detail panel, so it
         // runs wider than a one-column sidebar. `--sidebar-width-icon` is the
