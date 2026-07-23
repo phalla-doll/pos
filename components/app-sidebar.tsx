@@ -50,9 +50,13 @@ import { freshWorkspaceHref } from "@/lib/tab-url"
 import { sidebarUser, sidebarWorkspace } from "@/lib/fixtures"
 import {
   ChevronLeftIcon,
+  ClockIcon,
   Grid2x2Plus,
+  LayoutGridIcon,
   PinIcon,
+  PlusIcon,
   SearchIcon,
+  SettingsIcon,
   Star,
   XIcon,
 } from "lucide-react"
@@ -126,6 +130,18 @@ function DesktopSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   )
 }
 
+// Rail buttons beyond Menu/Favorites. Each opens the shared panel to its own
+// named view, which renders a titled but empty placeholder for now — the
+// open/switch/close wiring is already in place for when real content arrives.
+const RAIL_VIEWS = [
+  { view: "new", label: "New", Icon: PlusIcon },
+  { view: "recent", label: "Recent", Icon: ClockIcon },
+  { view: "apps", label: "Apps", Icon: LayoutGridIcon },
+  { view: "settings", label: "Settings", Icon: SettingsIcon },
+] as const
+
+type PlaceholderView = (typeof RAIL_VIEWS)[number]["view"]
+
 /** The desktop body wired to the live URL. */
 function SidebarBodyLive() {
   const { hrefFor, focusedType } = useSidebarLaunchState()
@@ -171,7 +187,9 @@ function SidebarBody({
     // the identity row; `favorites` is the flat starred list opened from the
     // rail's own button. The latter two are siblings of the path stack rather
     // than members of it — neither is a nav group, so neither belongs in `path`.
-    view: "menu" | "profile" | "favorites"
+    // The placeholder views (New/Recent/Apps/Settings) are further siblings with
+    // no content yet.
+    view: "menu" | "profile" | "favorites" | PlaceholderView
   }>({ path: [], dir: "forward", view: "menu" })
   // The menu filter. Cleared on every move so a query never lingers over a
   // level it wasn't typed against.
@@ -180,6 +198,9 @@ function SidebarBody({
   const { path, dir, view } = nav
   const inProfile = view === "profile"
   const inFavorites = view === "favorites"
+  // The placeholder view in view, if any — drives its title and empty panel.
+  const placeholder = RAIL_VIEWS.find((v) => v.view === view)
+  const inPlaceholder = placeholder != null
   // Read/toggle passed to every leaf row that offers a star, so marking works
   // the same from the menu list, a search result, and the Favorites panel.
   const favorite = React.useMemo<FavoriteControls>(
@@ -194,9 +215,11 @@ function SidebarBody({
     ? "Profile"
     : inFavorites
       ? "Favorites"
-      : path.length === 0
-        ? "Menu"
-        : (group?.label ?? "Menu")
+      : placeholder
+        ? placeholder.label
+        : path.length === 0
+          ? "Menu"
+          : (group?.label ?? "Menu")
   // The profile drills, so it can back out; the favorites list is flat, so it
   // can't — only the menu's own path stack and the profile offer a way up.
   const canGoBack = inProfile || path.length > 0
@@ -248,6 +271,25 @@ function SidebarBody({
       setTransientOpen(false)
     }
   }, [open, view, setPinned, setTransientOpen])
+
+  // The rail's placeholder buttons, mirroring Favorites: open the panel
+  // transiently to the named view, switch to it from another view, or close it
+  // when it is already showing.
+  const toggleView = React.useCallback(
+    (target: PlaceholderView) => {
+      setQuery("")
+      if (!open) {
+        setNav({ path: [], dir: "back", view: target })
+        setTransientOpen(true)
+      } else if (view !== target) {
+        setNav({ path: [], dir: "back", view: target })
+      } else {
+        setPinned(false)
+        setTransientOpen(false)
+      }
+    },
+    [open, view, setPinned, setTransientOpen]
+  )
 
   // Drill one level deeper: the clicked group's children take over the panel.
   const drill = React.useCallback((label: string) => {
@@ -307,14 +349,14 @@ function SidebarBody({
             <SidebarGroupContent>
               {/* The rail's own buttons: each opens the shared panel to its own
                   view. Menu is the whole nav tree; Favorites is the flat starred
-                  list. Only one reads active at a time — the one the panel is
-                  showing. */}
+                  list; the rest are placeholders with no content yet. Only one
+                  reads active at a time — the one the panel is showing. */}
               <SidebarMenu className="gap-1">
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     tooltip={{ children: "Menu", hidden: false }}
                     aria-label="Menu"
-                    isActive={open && !inFavorites}
+                    isActive={open && !inFavorites && !inPlaceholder}
                     className={railButton}
                     onClick={toggleMenu}
                   >
@@ -332,6 +374,19 @@ function SidebarBody({
                     <Star />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {RAIL_VIEWS.map(({ view: v, label, Icon }) => (
+                  <SidebarMenuItem key={v}>
+                    <SidebarMenuButton
+                      tooltip={{ children: label, hidden: false }}
+                      aria-label={label}
+                      isActive={open && view === v}
+                      className={railButton}
+                      onClick={() => toggleView(v)}
+                    >
+                      <Icon />
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -361,6 +416,16 @@ function SidebarBody({
               className="animate-in duration-200 fade-in-0 slide-in-from-right-4"
             >
               <NavProfilePanel user={sidebarUser} />
+            </div>
+          ) : placeholder ? (
+            // Placeholder views: a titled but empty panel until real content is
+            // wired up.
+            <div
+              key={view}
+              className="flex animate-in flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground duration-200 fade-in-0 slide-in-from-right-4"
+            >
+              <placeholder.Icon className="size-6 opacity-60" />
+              <p>{placeholder.label} — coming soon</p>
             </div>
           ) : (
             <>
