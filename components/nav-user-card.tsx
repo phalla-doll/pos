@@ -34,7 +34,12 @@ export function NavUserCard({
 }) {
   return (
     <div className="rounded-lg border p-4 text-sm">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <Avatar className="size-10 shrink-0">
+          <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+            {userInitials(user.name)}
+          </AvatarFallback>
+        </Avatar>
         <div className="min-w-0">
           <div className="truncate font-semibold tracking-wide text-foreground">
             {user.name}
@@ -43,11 +48,6 @@ export function NavUserCard({
             {user.email}
           </p>
         </div>
-        <Avatar className="size-10 shrink-0">
-          <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
-            {userInitials(user.name)}
-          </AvatarFallback>
-        </Avatar>
       </div>
 
       {/* Company row: a hover reveals it switches the active company. */}
