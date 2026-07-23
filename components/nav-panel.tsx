@@ -12,7 +12,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import type { FavoriteSection } from "@/lib/favorites"
-import type { NavCommand, NavEntry } from "@/lib/nav"
+import {
+  groupNavCommandsByPath,
+  type NavCommand,
+  type NavEntry,
+} from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
 import type { ScreenRef } from "@/lib/tab-identity"
 import { cn } from "@/lib/utils"
@@ -145,13 +149,15 @@ export function NavPanel({
 }
 
 /**
- * Pane 2's search view: the flat list of screens matching the query, shown in
- * place of the drill list while there is a query. Every row is a launcher (no
- * drilling — search collapses the hierarchy), trailed by its breadcrumb so two
- * same-named screens in different sections stay tellable apart. `commands` is
- * already filtered and scoped by the caller; this only renders. A `favorite`
- * control adds the marking star, so a screen can be starred straight from a
- * search result.
+ * Pane 2's search view: the screens matching the query, shown in place of the
+ * drill list while there is a query. Every row is a launcher (no drilling —
+ * search collapses the hierarchy), but the matches are grouped by their
+ * breadcrumb, each group under a heading. Location reads once, above its rows,
+ * instead of trailing every row with a breadcrumb that just truncates next to a
+ * wrapping label — while still keeping two same-named screens in different
+ * sections tellable apart. `commands` is already filtered and scoped by the
+ * caller; this only groups and renders. A `favorite` control adds the marking
+ * star, so a screen can be starred straight from a search result.
  */
 export function NavSearchResults({
   commands,
@@ -174,36 +180,38 @@ export function NavSearchResults({
     )
   }
 
+  const sections = groupNavCommandsByPath(commands, "Screens")
+
   return (
-    <SidebarGroup>
-      <SidebarMenu className="gap-0.5">
-        {commands.map(({ screen, path }) => (
-          <SidebarMenuItem key={screen.type}>
-            <SidebarMenuButton
-              className="h-10"
-              isActive={focusedType === screen.type}
-              render={
-                <Link
-                  href={hrefFor({ screenType: screen.type })}
-                  onClick={onNavigate}
-                />
-              }
-            >
-              {screen.icon}
-              <span>{screen.label}</span>
-              {path.length > 0 && (
-                <span className="ml-auto truncate text-xs text-muted-foreground">
-                  {path.join(" › ")}
-                </span>
-              )}
-            </SidebarMenuButton>
-            {favorite && (
-              <FavoriteToggle type={screen.type} favorite={favorite} />
-            )}
-          </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
+    <>
+      {sections.map((section) => (
+        <SidebarGroup key={section.heading} className="py-1">
+          <SidebarGroupLabel>{section.heading}</SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
+            {section.commands.map(({ screen }) => (
+              <SidebarMenuItem key={screen.type}>
+                <SidebarMenuButton
+                  className="h-10"
+                  isActive={focusedType === screen.type}
+                  render={
+                    <Link
+                      href={hrefFor({ screenType: screen.type })}
+                      onClick={onNavigate}
+                    />
+                  }
+                >
+                  {screen.icon}
+                  <span>{screen.label}</span>
+                </SidebarMenuButton>
+                {favorite && (
+                  <FavoriteToggle type={screen.type} favorite={favorite} />
+                )}
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      ))}
+    </>
   )
 }
 
