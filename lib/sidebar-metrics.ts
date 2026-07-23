@@ -16,11 +16,18 @@
 export const SIDEBAR_WIDTH_ICON = "3.5rem"
 
 /**
- * A pane-1 rail button: a fixed 40px square with a centered 20px glyph. Unlike
- * the old collapse-responsive styling, this does *not* key off the sidebar's
- * collapsible state — the rail is statically narrow whether or not pane 2 is
- * open, so its buttons must stay compact in both. The `!` on `size-10` beats
- * the vendored variant's `group-data-[collapsible=icon]:size-8!`, which would
- * otherwise shrink the buttons the moment pane 2 collapses.
+ * A pane-1 rail button: a fixed 40px square with a centered 20px glyph. The
+ * rail is statically narrow whether or not pane 2 is open, so its buttons must
+ * stay 40px in both states.
+ *
+ * The catch: these buttons live *inside* the outer `collapsible="icon"`
+ * sidebar, which collapses whenever pane 2 is closed — so the vendored base
+ * class's `group-data-[collapsible=icon]:size-8!` matches and shrinks them to
+ * 32px the moment the panel closes. A bare `size-10!` does *not* win that:
+ * both are `!important`, and the vendored selector's `.group[data-collapsible]`
+ * carries higher specificity, which outranks `!important`. So we re-assert the
+ * size under the *same* variant — equal specificity, and `size-10` sorts after
+ * `size-8`, so it wins — pinning the button to 40px in the collapsed state too.
  */
-export const railButton = "size-10! justify-center [&_svg]:size-5!"
+export const railButton =
+  "size-10! group-data-[collapsible=icon]:size-10! justify-center [&_svg]:size-5!"
