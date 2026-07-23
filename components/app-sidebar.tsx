@@ -40,12 +40,7 @@ import { groupAtPath } from "@/lib/nav-section"
 import type { ScreenType } from "@/lib/screens"
 import { freshWorkspaceHref } from "@/lib/tab-url"
 import { sidebarUser, sidebarWorkspace } from "@/lib/fixtures"
-import {
-  ChevronLeftIcon,
-  Grid2x2Plus,
-  PinIcon,
-  SearchIcon,
-} from "lucide-react"
+import { ChevronLeftIcon, Grid2x2Plus, PinIcon, SearchIcon } from "lucide-react"
 
 /**
  * The sidebar, in two shapes for two form factors:
@@ -285,7 +280,7 @@ function SidebarBody({
           no `hidden` of its own, so the collapse reads as one panel sliding
           away rather than two things toggling. */}
       <Sidebar collapsible="none" className="flex min-w-0 flex-1">
-        <SidebarHeader className="h-16 flex-row items-center gap-2 border-b px-4">
+        <SidebarHeader className="h-12 flex-row items-center gap-2 border-b px-4">
           {canGoBack && <BackButton onClick={back} />}
           <div className="flex-1 truncate text-sm font-medium text-foreground">
             {title}
