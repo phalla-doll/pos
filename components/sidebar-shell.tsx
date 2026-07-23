@@ -63,7 +63,14 @@ export function useSidebarPanel(): SidebarPanel {
  * pointer or under focus: an expanded sidebar reflows the page, which is too
  * much to hand to a cursor merely passing over the rail.
  */
-export function SidebarShell({ children }: { children: React.ReactNode }) {
+export function SidebarShell({
+  header,
+  children,
+}: {
+  /** The full-width app bar, rendered across the very top above both panes. */
+  header: React.ReactNode
+  children: React.ReactNode
+}) {
   // The cookie *is* the pin, so it is subscribed to rather than copied into
   // React. The prerendered HTML has no cookie in hand, which is exactly the
   // split `getServerSnapshot` exists for: the server renders unpinned and the
@@ -105,7 +112,10 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
         // hold the layout gap at the rail width while the panel is up. Pinning
         // clears it, so a pinned panel pushes the content as before.
         data-panel-overlay={open && !pinned ? "true" : undefined}
-        className="h-svh overflow-hidden"
+        // A column: the full-width app bar on top, then the sidebar + content
+        // row beneath it. `--header-height` is the app bar's height and the
+        // offset the fixed sidebar starts at (see `components/app-sidebar.tsx`).
+        className="h-svh flex-col overflow-hidden"
         // The expanded sidebar is the icon rail plus the detail panel, so it
         // runs wider than a one-column sidebar. `--sidebar-width-icon` is the
         // rail alone — the width the whole thing collapses to.
@@ -113,11 +123,15 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
           {
             "--sidebar-width": "19rem",
             "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+            "--header-height": "4rem",
           } as React.CSSProperties
         }
       >
-        <AppSidebar />
-        {children}
+        {header}
+        <div className="flex min-h-0 flex-1">
+          <AppSidebar />
+          {children}
+        </div>
       </SidebarProvider>
     </SidebarPanelContext.Provider>
   )

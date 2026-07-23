@@ -16,6 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { sidebarWorkspace } from "@/lib/fixtures"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 export default function DashboardLayout({
@@ -25,55 +26,57 @@ export default function DashboardLayout({
 }) {
   return (
     <NuqsAdapter>
-      <SidebarShell>
+      <SidebarShell
+        header={
+          // The full-width app bar: brand at the far left (above the rail),
+          // then the breadcrumb, with the header tools pinned to the right. It
+          // spans the whole top; the sidebar starts beneath it.
+          <header className="relative z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b px-4">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center [&_svg]:size-5!">
+                {sidebarWorkspace.logo}
+              </div>
+              <span className="text-sm font-semibold text-foreground">
+                {sidebarWorkspace.name}
+              </span>
+            </div>
+            <Separator
+              orientation="vertical"
+              className="mx-1 data-vertical:h-4 data-vertical:self-auto"
+            />
+            {/* Mobile only: below `md` the sidebar is an off-canvas sheet with
+                nothing on screen to press, so it needs an outside way in. On a
+                desktop the rail carries its own controls, so this is hidden. */}
+            <Tooltip>
+              <TooltipTrigger
+                render={<SidebarTrigger className="md:hidden" />}
+              />
+              <TooltipContent>Toggle Sidebar</TooltipContent>
+            </Tooltip>
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">
+                    Build Your Application
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+            <div className="ml-auto flex items-center gap-2">
+              <HeaderNotifications />
+              <HeaderSearch />
+            </div>
+          </header>
+        }
+      >
         {/* `z-0` makes the content its own stacking context, so the sticky
             table header (and anything else that raises itself above its
             neighbours) stays under the sidebar when it expands. */}
         <SidebarInset className="relative z-0 min-h-0 overflow-hidden">
-          {/* The header height tracks the *content's* left edge, not the panel:
-              it grows to 64px only when a pinned panel actually pushes the
-              content (to line up with the panel's own header), and stays at
-              48px both when collapsed and when an unpinned panel merely floats
-              over — `data-panel-overlay` — so opening the menu doesn't nudge
-              the content down. */}
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 group-data-[panel-overlay=true]/sidebar-wrapper:h-12">
-            <div className="flex flex-1 items-center gap-2 px-4">
-              {/* Mobile only. On a desktop the sidebar carries its own
-                  controls — collapse in its header, expand in its footer — so
-                  a third toggle out here is redundant. Below `md` the sidebar
-                  is an off-canvas sheet with nothing on screen to press, which
-                  is the one case that needs an outside way in. The breakpoint
-                  is `useIsMobile`'s 768px, so the trigger appears exactly when
-                  the sidebar becomes that sheet. */}
-              <Tooltip>
-                <TooltipTrigger
-                  render={<SidebarTrigger className="-ml-1 md:hidden" />}
-                />
-                <TooltipContent>Toggle Sidebar</TooltipContent>
-              </Tooltip>
-              <Separator
-                orientation="vertical"
-                className="mr-2 md:hidden data-vertical:h-4 data-vertical:self-auto"
-              />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">
-                      Build Your Application
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-              <div className="ml-auto flex items-center gap-2">
-                <HeaderNotifications />
-                <HeaderSearch />
-              </div>
-            </div>
-          </header>
           {children}
         </SidebarInset>
       </SidebarShell>

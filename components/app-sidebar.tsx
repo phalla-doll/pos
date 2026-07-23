@@ -94,7 +94,10 @@ function DesktopSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar
       collapsible="icon"
-      className="overflow-hidden *:data-[sidebar=sidebar]:flex-row"
+      // The full-width app bar owns the top strip, so the fixed sidebar starts
+      // below it: override the vendor's `inset-y-0`/`h-svh` to begin at
+      // `--header-height` and run the remaining viewport height.
+      className="top-(--header-height) h-[calc(100svh-var(--header-height))] overflow-hidden *:data-[sidebar=sidebar]:flex-row"
       {...props}
     >
       <React.Suspense
@@ -239,15 +242,13 @@ function SidebarBody({
   return (
     <>
       {/* Pane 1 — the icon rail. Pinned to the rail width; the outer sidebar's
-          collapse shrinks the whole container to exactly this. */}
+          collapse shrinks the whole container to exactly this. The brand now
+          lives in the full-width app bar, so the rail leads with its buttons. */}
       <Sidebar
         collapsible="none"
         className="w-[calc(var(--sidebar-width-icon)+1px)]! shrink-0 border-r"
       >
-        <SidebarHeader>
-          <SidebarBrand workspace={sidebarWorkspace} />
-        </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="pt-2">
           <SidebarGroup className="px-1.5">
             <SidebarGroupContent>
               {/* The rail's own buttons. For now just Menu — the whole nav tree
