@@ -1,17 +1,74 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Star } from "lucide-react"
 
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import type { FavoriteSection } from "@/lib/favorites"
 import type { NavCommand, NavEntry } from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
 import type { ScreenRef } from "@/lib/tab-identity"
+import { cn } from "@/lib/utils"
+
+/**
+ * The star that marks a screen as a favorite, sitting at the right edge of a
+ * leaf row as a {@link SidebarMenuAction} — a sibling of the row's launcher
+ * button, not nested in its link, so toggling never also navigates. Hidden
+ * until the row is hovered or focused *unless* the screen is already a favorite,
+ * in which case it stays lit so the current marks are visible at a glance.
+ */
+function FavoriteToggle({
+  type,
+  favorite,
+}: {
+  type: ScreenType
+  favorite: FavoriteControls
+}) {
+  const marked = favorite.isFavorite(type)
+  return (
+    <SidebarMenuAction
+      className={cn(
+        // The rows are taller than the vendored default the action anchors to
+        // (`top-1.5`), so re-center it on the h-10 row. The peer-variant
+        // override matches the base's specificity and sorts after it, so it
+        // wins. `right-2` lines its inset up with the row's own `p-2`.
+        "top-1/2 right-2 -translate-y-1/2 transition-opacity peer-data-[size=default]/menu-button:top-1/2",
+        // Kept deliberately dim so the star never competes with the row's label
+        // and icon for contrast; it lifts to full opacity only on a *direct*
+        // hover or focus of the star itself (the `!` beats the reveal below,
+        // whatever the class order). A marked star rests visibly dim; an unmarked
+        // one is hidden until the row is hovered, then only faintly.
+        "hover:opacity-100! focus-visible:opacity-100!",
+        marked
+          ? "opacity-45"
+          : "opacity-0 group-focus-within/menu-item:opacity-45 group-hover/menu-item:opacity-45"
+      )}
+      aria-label={marked ? "Remove from favorites" : "Add to favorites"}
+      aria-pressed={marked}
+      onClick={(e) => {
+        // The launcher is a sibling, but a stray bubble shouldn't reach the row.
+        e.preventDefault()
+        e.stopPropagation()
+        favorite.onToggle(type)
+      }}
+    >
+      <Star className={cn(marked && "fill-current")} strokeWidth={1.5} />
+    </SidebarMenuAction>
+  )
+}
+
+/** Read and toggle a screen's favorite state — passed down from the workspace. */
+export type FavoriteControls = {
+  isFavorite: (type: ScreenType) => boolean
+  onToggle: (type: ScreenType) => void
+}
 
 /**
  * One level of pane 2, rendered as a *drill-in* list rather than a collapsing
@@ -26,7 +83,7 @@ import type { ScreenRef } from "@/lib/tab-identity"
  * - A **leaf** is a launcher: a real link that opens the screen as a tab, and
  *   reads as active when it's the focused one. Clicking one also calls
  *   `onNavigate`, which is how an unpinned panel gets out of the way once a
- *   screen is picked.
+ *   screen is picked. When `favorite` is given, a star lets the leaf be marked.
  * - A **group** is a step deeper: clicking it pushes onto the panel's path
  *   (`onDrill`), so its own children take over the panel. The trailing chevron
  *   points *right* to say "opens a level", not down to say "expands here".
@@ -37,12 +94,14 @@ export function NavPanel({
   onDrill,
   focusedType,
   onNavigate,
+  favorite,
 }: {
   items: NavEntry[]
   hrefFor: (ref: ScreenRef) => string
   onDrill: (label: string) => void
   focusedType: ScreenType | null
   onNavigate?: () => void
+  favorite?: FavoriteControls
 }) {
   return (
     <SidebarGroup>
@@ -63,6 +122,9 @@ export function NavPanel({
                 {child.screen.icon}
                 <span>{child.screen.label}</span>
               </SidebarMenuButton>
+              {favorite && (
+                <FavoriteToggle type={child.screen.type} favorite={favorite} />
+              )}
             </SidebarMenuItem>
           ) : (
             <SidebarMenuItem key={child.label}>
@@ -87,18 +149,22 @@ export function NavPanel({
  * place of the drill list while there is a query. Every row is a launcher (no
  * drilling — search collapses the hierarchy), trailed by its breadcrumb so two
  * same-named screens in different sections stay tellable apart. `commands` is
- * already filtered and scoped by the caller; this only renders.
+ * already filtered and scoped by the caller; this only renders. A `favorite`
+ * control adds the marking star, so a screen can be starred straight from a
+ * search result.
  */
 export function NavSearchResults({
   commands,
   hrefFor,
   focusedType,
   onNavigate,
+  favorite,
 }: {
   commands: NavCommand[]
   hrefFor: (ref: ScreenRef) => string
   focusedType: ScreenType | null
   onNavigate?: () => void
+  favorite?: FavoriteControls
 }) {
   if (commands.length === 0) {
     return (
@@ -131,9 +197,74 @@ export function NavSearchResults({
                 </span>
               )}
             </SidebarMenuButton>
+            {favorite && (
+              <FavoriteToggle type={screen.type} favorite={favorite} />
+            )}
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
     </SidebarGroup>
+  )
+}
+
+/**
+ * Pane 2's Favorites view: the starred screens as a flat list with no drilling,
+ * separated into one labelled group per top-level section. `sections` is
+ * already derived and ordered by the caller (see `favoriteSections`); this only
+ * renders. Every row carries the marking star too, so the panel is also where a
+ * favorite is *removed* — unstarring drops it from the list on the next render.
+ * An empty set shows a hint rather than a blank panel.
+ */
+export function NavFavoritesPanel({
+  sections,
+  hrefFor,
+  focusedType,
+  onNavigate,
+  favorite,
+}: {
+  sections: FavoriteSection[]
+  hrefFor: (ref: ScreenRef) => string
+  focusedType: ScreenType | null
+  onNavigate?: () => void
+  favorite: FavoriteControls
+}) {
+  if (sections.length === 0) {
+    return (
+      <div className="px-6 py-10 text-center text-sm text-muted-foreground">
+        No favorites yet. Star a screen in the menu to pin it here.
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {sections.map((section) => (
+        <SidebarGroup key={section.label ?? " general"} className="py-1">
+          {/* Top-level leaves belong to no section, so they gather under a
+              catch-all heading rather than showing an empty one. */}
+          <SidebarGroupLabel>{section.label ?? "General"}</SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
+            {section.screens.map((screen) => (
+              <SidebarMenuItem key={screen.type}>
+                <SidebarMenuButton
+                  className="h-10"
+                  isActive={focusedType === screen.type}
+                  render={
+                    <Link
+                      href={hrefFor({ screenType: screen.type })}
+                      onClick={onNavigate}
+                    />
+                  }
+                >
+                  {screen.icon}
+                  <span>{screen.label}</span>
+                </SidebarMenuButton>
+                <FavoriteToggle type={screen.type} favorite={favorite} />
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      ))}
+    </>
   )
 }
