@@ -3,7 +3,12 @@
 import * as React from "react"
 
 import { NavMain, NavMainLive } from "@/components/nav-main"
-import { NavPanel, NavSearchResults } from "@/components/nav-panel"
+import {
+  NavFavoritesPanel,
+  NavPanel,
+  NavSearchResults,
+  type FavoriteControls,
+} from "@/components/nav-panel"
 import { NavProfilePanel } from "@/components/nav-profile-panel"
 import { NavUser } from "@/components/nav-user"
 import { NavUserCard } from "@/components/nav-user-card"
@@ -32,9 +37,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useFavorites } from "@/hooks/use-favorites"
 import { useSidebarLaunchState } from "@/hooks/use-tabs"
 import { cn } from "@/lib/utils"
 import { railButton } from "@/lib/sidebar-metrics"
+import { favoriteSections } from "@/lib/favorites"
 import { filterNavCommands, flattenNav, sidebarNav } from "@/lib/nav"
 import { groupAtPath } from "@/lib/nav-section"
 import type { ScreenType } from "@/lib/screens"
@@ -154,13 +161,15 @@ function SidebarBody({
   focusedType: ScreenType | null
 }) {
   const { pinned, open, setPinned, setTransientOpen } = useSidebarPanel()
+  const { favorites, isFavorite, toggle } = useFavorites()
   const [nav, setNav] = React.useState<{
     path: string[]
     dir: "forward" | "back"
     // `menu` is the group tree; `profile` is the identity view drilled into from
-    // the identity row. A sibling of the path stack rather than a member of it —
-    // the profile isn't a nav group, so it doesn't belong in `path`.
-    view: "menu" | "profile"
+    // the identity row; `favorites` is the flat starred list opened from the
+    // rail's own button. The latter two are siblings of the path stack rather
+    // than members of it — neither is a nav group, so neither belongs in `path`.
+    view: "menu" | "profile" | "favorites"
   }>({ path: [], dir: "forward", view: "menu" })
   // The menu filter. Cleared on every move so a query never lingers over a
   // level it wasn't typed against.
@@ -168,38 +177,75 @@ function SidebarBody({
 
   const { path, dir, view } = nav
   const inProfile = view === "profile"
+  const inFavorites = view === "favorites"
+  // Read/toggle passed to every leaf row that offers a star, so marking works
+  // the same from the menu list, a search result, and the Favorites panel.
+  const favorite = React.useMemo<FavoriteControls>(
+    () => ({ isFavorite, onToggle: toggle }),
+    [isFavorite, toggle]
+  )
   // What fills the panel: the top-level tree at the root, else the group's
   // children — falling back to the root so a stale path can't empty the panel.
   const group = groupAtPath(sidebarNav, path)
   const items = path.length === 0 ? sidebarNav : (group?.children ?? sidebarNav)
   const title = inProfile
     ? "Profile"
-    : path.length === 0
-      ? "Menu"
-      : (group?.label ?? "Menu")
+    : inFavorites
+      ? "Favorites"
+      : path.length === 0
+        ? "Menu"
+        : (group?.label ?? "Menu")
+  // The profile drills, so it can back out; the favorites list is flat, so it
+  // can't — only the menu's own path stack and the profile offer a way up.
   const canGoBack = inProfile || path.length > 0
 
-  // Search is scoped to the level in view: flatten this subtree's leaves and
-  // keep the ones that match. Empty at the root means "all screens"; drilled in
-  // it means "this section only".
+  // The starred screens, grouped by section for the Favorites panel and
+  // flattened for its search.
+  const favoriteSectionList = favoriteSections(sidebarNav, favorites)
+  const favoriteCommands = flattenNav(sidebarNav).filter((c) =>
+    isFavorite(c.screen.type)
+  )
+
+  // Search is scoped to what the panel is showing: the favorites when in the
+  // Favorites view, else the level in view — flatten its leaves and keep the
+  // ones that match. Empty at the menu root means "all screens"; drilled in it
+  // means "this section only".
   const searching = query.trim().length > 0
-  const results = searching ? filterNavCommands(flattenNav(items), query) : []
+  const searchSource = inFavorites ? favoriteCommands : flattenNav(items)
+  const results = searching ? filterNavCommands(searchSource, query) : []
 
   // The rail's Menu button: open (transiently) to the top-level menu, jump back
-  // to it from a drilled level, or close it when it's already showing the top
-  // level. Opening here never pins — that is the pin button's job alone.
+  // to it from a drilled level or another view (profile, favorites), or close it
+  // when it's already showing the menu root. Opening here never pins — that is
+  // the pin button's job alone.
   const toggleMenu = React.useCallback(() => {
     setQuery("")
     if (!open) {
       setNav({ path: [], dir: "back", view: "menu" })
       setTransientOpen(true)
-    } else if (path.length > 0 || inProfile) {
+    } else if (path.length > 0 || view !== "menu") {
       setNav({ path: [], dir: "back", view: "menu" })
     } else {
       setPinned(false)
       setTransientOpen(false)
     }
-  }, [open, path.length, inProfile, setPinned, setTransientOpen])
+  }, [open, path.length, view, setPinned, setTransientOpen])
+
+  // The rail's Favorites button, mirroring Menu: open transiently to the
+  // favorites list, switch to it from any other view, or close it when it is
+  // already the favorites list showing.
+  const toggleFavorites = React.useCallback(() => {
+    setQuery("")
+    if (!open) {
+      setNav({ path: [], dir: "back", view: "favorites" })
+      setTransientOpen(true)
+    } else if (view !== "favorites") {
+      setNav({ path: [], dir: "back", view: "favorites" })
+    } else {
+      setPinned(false)
+      setTransientOpen(false)
+    }
+  }, [open, view, setPinned, setTransientOpen])
 
   // Drill one level deeper: the clicked group's children take over the panel.
   const drill = React.useCallback((label: string) => {
@@ -257,15 +303,16 @@ function SidebarBody({
         <SidebarContent className="pt-2">
           <SidebarGroup className="px-1.5">
             <SidebarGroupContent>
-              {/* The rail's own buttons. For now just Menu — the whole nav tree
-                  lives in the panel it opens; future entries (Favorites, …) sit
-                  alongside it here. */}
+              {/* The rail's own buttons: each opens the shared panel to its own
+                  view. Menu is the whole nav tree; Favorites is the flat starred
+                  list. Only one reads active at a time — the one the panel is
+                  showing. */}
               <SidebarMenu className="gap-1">
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     tooltip={{ children: "Menu", hidden: false }}
                     aria-label="Menu"
-                    isActive={open}
+                    isActive={open && !inFavorites}
                     className={railButton}
                     onClick={toggleMenu}
                   >
@@ -276,7 +323,9 @@ function SidebarBody({
                   <SidebarMenuButton
                     tooltip={{ children: "Favorites", hidden: false }}
                     aria-label="Favorites"
+                    isActive={open && inFavorites}
                     className={railButton}
+                    onClick={toggleFavorites}
                   >
                     <Star />
                   </SidebarMenuButton>
@@ -313,25 +362,30 @@ function SidebarBody({
             </div>
           ) : (
             <>
-              {/* Search sits at the very top and filters the level in view. */}
+              {/* Search sits at the very top and filters whatever is in view —
+                  the menu level, or the favorites list. */}
               <div className="px-3 pt-3 pb-3">
                 <InputGroup className="rounded-full px-1">
                   <InputGroupAddon>
                     <SearchIcon strokeWidth={1.5} />
                   </InputGroupAddon>
                   <InputGroupInput
-                    placeholder="Search menu..."
-                    aria-label="Search menu"
+                    placeholder={
+                      inFavorites ? "Search favorites..." : "Search menu..."
+                    }
+                    aria-label={
+                      inFavorites ? "Search favorites" : "Search menu"
+                    }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />
                 </InputGroup>
               </div>
-              {/* The identity row follows the search at the top level only —
-                  once drilled into a section the list takes the space. A divider
-                  sets it apart from the list below, and clicking it drills into
-                  the profile view. */}
-              {path.length === 0 && (
+              {/* The identity row follows the search at the menu's top level
+                  only — once drilled into a section, or over in favorites, the
+                  list takes the space. A divider sets it apart from the list
+                  below, and clicking it drills into the profile view. */}
+              {!inFavorites && path.length === 0 && (
                 <div className="border-b px-3 pb-4">
                   <NavUserCard user={sidebarUser} onClick={openProfile} />
                 </div>
@@ -342,7 +396,21 @@ function SidebarBody({
                   hrefFor={hrefFor}
                   focusedType={focusedType}
                   onNavigate={closeOnNavigate}
+                  favorite={favorite}
                 />
+              ) : inFavorites ? (
+                <div
+                  key="favorites"
+                  className="animate-in duration-200 fade-in-0 slide-in-from-right-4"
+                >
+                  <NavFavoritesPanel
+                    sections={favoriteSectionList}
+                    hrefFor={hrefFor}
+                    focusedType={focusedType}
+                    onNavigate={closeOnNavigate}
+                    favorite={favorite}
+                  />
+                </div>
               ) : (
                 // Keyed on the path so each level is its own mount and slides in
                 // from the side the move came from — deeper from the right, back
@@ -362,6 +430,7 @@ function SidebarBody({
                     onDrill={drill}
                     focusedType={focusedType}
                     onNavigate={closeOnNavigate}
+                    favorite={favorite}
                   />
                 </div>
               )}
