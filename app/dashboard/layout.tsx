@@ -30,8 +30,13 @@ export default function DashboardLayout({
             table header (and anything else that raises itself above its
             neighbours) stays under the sidebar when it expands. */}
         <SidebarInset className="relative z-0 min-h-0 overflow-hidden">
-          {/* The header shrinks with the collapsed rail. */}
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          {/* The header height tracks the *content's* left edge, not the panel:
+              it grows to 64px only when a pinned panel actually pushes the
+              content (to line up with the panel's own header), and stays at
+              48px both when collapsed and when an unpinned panel merely floats
+              over — `data-panel-overlay` — so opening the menu doesn't nudge
+              the content down. */}
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 group-data-[panel-overlay=true]/sidebar-wrapper:h-12">
             <div className="flex flex-1 items-center gap-2 px-4">
               {/* Mobile only. On a desktop the sidebar carries its own
                   controls — collapse in its header, expand in its footer — so
