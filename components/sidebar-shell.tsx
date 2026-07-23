@@ -123,7 +123,7 @@ export function SidebarShell({
           {
             "--sidebar-width": "19rem",
             "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-            "--header-height": "4rem",
+            "--header-height": "3rem",
           } as React.CSSProperties
         }
       >
