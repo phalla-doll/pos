@@ -92,6 +92,30 @@ export function useTabLauncherHref(): (ref: ScreenRef) => string {
 }
 
 /**
+ * What the two-pane sidebar reads from the URL, in one subscription: the
+ * launcher `hrefFor` (as {@link useTabLauncherHref}) plus the `focusedType` —
+ * the screen type of the focused tab, which decides the section pane 2 opens
+ * to. Both derive from the same `?tabs=`/`?i=` read, so the rail and the panel
+ * never disagree about what's focused.
+ *
+ * Reads the URL, so callers must sit inside `<Suspense>` — the sidebar owns
+ * that boundary and its fallback (a fresh-workspace href, no focus).
+ */
+export function useSidebarLaunchState(): {
+  hrefFor: (ref: ScreenRef) => string
+  focusedType: ScreenType | null
+} {
+  const [{ tabs, i }] = useQueryStates(tabParsers, tabUrlOptions)
+  const hrefFor = React.useCallback(
+    (ref: ScreenRef) => launcherHref(contentFromParams({ tabs, i }), ref),
+    [tabs, i]
+  )
+  const content = contentFromParams({ tabs, i })
+  const focusedType = content.refs[content.activeIndex]?.screenType ?? null
+  return { hrefFor, focusedType }
+}
+
+/**
  * The tab workspace: its *content* lives in the URL (`?tabs=` and `?i=`), its
  * *identity* lives here.
  *
