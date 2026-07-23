@@ -8,7 +8,6 @@
 //   BreadcrumbSeparator,
 // } from "@/components/ui/breadcrumb"
 import { HeaderNotifications } from "@/components/header-notifications"
-import { HeaderSearch } from "@/components/header-search"
 // import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { SidebarShell } from "@/components/sidebar-shell"
@@ -73,7 +72,6 @@ export default function DashboardLayout({
             */}
             <div className="ml-auto flex items-center gap-2">
               <HeaderNotifications />
-              <HeaderSearch />
             </div>
           </header>
         }
