@@ -2,7 +2,7 @@
 
 import { Landmark } from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +28,7 @@ export function NavUserCard({
   user: {
     name: string
     email: string
+    avatar: string
     company: string
     companyCode: string
   }
@@ -36,6 +37,7 @@ export function NavUserCard({
     <div className="rounded-lg border p-4 text-sm">
       <div className="flex items-center gap-3">
         <Avatar className="size-10 shrink-0">
+          <AvatarImage src={user.avatar} alt={user.name} />
           <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
             {userInitials(user.name)}
           </AvatarFallback>

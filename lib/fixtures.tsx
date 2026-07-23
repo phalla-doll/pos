@@ -728,7 +728,7 @@ export const businessDate = "Thu 16 Jul"
 export const sidebarUser = {
   name: "shadcn",
   email: "m@example.com",
-  avatar: "/avatars/shadcn.jpg",
+  avatar: "/avatars/shadcn.png",
   // The identity card above the menu search: session and company context.
   lastSignedOn: "01 JAN 2025 at 06:29",
   loginAttempts: 0,
