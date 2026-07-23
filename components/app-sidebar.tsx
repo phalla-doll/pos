@@ -299,7 +299,7 @@ function SidebarBody({
             <>
               {/* Search sits at the very top and filters the level in view. */}
               <div className="px-3 pt-3 pb-3">
-                <InputGroup>
+                <InputGroup className="rounded-full px-1">
                   <InputGroupAddon>
                     <SearchIcon strokeWidth={1.5} />
                   </InputGroupAddon>
