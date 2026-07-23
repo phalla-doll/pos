@@ -282,7 +282,7 @@ function SidebarBody({
       <Sidebar collapsible="none" className="flex min-w-0 flex-1">
         <SidebarHeader className="h-16 flex-row items-center gap-2 border-b px-4">
           {canGoBack && <BackButton onClick={back} />}
-          <div className="flex-1 truncate text-base font-medium text-foreground">
+          <div className="flex-1 truncate text-sm font-medium text-foreground">
             {title}
           </div>
           <PinButton pinned={pinned} onClick={togglePin} />
