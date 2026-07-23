@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { NavMain, NavMainLive } from "@/components/nav-main"
 import { NavPanel, NavSearchResults } from "@/components/nav-panel"
+import { NavProfilePanel } from "@/components/nav-profile-panel"
 import { NavUser } from "@/components/nav-user"
 import { NavUserCard } from "@/components/nav-user-card"
 import { SidebarBrand } from "@/components/sidebar-brand"
@@ -147,18 +148,27 @@ function SidebarBody({
   const [nav, setNav] = React.useState<{
     path: string[]
     dir: "forward" | "back"
-  }>({ path: [], dir: "forward" })
+    // `menu` is the group tree; `profile` is the identity view drilled into from
+    // the identity row. A sibling of the path stack rather than a member of it —
+    // the profile isn't a nav group, so it doesn't belong in `path`.
+    view: "menu" | "profile"
+  }>({ path: [], dir: "forward", view: "menu" })
   // The menu filter. Cleared on every move so a query never lingers over a
   // level it wasn't typed against.
   const [query, setQuery] = React.useState("")
 
-  const { path, dir } = nav
+  const { path, dir, view } = nav
+  const inProfile = view === "profile"
   // What fills the panel: the top-level tree at the root, else the group's
   // children — falling back to the root so a stale path can't empty the panel.
   const group = groupAtPath(sidebarNav, path)
   const items = path.length === 0 ? sidebarNav : (group?.children ?? sidebarNav)
-  const title = path.length === 0 ? "Menu" : (group?.label ?? "Menu")
-  const canGoBack = path.length > 0
+  const title = inProfile
+    ? "Profile"
+    : path.length === 0
+      ? "Menu"
+      : (group?.label ?? "Menu")
+  const canGoBack = inProfile || path.length > 0
 
   // Search is scoped to the level in view: flatten this subtree's leaves and
   // keep the ones that match. Empty at the root means "all screens"; drilled in
@@ -172,27 +182,38 @@ function SidebarBody({
   const toggleMenu = React.useCallback(() => {
     setQuery("")
     if (!open) {
-      setNav({ path: [], dir: "back" })
+      setNav({ path: [], dir: "back", view: "menu" })
       setTransientOpen(true)
-    } else if (path.length > 0) {
-      setNav({ path: [], dir: "back" })
+    } else if (path.length > 0 || inProfile) {
+      setNav({ path: [], dir: "back", view: "menu" })
     } else {
       setPinned(false)
       setTransientOpen(false)
     }
-  }, [open, path.length, setPinned, setTransientOpen])
+  }, [open, path.length, inProfile, setPinned, setTransientOpen])
 
   // Drill one level deeper: the clicked group's children take over the panel.
   const drill = React.useCallback((label: string) => {
     setQuery("")
-    setNav((n) => ({ path: [...n.path, label], dir: "forward" }))
+    setNav((n) => ({ path: [...n.path, label], dir: "forward", view: "menu" }))
   }, [])
 
-  // Back up one level; from the top level there is nowhere further up.
+  // Drill into the profile view from the identity row.
+  const openProfile = React.useCallback(() => {
+    setQuery("")
+    setNav({ path: [], dir: "forward", view: "profile" })
+  }, [])
+
+  // Back up one level: out of the profile to the menu root, else pop one group
+  // off the path; from the top of the menu there is nowhere further up.
   const back = React.useCallback(() => {
     setQuery("")
     setNav((n) =>
-      n.path.length > 0 ? { path: n.path.slice(0, -1), dir: "back" } : n
+      n.view === "profile"
+        ? { path: [], dir: "back", view: "menu" }
+        : n.path.length > 0
+          ? { path: n.path.slice(0, -1), dir: "back", view: "menu" }
+          : n
     )
   }, [])
 
@@ -266,56 +287,69 @@ function SidebarBody({
           <PinButton pinned={pinned} onClick={togglePin} />
         </SidebarHeader>
         <SidebarContent className="overflow-x-hidden">
-          {/* Search sits at the very top and filters the level in view. */}
-          <div className="px-3 pt-3 pb-3">
-            <InputGroup>
-              <InputGroupAddon>
-                <SearchIcon strokeWidth={1.5} />
-              </InputGroupAddon>
-              <InputGroupInput
-                placeholder="Search menu..."
-                aria-label="Search menu"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </InputGroup>
-          </div>
-          {/* The identity row follows the search at the top level only — once
-              drilled into a section the list takes the space. A divider sets it
-              apart from the list below. */}
-          {path.length === 0 && (
-            <div className="border-b px-3 pb-4">
-              <NavUserCard user={sidebarUser} />
-            </div>
-          )}
-          {searching ? (
-            <NavSearchResults
-              commands={results}
-              hrefFor={hrefFor}
-              focusedType={focusedType}
-              onNavigate={closeOnNavigate}
-            />
-          ) : (
-            // Keyed on the path so each level is its own mount and slides in
-            // from the side the move came from — deeper from the right, back
-            // from the left.
+          {inProfile ? (
+            // The profile view takes over the whole panel — no search or list.
             <div
-              key={path.join("/")}
-              className={cn(
-                "animate-in duration-200 fade-in-0",
-                dir === "forward"
-                  ? "slide-in-from-right-4"
-                  : "slide-in-from-left-4"
-              )}
+              key="profile"
+              className="animate-in duration-200 fade-in-0 slide-in-from-right-4"
             >
-              <NavPanel
-                items={items}
-                hrefFor={hrefFor}
-                onDrill={drill}
-                focusedType={focusedType}
-                onNavigate={closeOnNavigate}
-              />
+              <NavProfilePanel user={sidebarUser} />
             </div>
+          ) : (
+            <>
+              {/* Search sits at the very top and filters the level in view. */}
+              <div className="px-3 pt-3 pb-3">
+                <InputGroup>
+                  <InputGroupAddon>
+                    <SearchIcon strokeWidth={1.5} />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    placeholder="Search menu..."
+                    aria-label="Search menu"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </InputGroup>
+              </div>
+              {/* The identity row follows the search at the top level only —
+                  once drilled into a section the list takes the space. A divider
+                  sets it apart from the list below, and clicking it drills into
+                  the profile view. */}
+              {path.length === 0 && (
+                <div className="border-b px-3 pb-4">
+                  <NavUserCard user={sidebarUser} onClick={openProfile} />
+                </div>
+              )}
+              {searching ? (
+                <NavSearchResults
+                  commands={results}
+                  hrefFor={hrefFor}
+                  focusedType={focusedType}
+                  onNavigate={closeOnNavigate}
+                />
+              ) : (
+                // Keyed on the path so each level is its own mount and slides in
+                // from the side the move came from — deeper from the right, back
+                // from the left.
+                <div
+                  key={path.join("/")}
+                  className={cn(
+                    "animate-in duration-200 fade-in-0",
+                    dir === "forward"
+                      ? "slide-in-from-right-4"
+                      : "slide-in-from-left-4"
+                  )}
+                >
+                  <NavPanel
+                    items={items}
+                    hrefFor={hrefFor}
+                    onDrill={drill}
+                    focusedType={focusedType}
+                    onNavigate={closeOnNavigate}
+                  />
+                </div>
+              )}
+            </>
           )}
         </SidebarContent>
       </Sidebar>

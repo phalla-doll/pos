@@ -1,5 +1,7 @@
 "use client"
 
+import { ChevronRight } from "lucide-react"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { userInitials } from "@/lib/user-initials"
 
@@ -9,6 +11,8 @@ import { userInitials } from "@/lib/user-initials"
  *
  * `components/app-sidebar.tsx` renders it above the menu search and only at the
  * top level: once you drill into a section the card gives way to the list.
+ * Clicking it drills into the profile view (the trailing chevron says "opens a
+ * level", matching a nav group), so `onClick` is wired to that drill.
  *
  * Presentational: the initials are derived from `name` (see `userInitials`) so
  * the avatar can never disagree with it, and everything else is read straight
@@ -16,31 +20,39 @@ import { userInitials } from "@/lib/user-initials"
  */
 export function NavUserCard({
   user,
+  onClick,
 }: {
   user: {
     name: string
     email: string
     avatar: string
   }
+  onClick?: () => void
 }) {
   return (
-    <div className="text-sm">
-      <div className="flex items-center gap-3">
-        <Avatar className="size-10 shrink-0">
-          <AvatarImage src={user.avatar} alt={user.name} />
-          <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
-            {userInitials(user.name)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0">
-          <div className="truncate font-semibold tracking-wide text-foreground">
-            {user.name}
-          </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
-            {user.email}
-          </p>
+    <button
+      type="button"
+      onClick={onClick}
+      className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-3 rounded-md px-1 py-1.5 text-left text-sm hover:bg-muted"
+    >
+      <Avatar className="size-10 shrink-0">
+        <AvatarImage src={user.avatar} alt={user.name} />
+        <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+          {userInitials(user.name)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-semibold tracking-wide text-foreground">
+          {user.name}
         </div>
+        <p className="mt-1 truncate text-xs text-muted-foreground">
+          {user.email}
+        </p>
       </div>
-    </div>
+      <ChevronRight
+        strokeWidth={1.5}
+        className="size-4 shrink-0 text-muted-foreground"
+      />
+    </button>
   )
 }
