@@ -152,6 +152,31 @@ export function filterNavCommands(
   })
 }
 
+/** A run of commands that share one breadcrumb, keyed by their joined path. */
+export type NavCommandSection = { heading: string; commands: NavCommand[] }
+
+/**
+ * Group commands by their full breadcrumb path, in first-seen order, so a search
+ * result list can print each screen's location once as a heading above its rows
+ * instead of trailing every row with a breadcrumb that just truncates. Commands
+ * with an empty path (top-level screens) fall under `rootHeading`. Pure and
+ * data-only; the panel component stays a thin renderer.
+ */
+export function groupNavCommandsByPath(
+  commands: NavCommand[],
+  rootHeading: string
+): NavCommandSection[] {
+  const byHeading = new Map<string, NavCommand[]>()
+  for (const command of commands) {
+    const heading =
+      command.path.length > 0 ? command.path.join(" › ") : rootHeading
+    const existing = byHeading.get(heading)
+    if (existing) existing.push(command)
+    else byHeading.set(heading, [command])
+  }
+  return [...byHeading].map(([heading, commands]) => ({ heading, commands }))
+}
+
 /**
  * Check the registry ↔ nav invariant: every screen is reachable from the nav
  * exactly once. Returns the screens missing from the nav (`unreachable`) and

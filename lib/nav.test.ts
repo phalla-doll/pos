@@ -6,7 +6,9 @@ import {
   filterNavCommands,
   findNavIssues,
   flattenNav,
+  groupNavCommandsByPath,
   sidebarNav,
+  type NavCommand,
   type NavEntry,
 } from "@/lib/nav"
 import { screens, type Screen, type ScreenType } from "@/lib/screens"
@@ -82,6 +84,47 @@ describe("flattenNav (pure)", () => {
   it("does not leak a sibling's breadcrumb into a later entry", () => {
     const nav = [group([leaf("a")], "Reports"), leaf("b")]
     expect(flattenNav(nav).map((c) => c.path)).toEqual([["Reports"], []])
+  })
+})
+
+describe("groupNavCommandsByPath (pure)", () => {
+  const cmd = (type: string, path: string[]): NavCommand => ({
+    screen: { type, label: type.toUpperCase() } as unknown as Screen,
+    path,
+  })
+
+  it("joins each command's path into a heading", () => {
+    const sections = groupNavCommandsByPath(
+      [cmd("a", ["Reports", "Financials"])],
+      "Screens"
+    )
+    expect(sections).toEqual([
+      {
+        heading: "Reports › Financials",
+        commands: [cmd("a", ["Reports", "Financials"])],
+      },
+    ])
+  })
+
+  it("gathers same-path commands under one section, in first-seen order", () => {
+    const sections = groupNavCommandsByPath(
+      [
+        cmd("a", ["Reports", "Financials"]),
+        cmd("b", ["Admin"]),
+        cmd("c", ["Reports", "Financials"]),
+      ],
+      "Screens"
+    )
+    expect(sections.map((s) => s.heading)).toEqual([
+      "Reports › Financials",
+      "Admin",
+    ])
+    expect(sections[0].commands.map((c) => c.screen.type)).toEqual(["a", "c"])
+  })
+
+  it("files a top-level screen under the root heading", () => {
+    const sections = groupNavCommandsByPath([cmd("a", [])], "Screens")
+    expect(sections).toEqual([{ heading: "Screens", commands: [cmd("a", [])] }])
   })
 })
 
