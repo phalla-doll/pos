@@ -35,7 +35,7 @@ export function NavUserCard({
   }
 }) {
   return (
-    <div className="rounded-lg border bg-background p-4 text-sm shadow-xs">
+    <div className="rounded-lg border p-4 text-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate font-semibold tracking-wide text-foreground uppercase">
