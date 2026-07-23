@@ -6,7 +6,7 @@ import { NavMain, NavMainLive } from "@/components/nav-main"
 import { NavPanel, NavSearchResults } from "@/components/nav-panel"
 import { NavUser } from "@/components/nav-user"
 import { SidebarBrand } from "@/components/sidebar-brand"
-import { useSidebarPin } from "@/components/sidebar-shell"
+import { useSidebarPanel } from "@/components/sidebar-shell"
 import { Button } from "@/components/ui/button"
 import {
   Sidebar,
@@ -38,12 +38,7 @@ import { groupAtPath } from "@/lib/nav-section"
 import type { ScreenType } from "@/lib/screens"
 import { freshWorkspaceHref } from "@/lib/tab-url"
 import { sidebarUser, sidebarWorkspace } from "@/lib/fixtures"
-import {
-  ChevronLeftIcon,
-  MenuIcon,
-  PanelLeftIcon,
-  SearchIcon,
-} from "lucide-react"
+import { ChevronLeftIcon, MenuIcon, PinIcon, SearchIcon } from "lucide-react"
 
 /**
  * The sidebar, in two shapes for two form factors:
@@ -121,14 +116,24 @@ function SidebarBodyLive() {
  * The two panes and the state that ties them together: pane 2's **navigation
  * path**.
  *
- * The pin *is* pane 2's open/closed (see `sidebar-shell.tsx`); this holds where
- * inside it you are. The path is a stack of group labels drilled into from the
- * root: an empty path is the **Menu** — the whole top-level tree — and each
- * entry drills one group deeper. So pane 2 never expands inline: clicking a
- * group *replaces* the level with its children, and Back pops one off.
+ * Pane 2's open/closed is the `open` flag from `sidebar-shell.tsx` — `pinned`
+ * (persisted) or `transientOpen` (this session only). This holds where inside it
+ * you are. The path is a stack of group labels drilled into from the root: an
+ * empty path is the **Menu** — the whole top-level tree — and each entry drills
+ * one group deeper. So pane 2 never expands inline: clicking a group *replaces*
+ * the level with its children, and Back pops one off.
  *
  * `dir` records whether the last move was deeper or back, purely so the level
  * can slide in from the matching side.
+ *
+ * The three ways the panel opens and closes:
+ *
+ * - **Menu** (rail) opens it *transiently* when shut, jumps to the root when
+ *   drilled in, and closes it when already at the root.
+ * - **Pin** (header) flips the standing intent. Unpinning keeps the panel up
+ *   transiently so it doesn't vanish under the cursor — the next screen closes it.
+ * - **Selecting a screen** drops the transient flag, so an unpinned panel gets
+ *   out of the way once it has done its job; a pinned one stays.
  */
 function SidebarBody({
   hrefFor,
@@ -137,7 +142,7 @@ function SidebarBody({
   hrefFor: (ref: { screenType: ScreenType }) => string
   focusedType: ScreenType | null
 }) {
-  const { pinned, setPinned } = useSidebarPin()
+  const { pinned, open, setPinned, setTransientOpen } = useSidebarPanel()
   const [nav, setNav] = React.useState<{
     path: string[]
     dir: "forward" | "back"
@@ -160,19 +165,21 @@ function SidebarBody({
   const searching = query.trim().length > 0
   const results = searching ? filterNavCommands(flattenNav(items), query) : []
 
-  // The rail's Menu button: open to the top-level menu, jump back to it from a
-  // drilled level, or close it when it's already showing the top level.
+  // The rail's Menu button: open (transiently) to the top-level menu, jump back
+  // to it from a drilled level, or close it when it's already showing the top
+  // level. Opening here never pins — that is the pin button's job alone.
   const toggleMenu = React.useCallback(() => {
     setQuery("")
-    if (!pinned) {
+    if (!open) {
       setNav({ path: [], dir: "back" })
-      setPinned(true)
+      setTransientOpen(true)
     } else if (path.length > 0) {
       setNav({ path: [], dir: "back" })
     } else {
       setPinned(false)
+      setTransientOpen(false)
     }
-  }, [pinned, path.length, setPinned])
+  }, [open, path.length, setPinned, setTransientOpen])
 
   // Drill one level deeper: the clicked group's children take over the panel.
   const drill = React.useCallback((label: string) => {
@@ -188,8 +195,24 @@ function SidebarBody({
     )
   }, [])
 
-  // Closes the panel down to the bare rail.
-  const collapse = React.useCallback(() => setPinned(false), [setPinned])
+  // The header's pin button: flip the standing intent. Unpinning keeps the
+  // panel up transiently — it shouldn't slam shut with the button under the
+  // cursor — and the next screen selection clears that.
+  const togglePin = React.useCallback(() => {
+    if (pinned) {
+      setPinned(false)
+      setTransientOpen(true)
+    } else {
+      setPinned(true)
+      setTransientOpen(false)
+    }
+  }, [pinned, setPinned, setTransientOpen])
+
+  // Selecting a screen retires an unpinned (transient) panel; a pinned one
+  // stays. Threaded to every launcher link in the panel.
+  const closeOnNavigate = React.useCallback(() => {
+    if (!pinned) setTransientOpen(false)
+  }, [pinned, setTransientOpen])
 
   return (
     <>
@@ -213,7 +236,7 @@ function SidebarBody({
                   <SidebarMenuButton
                     tooltip={{ children: "Menu", hidden: false }}
                     aria-label="Menu"
-                    isActive={pinned}
+                    isActive={open}
                     className={railButton}
                     onClick={toggleMenu}
                   >
@@ -239,7 +262,7 @@ function SidebarBody({
           <div className="flex-1 truncate text-base font-medium text-foreground">
             {title}
           </div>
-          <CollapsePanelButton onClick={collapse} />
+          <PinButton pinned={pinned} onClick={togglePin} />
         </SidebarHeader>
         <SidebarContent className="overflow-x-hidden">
           {/* Search sits above the list and filters the level in view. */}
@@ -261,6 +284,7 @@ function SidebarBody({
               commands={results}
               hrefFor={hrefFor}
               focusedType={focusedType}
+              onNavigate={closeOnNavigate}
             />
           ) : (
             // Keyed on the path so each level is its own mount and slides in
@@ -280,6 +304,7 @@ function SidebarBody({
                 hrefFor={hrefFor}
                 onDrill={drill}
                 focusedType={focusedType}
+                onNavigate={closeOnNavigate}
               />
             </div>
           )}
@@ -312,9 +337,20 @@ function BackButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-/** Closes pane 2 down to the rail — the mirror of selecting its rail icon. */
-function CollapsePanelButton({ onClick }: { onClick: () => void }) {
-  const label = "Collapse panel"
+/**
+ * Toggles the pin — pane 2's standing intent to stay open. Filled and tinted
+ * when pinned; an outline "pin me" affordance when not. Unpinning doesn't close
+ * the panel outright (see `togglePin`), so this reads as a sticky toggle, not a
+ * close button.
+ */
+function PinButton({
+  pinned,
+  onClick,
+}: {
+  pinned: boolean
+  onClick: () => void
+}) {
+  const label = pinned ? "Unpin sidebar" : "Pin sidebar"
   return (
     <Tooltip>
       <TooltipTrigger
@@ -323,10 +359,14 @@ function CollapsePanelButton({ onClick }: { onClick: () => void }) {
             variant="ghost"
             size="icon"
             aria-label={label}
-            className="size-7"
+            aria-pressed={pinned}
+            className={cn("size-7", pinned && "text-primary")}
             onClick={onClick}
           >
-            <PanelLeftIcon strokeWidth={1.5} />
+            <PinIcon
+              strokeWidth={1.5}
+              className={cn(pinned && "fill-current")}
+            />
           </Button>
         }
       />

@@ -23,30 +23,48 @@ const pinStore = {
   },
 }
 
-type PinContext = { pinned: boolean; setPinned: (pinned: boolean) => void }
+type SidebarPanel = {
+  /** The standing intent to keep the panel open — persisted in the cookie. */
+  pinned: boolean
+  /** Whether pane 2 is showing at all: `pinned || transientOpen`. */
+  open: boolean
+  /** Writes the pin cookie. */
+  setPinned: (pinned: boolean) => void
+  /** Sets the ephemeral "open right now, but not pinned" flag. */
+  setTransientOpen: (open: boolean) => void
+}
 
-const PinContext = React.createContext<PinContext | null>(null)
+const SidebarPanelContext = React.createContext<SidebarPanel | null>(null)
 
-/** Read by the pin button in the sidebar header. */
-export function useSidebarPin(): PinContext {
-  const ctx = React.useContext(PinContext)
-  if (!ctx) throw new Error("useSidebarPin must be used within SidebarShell")
+/** Read by pane 2's Menu and pin controls in the sidebar header. */
+export function useSidebarPanel(): SidebarPanel {
+  const ctx = React.useContext(SidebarPanelContext)
+  if (!ctx) throw new Error("useSidebarPanel must be used within SidebarShell")
   return ctx
 }
 
 /**
- * Owns the sidebar's open state so the pin, not the vendored provider, is the
- * thing that persists — see `lib/sidebar-pin.ts` for why. The provider runs
- * controlled: `open` *is* the pin, and every uncontrolled path into it (the
- * header trigger, ⌘B, the rail, the footer's expand button) lands on
- * `setPinned`, so toggling the sidebar by any route is what "pin" means.
+ * Owns the sidebar's open state, split in two so "open the panel" and "keep it
+ * open" are no longer the same act:
+ *
+ * - **`pinned`** is the standing intent, persisted in the cookie — see
+ *   `lib/sidebar-pin.ts` for why it lives outside the vendored provider.
+ * - **`transientOpen`** is ephemeral React state: the panel opened by the rail's
+ *   Menu button without pinning, which the panel drops again the moment a screen
+ *   is selected. It never persists, so a refresh always lands on the pin alone.
+ *
+ * The provider runs controlled on `open = pinned || transientOpen`. Its own
+ * uncontrolled routes (⌘B, the header trigger) mean "toggle the whole thing":
+ * opening pins, closing clears both flags. The rail's Menu button and the
+ * header's pin button reach past this to `setPinned`/`setTransientOpen` for the
+ * finer transient-vs-pinned behavior — see `components/app-sidebar.tsx`.
  *
  * The sidebar only ever moves when asked to. It does not peek open under the
  * pointer or under focus: an expanded sidebar reflows the page, which is too
  * much to hand to a cursor merely passing over the rail.
  */
 export function SidebarShell({ children }: { children: React.ReactNode }) {
-  // The cookie *is* the state, so it is subscribed to rather than copied into
+  // The cookie *is* the pin, so it is subscribed to rather than copied into
   // React. The prerendered HTML has no cookie in hand, which is exactly the
   // split `getServerSnapshot` exists for: the server renders unpinned and the
   // client reads the real value on hydration, with no effect and no mismatch.
@@ -55,21 +73,33 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
     () => readPinned(document.cookie),
     () => false
   )
+  // Ephemeral, client-only, and initially false — so it matches the unpinned
+  // server render and needs no hydration handling of its own.
+  const [transientOpen, setTransientOpen] = React.useState(false)
+  const open = pinned || transientOpen
 
   const setPinned = React.useCallback((next: boolean) => {
     document.cookie = pinCookie(next)
     pinStore.emit()
   }, [])
 
+  const value = React.useMemo<SidebarPanel>(
+    () => ({ pinned, open, setPinned, setTransientOpen }),
+    [pinned, open, setPinned]
+  )
+
   return (
-    <PinContext.Provider value={{ pinned, setPinned }}>
+    <SidebarPanelContext.Provider value={value}>
       <SidebarProvider
-        open={pinned}
-        // Upstream computes the requested value as `!open`, which is the pin
-        // inverted — so taking it or inverting the pin ourselves are the same
-        // thing. Written this way it stays correct against a `setOpen(true)`
-        // caller that means "open", not "toggle".
-        onOpenChange={(next) => setPinned(next)}
+        open={open}
+        // Upstream computes the requested value as `!open`, so this fires with
+        // the intent already resolved: a request to open is a pin, a request to
+        // close clears both flags. The Menu/pin buttons handle the transient
+        // middle ground themselves rather than routing through here.
+        onOpenChange={(next) => {
+          setPinned(next)
+          if (!next) setTransientOpen(false)
+        }}
         className="h-svh overflow-hidden"
         // The expanded sidebar is the icon rail plus the detail panel, so it
         // runs wider than a one-column sidebar. `--sidebar-width-icon` is the
@@ -84,6 +114,6 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         {children}
       </SidebarProvider>
-    </PinContext.Provider>
+    </SidebarPanelContext.Provider>
   )
 }
