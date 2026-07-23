@@ -7,78 +7,78 @@
 @custom-variant dark (&:is(.dark *, .system-dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-chart-cat-1: var(--chart-cat-1);
-    --color-chart-cat-2: var(--chart-cat-2);
-    --color-chart-cat-3: var(--chart-cat-3);
-    --color-chart-cat-4: var(--chart-cat-4);
-    --color-status-good: var(--status-good);
-    --color-status-warning: var(--status-warning);
-    --color-status-critical: var(--status-critical);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-chart-cat-1: var(--chart-cat-1);
+  --color-chart-cat-2: var(--chart-cat-2);
+  --color-chart-cat-3: var(--chart-cat-3);
+  --color-chart-cat-4: var(--chart-cat-4);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
-    /* Declared here rather than by `next-themes` (`enableColorScheme={false}`):
+  /* Declared here rather than by `next-themes` (`enableColorScheme={false}`):
      * it only understands the literal values `light`/`dark`, so it would fall
      * back to the default for `.system-dark` and render light form controls on
      * a dark surface. CSS knows the mapping already. */
-    color-scheme: light;
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    /*
+  color-scheme: light;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  /*
      * Chart color comes in two families, each doing one job. `chart-1..5` is an
      * ordinal emerald ramp (magnitude / ordered steps, light→dark); the light
      * steps are darker than the dark ones so the light end still clears the
@@ -87,35 +87,35 @@
      * cycled) for unordered series like payment methods. Both sets are
      * validated per theme; re-run the validator before changing a value.
      */
-    --chart-1: oklch(0.721 0.154 163.8);
-    --chart-2: oklch(0.656 0.14 163.7);
-    --chart-3: oklch(0.59 0.126 164.1);
-    --chart-4: oklch(0.525 0.112 163.6);
-    --chart-5: oklch(0.461 0.098 163.8);
-    --chart-cat-1: oklch(0.581 0.124 163.7);
-    --chart-cat-2: oklch(0.579 0.17 258.1);
-    --chart-cat-3: oklch(0.58 0.144 54.7);
-    --chart-cat-4: oklch(0.58 0.169 299.9);
-    /*
+  --chart-1: oklch(0.721 0.154 163.8);
+  --chart-2: oklch(0.656 0.14 163.7);
+  --chart-3: oklch(0.59 0.126 164.1);
+  --chart-4: oklch(0.525 0.112 163.6);
+  --chart-5: oklch(0.461 0.098 163.8);
+  --chart-cat-1: oklch(0.581 0.124 163.7);
+  --chart-cat-2: oklch(0.579 0.17 258.1);
+  --chart-cat-3: oklch(0.58 0.144 54.7);
+  --chart-cat-4: oklch(0.58 0.169 299.9);
+  /*
      * Status is a fixed scale with reserved meaning — never themed, never
      * reused as a series color, and always paired with an icon + label. On the
      * light surface `warning` sits below 3:1 by design; the pairing is the
      * mitigation, so status hues stay on icons and marks, never on text.
      */
-    --status-good: oklch(0.621 0.207 142.6);
-    --status-warning: oklch(0.811 0.164 78.5);
-    --status-critical: oklch(0.575 0.186 25.2);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+  --status-good: oklch(0.621 0.207 142.6);
+  --status-warning: oklch(0.811 0.164 78.5);
+  --status-critical: oklch(0.575 0.186 25.2);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
 }
 
 /* The dark surface, shared by both dark themes. `.system-dark` below keeps the
@@ -123,47 +123,47 @@
  * differ by exactly the six accent variables and nothing else drifts. */
 .dark,
 .system-dark {
-    color-scheme: dark;
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    /* The dark ramp is selected for the dark surface, not flipped from light —
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  /* The dark ramp is selected for the dark surface, not flipped from light —
      * these steps already clear it (light end 11.8:1, dark end 2.4:1). */
-    --chart-1: oklch(0.845 0.143 164.978);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.596 0.145 163.225);
-    --chart-4: oklch(0.508 0.118 165.612);
-    --chart-5: oklch(0.432 0.095 166.913);
-    --chart-cat-1: oklch(0.659 0.14 164.3);
-    --chart-cat-2: oklch(0.661 0.169 257.9);
-    --chart-cat-3: oklch(0.66 0.164 54.7);
-    --chart-cat-4: oklch(0.66 0.169 299.9);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    /* Mirrors `--primary`/`--primary-foreground` above. The CLI's neutral theme
+  --chart-1: oklch(0.845 0.143 164.978);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.596 0.145 163.225);
+  --chart-4: oklch(0.508 0.118 165.612);
+  --chart-5: oklch(0.432 0.095 166.913);
+  --chart-cat-1: oklch(0.659 0.14 164.3);
+  --chart-cat-2: oklch(0.661 0.169 257.9);
+  --chart-cat-3: oklch(0.66 0.164 54.7);
+  --chart-cat-4: oklch(0.66 0.169 299.9);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  /* Mirrors `--primary`/`--primary-foreground` above. The CLI's neutral theme
      * emits a blue `--sidebar-primary` here — a leftover from the blue theme's
      * light block — which would be the one blue left in a neutral palette. */
-    --sidebar-primary: oklch(0.922 0 0);
-    --sidebar-primary-foreground: oklch(0.205 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-primary: oklch(0.922 0 0);
+  --sidebar-primary-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 /*
@@ -179,32 +179,59 @@
  * theme class is ever present: `next-themes` clears the others on a switch.
  */
 .system {
-    --primary: oklch(0.488 0.243 264.376);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --sidebar-primary: oklch(0.546 0.245 262.881);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --primary: oklch(0.488 0.243 264.376);
+  --primary-foreground: oklch(0.97 0.014 254.604);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-primary: oklch(0.546 0.245 262.881);
+  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
 }
 
 .system-dark {
-    --primary: oklch(0.424 0.199 265.638);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.274 0.006 286.033);
-    --sidebar-primary: oklch(0.623 0.214 259.815);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --primary: oklch(0.424 0.199 265.638);
+  --primary-foreground: oklch(0.97 0.014 254.604);
+  --secondary: oklch(0.274 0.006 286.033);
+  --sidebar-primary: oklch(0.623 0.214 259.815);
+  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
+}
+
+/* Overlay mode for the two-pane sidebar: an *unpinned* menu panel slides over
+ * the page instead of reflowing it; only a pinned panel pushes the content.
+ *
+ * The vendored sidebar reserves its width with an in-flow `sidebar-gap` spacer
+ * (this is what pushes) and floats the visible panel in a `fixed`
+ * `sidebar-container` (this is what overlays). Normally both track the same
+ * expanded width. `data-panel-overlay` — set on the wrapper by `SidebarShell`
+ * while the panel is open but unpinned — pins the *gap* back to the rail width
+ * so only the rail keeps a reserved column, while the container stays full
+ * width and floats above the content. A shadow sells the "above"; a pinned
+ * panel sits in flow and needs none. `transition-[width]` on the gap is the
+ * vendor's, so the reflow on pin/unpin animates for free.
+ *
+ * Scoped to `md` because below it the sidebar is an off-canvas sheet, not
+ * these slots. */
+@media (min-width: 768px) {
+  [data-slot="sidebar-wrapper"][data-panel-overlay="true"]
+    [data-slot="sidebar-gap"] {
+    width: var(--sidebar-width-icon);
+  }
+  [data-slot="sidebar-wrapper"][data-panel-overlay="true"]
+    [data-slot="sidebar-container"] {
+    box-shadow: 0 8px 24px -8px
+      color-mix(in oklab, var(--foreground) 22%, transparent);
+  }
 }
 
 /* A scrollbar that stays out of the way: thin, and coloured in only while the
