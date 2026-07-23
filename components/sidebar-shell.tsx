@@ -128,9 +128,24 @@ export function SidebarShell({
         }
       >
         {header}
-        <div className="flex min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1">
           <AppSidebar />
           {children}
+          {/* Scrim over the content while the panel is up but unpinned: a dark
+              tint that pulls focus to the sidebar, and a click target that
+              retires the transient panel — the same dismissal a pinned panel
+              deliberately doesn't get. It sits under the floating panel/rail
+              (both `z-10`) at `z-[9]`, so those stay interactive while the
+              content behind it does not. */}
+          {open && !pinned && (
+            <button
+              type="button"
+              aria-label="Close menu"
+              tabIndex={-1}
+              onClick={() => setTransientOpen(false)}
+              className="absolute inset-0 z-[9] animate-in cursor-default bg-black/45 duration-200 fade-in-0"
+            />
+          )}
         </div>
       </SidebarProvider>
     </SidebarPanelContext.Provider>
