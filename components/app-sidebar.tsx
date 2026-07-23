@@ -30,6 +30,7 @@ import {
 import {
   InputGroup,
   InputGroupAddon,
+  InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
 import {
@@ -53,6 +54,7 @@ import {
   PinIcon,
   SearchIcon,
   Star,
+  XIcon,
 } from "lucide-react"
 
 /**
@@ -379,6 +381,19 @@ function SidebarBody({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />
+                  {/* Clear button, inline at the trailing edge — shown only once
+                      something is typed, so an empty field stays uncluttered. */}
+                  {query.length > 0 && (
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-label="Clear search"
+                        onClick={() => setQuery("")}
+                      >
+                        <XIcon />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  )}
                 </InputGroup>
               </div>
               {/* The identity row follows the search at the menu's top level
