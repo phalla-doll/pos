@@ -36,7 +36,7 @@ export function NavUserCard({
     <div className="rounded-lg border p-4 text-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate font-semibold tracking-wide text-foreground uppercase">
+          <div className="truncate font-semibold tracking-wide text-foreground">
             {user.name}
           </div>
           <p className="mt-1 truncate text-xs text-muted-foreground">
