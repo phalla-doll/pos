@@ -40,7 +40,13 @@ import { groupAtPath } from "@/lib/nav-section"
 import type { ScreenType } from "@/lib/screens"
 import { freshWorkspaceHref } from "@/lib/tab-url"
 import { sidebarUser, sidebarWorkspace } from "@/lib/fixtures"
-import { ChevronLeftIcon, Grid2x2Plus, PinIcon, SearchIcon } from "lucide-react"
+import {
+  ChevronLeftIcon,
+  Grid2x2Plus,
+  PinIcon,
+  SearchIcon,
+  Star,
+} from "lucide-react"
 
 /**
  * The sidebar, in two shapes for two form factors:
@@ -264,6 +270,15 @@ function SidebarBody({
                     onClick={toggleMenu}
                   >
                     <Grid2x2Plus />
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={{ children: "Favorites", hidden: false }}
+                    aria-label="Favorites"
+                    className={railButton}
+                  >
+                    <Star />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
