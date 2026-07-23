@@ -724,11 +724,17 @@ export const yesterdaySales: Sale[] = generateDay(20260715, 2.35)
  */
 export const businessDate = "Thu 16 Jul"
 
-/** The signed-in user shown in the sidebar footer. */
+/** The signed-in user shown in the sidebar footer and the top-level identity card. */
 export const sidebarUser = {
   name: "shadcn",
   email: "m@example.com",
   avatar: "/avatars/shadcn.jpg",
+  // The identity card above the menu search: session and company context.
+  lastSignedOn: "01 JAN 2025 at 06:29",
+  loginAttempts: 0,
+  company: "Model Bank",
+  companyCode: "GB0010001",
+  businessDate: "20-MAY-2024",
 }
 
 /** The workspace named in the sidebar header. */
