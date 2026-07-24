@@ -995,6 +995,17 @@ export function ListScreen<T>({
                           : "justify-center"
                       )}
                     >
+                      {/*
+                        A spacer the funnel's width, balancing it on the left so
+                        the label centres over the column rather than the
+                        label-plus-funnel pair — without it the funnel's width
+                        pulls the label left of centre. Only for centred columns;
+                        a right-aligned header wants its funnel tight against the
+                        label at the edge, not mirrored across it.
+                      */}
+                      {canFilter && column.align !== "right" && (
+                        <span aria-hidden className="size-6 shrink-0" />
+                      )}
                       {sortable ? (
                         <Button
                           type="button"
