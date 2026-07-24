@@ -358,10 +358,13 @@ function SidebarBody({
     <>
       {/* Pane 1 — the icon rail. Pinned to the rail width; the outer sidebar's
           collapse shrinks the whole container to exactly this. The brand now
-          lives in the full-width app bar, so the rail leads with its buttons. */}
+          lives in the full-width app bar, so the rail leads with its buttons.
+          The rail sits on its own, darker surface, and re-points
+          `--sidebar-accent` at the rail's step so the vendored hover/active
+          styles stay visible on it. */}
       <Sidebar
         collapsible="none"
-        className="w-[calc(var(--sidebar-width-icon)+1px)]! shrink-0 border-r"
+        className="w-[calc(var(--sidebar-width-icon)+1px)]! shrink-0 border-r bg-(--sidebar-rail) [--sidebar-accent:var(--sidebar-rail-accent)]"
       >
         <SidebarContent className="pt-2">
           <SidebarGroup className="px-1.5">

@@ -120,6 +120,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* The icon rail shares the accent's shade, so it needs its own hover/active
+     * step — on the rail the panel's accent would vanish into the surface. */
+  --sidebar-rail: oklch(0.936 0.016 82.8); /* #efe9de */
+  --sidebar-rail-accent: oklch(0.9 0.018 83);
   --background: oklch(0.982 0.005 95.1); /* #faf9f5 */
   --foreground: oklch(0.145 0 0);
 }
@@ -170,6 +174,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Dark keeps rail and panel on one surface — the light ramp is a cream
+     * gradient with no dark counterpart, so the rail just follows the panel. */
+  --sidebar-rail: var(--sidebar);
+  --sidebar-rail-accent: var(--sidebar-accent);
 }
 
 /*
