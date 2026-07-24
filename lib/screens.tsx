@@ -380,16 +380,17 @@ const screenDefs = {
         { key: "category", header: "Category", get: (i) => i.category },
         { key: "supplier", header: "Supplier", get: (i) => i.supplier },
         {
+          // Left-aligned body with a centred header (the default): the value
+          // is "0 bottle", a count plus a unit word, so it reads as a label
+          // rather than a figure to line up decimal-wise.
           key: "stock",
           header: "Stock",
-          align: "right",
           get: (i) => i.stock,
           cell: (i) => `${i.stock} ${i.unit}`,
         },
         {
           key: "price",
           header: "Price",
-          align: "right",
           get: (i) => i.price,
           cell: (i) => `$${i.price.toFixed(2)}`,
         },
