@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { SIDEBAR_WIDTH_ICON } from "@/lib/sidebar-metrics"
 import { pinCookie, readPinned } from "@/lib/sidebar-pin"
+import { cn } from "@/lib/utils"
 
 /**
  * Lets `useSyncExternalStore` treat the pin cookie as the store it is. Writes
@@ -84,11 +85,27 @@ export function SidebarShell({
   // server render and needs no hydration handling of its own.
   const [transientOpen, setTransientOpen] = React.useState(false)
   const open = pinned || transientOpen
+  // Open but unpinned: the panel floats over the page rather than reflowing it,
+  // which is what earns it a scrim and a dismissal.
+  const overlay = open && !pinned
 
   const setPinned = React.useCallback((next: boolean) => {
     document.cookie = pinCookie(next)
     pinStore.emit()
   }, [])
+
+  // Escape retires an overlaying panel — the keyboard's half of clicking the
+  // scrim. A pinned panel is part of the layout rather than something covering
+  // it, so it stays put. Anything closer to the keystroke can claim it first by
+  // calling `preventDefault` (the menu's search clears its query that way).
+  React.useEffect(() => {
+    if (!overlay) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) setTransientOpen(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [overlay])
 
   const value = React.useMemo<SidebarPanel>(
     () => ({ pinned, open, setPinned, setTransientOpen }),
@@ -111,7 +128,7 @@ export function SidebarShell({
         // than reflowing it. `app/globals.css` reads this off the wrapper to
         // hold the layout gap at the rail width while the panel is up. Pinning
         // clears it, so a pinned panel pushes the content as before.
-        data-panel-overlay={open && !pinned ? "true" : undefined}
+        data-panel-overlay={overlay ? "true" : undefined}
         // A column: the full-width app bar on top, then the sidebar + content
         // row beneath it. `--header-height` is the app bar's height and the
         // offset the fixed sidebar starts at (see `components/app-sidebar.tsx`).
@@ -136,16 +153,23 @@ export function SidebarShell({
               retires the transient panel — the same dismissal a pinned panel
               deliberately doesn't get. It sits under the floating panel/rail
               (both `z-10`) at `z-[9]`, so those stay interactive while the
-              content behind it does not. */}
-          {open && !pinned && (
-            <button
-              type="button"
-              aria-label="Close menu"
-              tabIndex={-1}
-              onClick={() => setTransientOpen(false)}
-              className="absolute inset-0 z-[9] animate-in cursor-default bg-black/45 duration-200 fade-in-0"
-            />
-          )}
+              content behind it does not.
+
+              Kept mounted and faded with a transition rather than mounted with
+              an enter animation: unmounting cut the tint in a single frame
+              while the panel was still sliding away, and the two have to arrive
+              and leave together. Faded out it takes no clicks and no focus. */}
+          <button
+            type="button"
+            aria-label="Close menu"
+            aria-hidden={!overlay}
+            tabIndex={-1}
+            onClick={() => setTransientOpen(false)}
+            className={cn(
+              "absolute inset-0 z-[9] cursor-default bg-black/45 transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              overlay ? "opacity-100" : "pointer-events-none opacity-0"
+            )}
+          />
         </div>
       </SidebarProvider>
     </SidebarPanelContext.Provider>
