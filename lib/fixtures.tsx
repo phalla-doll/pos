@@ -737,6 +737,50 @@ export const sidebarUser = {
   businessDate: "20-MAY-2024",
 }
 
+export type Notification = {
+  id: string
+  title: string
+  body: string
+  /** A static relative-time label — see `businessDate` for why it isn't live. */
+  time: string
+  unread: boolean
+}
+
+/**
+ * Mock notifications behind the header bell. The count of `unread` entries is
+ * what the bell's badge reflects.
+ */
+export const sampleNotifications: Notification[] = [
+  {
+    id: "n1",
+    title: "Low stock alert",
+    body: "Angkor Beer 330ml is down to 18 cans.",
+    time: "5m ago",
+    unread: true,
+  },
+  {
+    id: "n2",
+    title: "New order",
+    body: "Order #1042 was placed for $128.50.",
+    time: "1h ago",
+    unread: true,
+  },
+  {
+    id: "n3",
+    title: "Payment received",
+    body: "Sok Dara settled an outstanding balance of $42.00.",
+    time: "3h ago",
+    unread: true,
+  },
+  {
+    id: "n4",
+    title: "Daily summary ready",
+    body: "Yesterday's sales report is available to review.",
+    time: "Yesterday",
+    unread: false,
+  },
+]
+
 /** The workspace named in the sidebar header. */
 export const sidebarWorkspace = {
   name: "Acme Inc",
