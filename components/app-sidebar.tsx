@@ -130,17 +130,59 @@ function DesktopSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   )
 }
 
-// Rail buttons beyond Menu/Favorites. Each opens the shared panel to its own
-// named view, which renders a titled but empty placeholder for now — the
-// open/switch/close wiring is already in place for when real content arrives.
+/**
+ * The rail's buttons, in order — and pane 2's views, which are the same list.
+ *
+ * Each entry is one button *and* one view of the shared panel: `label` names
+ * the button and titles the panel, and `kind` says what fills it. `menu` is the
+ * nav tree, `favorites` the flat starred list; the rest render a titled but
+ * empty placeholder, with the open/switch/close wiring already in place for
+ * when real content arrives.
+ *
+ * Stating a view once here is what keeps the rail, the panel title, and the
+ * active-button rule from drifting — adding a view is one row, not four edits.
+ */
 const RAIL_VIEWS = [
-  { view: "new", label: "New", Icon: PlusIcon },
-  { view: "recent", label: "Recent", Icon: ClockIcon },
-  { view: "apps", label: "Apps", Icon: LayoutGridIcon },
-  { view: "settings", label: "Settings", Icon: SettingsIcon },
+  { view: "menu", label: "Menu", Icon: Grid2x2Plus, kind: "menu" },
+  { view: "favorites", label: "Favorites", Icon: Star, kind: "favorites" },
+  { view: "new", label: "New", Icon: PlusIcon, kind: "placeholder" },
+  { view: "recent", label: "Recent", Icon: ClockIcon, kind: "placeholder" },
+  { view: "apps", label: "Apps", Icon: LayoutGridIcon, kind: "placeholder" },
+  {
+    view: "settings",
+    label: "Settings",
+    Icon: SettingsIcon,
+    kind: "placeholder",
+  },
 ] as const
 
-type PlaceholderView = (typeof RAIL_VIEWS)[number]["view"]
+/**
+ * The enter animation pane 2's levels share: a short fade with a small slide,
+ * eased out so the level settles into place rather than stopping dead. Each
+ * caller adds the side it slides in from. Declared once so the four levels
+ * can't drift apart, and skipped outright when less motion is asked for.
+ */
+const ENTER =
+  "animate-in duration-200 ease-out fade-in-0 motion-reduce:animate-none"
+
+/** A view the rail has a button for. */
+type RailView = (typeof RAIL_VIEWS)[number]["view"]
+
+/**
+ * What pane 2 is showing. The profile is the one view with no rail button of
+ * its own — it is drilled into from the menu's identity row, not opened from
+ * the rail — so it sits alongside the table's views rather than in it.
+ */
+type PanelView = RailView | "profile"
+
+/**
+ * The rail button that owns a view, so exactly one reads active at a time. Only
+ * the profile needs mapping: you reach it from inside the menu, so the Menu
+ * button stays lit while you are in it.
+ */
+function railViewOf(view: PanelView): RailView {
+  return view === "profile" ? "menu" : view
+}
 
 /** The desktop body wired to the live URL. */
 function SidebarBodyLive() {
@@ -183,13 +225,10 @@ function SidebarBody({
   const [nav, setNav] = React.useState<{
     path: string[]
     dir: "forward" | "back"
-    // `menu` is the group tree; `profile` is the identity view drilled into from
-    // the identity row; `favorites` is the flat starred list opened from the
-    // rail's own button. The latter two are siblings of the path stack rather
-    // than members of it — neither is a nav group, so neither belongs in `path`.
-    // The placeholder views (New/Recent/Apps/Settings) are further siblings with
-    // no content yet.
-    view: "menu" | "profile" | "favorites" | PlaceholderView
+    // The view is a sibling of the path stack, not a member of it: only the
+    // menu drills, and nothing but a nav group belongs in `path`. See
+    // {@link RAIL_VIEWS} for the views the rail opens, plus `profile`.
+    view: PanelView
   }>({ path: [], dir: "forward", view: "menu" })
   // The menu filter. Cleared on every move so a query never lingers over a
   // level it wasn't typed against.
@@ -198,9 +237,11 @@ function SidebarBody({
   const { path, dir, view } = nav
   const inProfile = view === "profile"
   const inFavorites = view === "favorites"
-  // The placeholder view in view, if any — drives its title and empty panel.
-  const placeholder = RAIL_VIEWS.find((v) => v.view === view)
-  const inPlaceholder = placeholder != null
+  // The rail entry the panel is showing — its title and what fills it.
+  // `railViewOf` maps into this very table's keys, so the lookup always lands;
+  // the fallback is there for the type checker, not for a real case.
+  const rail =
+    RAIL_VIEWS.find((v) => v.view === railViewOf(view)) ?? RAIL_VIEWS[0]
   // Read/toggle passed to every leaf row that offers a star, so marking works
   // the same from the menu list, a search result, and the Favorites panel.
   const favorite = React.useMemo<FavoriteControls>(
@@ -211,84 +252,62 @@ function SidebarBody({
   // children — falling back to the root so a stale path can't empty the panel.
   const group = groupAtPath(sidebarNav, path)
   const items = path.length === 0 ? sidebarNav : (group?.children ?? sidebarNav)
+  // Only the menu drills, so a non-empty path always means a group is showing
+  // and the rail's own label is the right title everywhere else.
   const title = inProfile
     ? "Profile"
-    : inFavorites
-      ? "Favorites"
-      : placeholder
-        ? placeholder.label
-        : path.length === 0
-          ? "Menu"
-          : (group?.label ?? "Menu")
+    : path.length > 0
+      ? (group?.label ?? rail.label)
+      : rail.label
   // The profile drills, so it can back out; the favorites list is flat, so it
   // can't — only the menu's own path stack and the profile offer a way up.
   const canGoBack = inProfile || path.length > 0
 
-  // The starred screens, grouped by section for the Favorites panel and
-  // flattened for its search.
-  const favoriteSectionList = favoriteSections(sidebarNav, favorites)
-  const favoriteCommands = flattenNav(sidebarNav).filter((c) =>
-    isFavorite(c.screen.type)
+  // The starred screens, grouped by section — derived only while the Favorites
+  // panel is the one on screen, so typing in the menu's search doesn't rebuild
+  // a list nothing is rendering.
+  const favoriteSectionList = React.useMemo(
+    () => (inFavorites ? favoriteSections(sidebarNav, favorites) : []),
+    [inFavorites, favorites]
   )
 
   // Search is scoped to what the panel is showing: the favorites when in the
   // Favorites view, else the level in view — flatten its leaves and keep the
   // ones that match. Empty at the menu root means "all screens"; drilled in it
-  // means "this section only".
+  // means "this section only". Nothing is flattened until something is typed.
   const searching = query.trim().length > 0
-  const searchSource = inFavorites ? favoriteCommands : flattenNav(items)
-  const results = searching ? filterNavCommands(searchSource, query) : []
+  const results = React.useMemo(() => {
+    if (!searching) return []
+    const source = inFavorites
+      ? flattenNav(sidebarNav).filter((c) => isFavorite(c.screen.type))
+      : flattenNav(items)
+    return filterNavCommands(source, query)
+  }, [searching, inFavorites, items, query, isFavorite])
 
-  // The rail's Menu button: open (transiently) to the top-level menu, jump back
-  // to it from a drilled level or another view (profile, favorites), or close it
-  // when it's already showing the menu root. Opening here never pins — that is
-  // the pin button's job alone.
-  const toggleMenu = React.useCallback(() => {
-    setQuery("")
-    if (!open) {
-      setNav({ path: [], dir: "back", view: "menu" })
-      setTransientOpen(true)
-    } else if (path.length > 0 || view !== "menu") {
-      setNav({ path: [], dir: "back", view: "menu" })
-    } else {
-      setPinned(false)
-      setTransientOpen(false)
-    }
-  }, [open, path.length, view, setPinned, setTransientOpen])
-
-  // The rail's Favorites button, mirroring Menu: open transiently to the
-  // favorites list, switch to it from any other view, or close it when it is
-  // already the favorites list showing.
-  const toggleFavorites = React.useCallback(() => {
-    setQuery("")
-    if (!open) {
-      setNav({ path: [], dir: "back", view: "favorites" })
-      setTransientOpen(true)
-    } else if (view !== "favorites") {
-      setNav({ path: [], dir: "back", view: "favorites" })
-    } else {
-      setPinned(false)
-      setTransientOpen(false)
-    }
-  }, [open, view, setPinned, setTransientOpen])
-
-  // The rail's placeholder buttons, mirroring Favorites: open the panel
-  // transiently to the named view, switch to it from another view, or close it
-  // when it is already showing.
-  const toggleView = React.useCallback(
-    (target: PlaceholderView) => {
+  // Every rail button, in one rule: open the panel (transiently) to the named
+  // view when it is shut, switch to that view when another one is showing, and
+  // close the panel when it is already showing this view. Opening here never
+  // pins — that is the pin button's job alone.
+  //
+  // "Already showing" is stricter for the menu: a drilled-in level returns to
+  // the root rather than closing, so the Menu button is a way back up before it
+  // is a way out.
+  const toggleTo = React.useCallback(
+    (target: RailView) => {
       setQuery("")
+      const showing =
+        view === target && (target !== "menu" || path.length === 0)
       if (!open) {
         setNav({ path: [], dir: "back", view: target })
         setTransientOpen(true)
-      } else if (view !== target) {
+      } else if (!showing) {
         setNav({ path: [], dir: "back", view: target })
       } else {
         setPinned(false)
         setTransientOpen(false)
       }
     },
-    [open, view, setPinned, setTransientOpen]
+    [open, view, path.length, setPinned, setTransientOpen]
   )
 
   // Drill one level deeper: the clicked group's children take over the panel.
@@ -347,38 +366,16 @@ function SidebarBody({
         <SidebarContent className="pt-2">
           <SidebarGroup className="px-1.5">
             <SidebarGroupContent>
-              {/* The rail's own buttons: each opens the shared panel to its own
-                  view. Menu is the whole nav tree; Favorites is the flat starred
-                  list; the rest are placeholders with no content yet. Only one
+              {/* The rail's own buttons, one per view in the table. Only one
                   reads active at a time — the one the panel is showing. */}
               <SidebarMenu className="gap-1">
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    aria-label="Menu"
-                    isActive={open && !inFavorites && !inPlaceholder}
-                    className={railButton}
-                    onClick={toggleMenu}
-                  >
-                    <Grid2x2Plus />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    aria-label="Favorites"
-                    isActive={open && inFavorites}
-                    className={railButton}
-                    onClick={toggleFavorites}
-                  >
-                    <Star />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
                 {RAIL_VIEWS.map(({ view: v, label, Icon }) => (
                   <SidebarMenuItem key={v}>
                     <SidebarMenuButton
                       aria-label={label}
-                      isActive={open && view === v}
+                      isActive={open && railViewOf(view) === v}
                       className={railButton}
-                      onClick={() => toggleView(v)}
+                      onClick={() => toggleTo(v)}
                     >
                       <Icon />
                     </SidebarMenuButton>
@@ -399,7 +396,21 @@ function SidebarBody({
           away rather than two things toggling. */}
       <Sidebar collapsible="none" className="flex min-w-0 flex-1">
         <SidebarHeader className="h-12 flex-row items-center gap-2 border-b px-4">
-          {canGoBack && <BackButton onClick={back} />}
+          {/* A slot that opens and shuts for the back button, so drilling in
+              slides the title across instead of shoving it aside in one frame.
+              The button stays mounted and goes inert when there is nowhere up —
+              unmounting it would snap the slot closed. The two negative margins
+              are the same optical inset as before (`-ml-1`), plus, while shut,
+              the header's own `gap-2` cancelled so the title sits flush with
+              the panel's left edge exactly as it did. */}
+          <div
+            className={cn(
+              "shrink-0 overflow-hidden transition-[width,margin] duration-200 ease-out motion-reduce:transition-none",
+              canGoBack ? "-ml-1 w-7" : "-ml-2 w-0"
+            )}
+          >
+            <BackButton onClick={back} disabled={!canGoBack} />
+          </div>
           <div className="flex-1 truncate text-sm font-medium text-foreground">
             {title}
           </div>
@@ -408,24 +419,21 @@ function SidebarBody({
         <SidebarContent className="overflow-x-hidden">
           {inProfile ? (
             // The profile view takes over the whole panel — no search or list.
-            <div
-              key="profile"
-              className="animate-in duration-200 fade-in-0 slide-in-from-right-4"
-            >
+            <div key="profile" className={cn(ENTER, "slide-in-from-right-4")}>
               <NavProfilePanel user={sidebarUser} />
             </div>
-          ) : placeholder ? (
+          ) : rail.kind === "placeholder" ? (
             // Placeholder views: a titled but empty panel until real content is
             // wired up.
             <div
               key={view}
-              className="flex animate-in flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground duration-200 fade-in-0 slide-in-from-right-4"
+              className={cn(
+                ENTER,
+                "flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground slide-in-from-right-4"
+              )}
             >
-              <placeholder.Icon
-                strokeWidth={1.5}
-                className="size-6 opacity-60"
-              />
-              <p>{placeholder.label} — coming soon</p>
+              <rail.Icon strokeWidth={1.5} className="size-6 opacity-60" />
+              <p>{rail.label} — coming soon</p>
             </div>
           ) : (
             <>
@@ -445,6 +453,17 @@ function SidebarBody({
                     }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    // Escape clears the query first and only reaches the panel
+                    // once there is nothing left to clear, so a stray keystroke
+                    // doesn't throw away the search *and* the panel at once.
+                    // `preventDefault` is how that claim is announced — the
+                    // shell's window-level handler skips a handled Escape.
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape" && query.length > 0) {
+                        e.preventDefault()
+                        setQuery("")
+                      }
+                    }}
                   />
                   {/* Clear button, inline at the trailing edge — shown only once
                       something is typed, so an empty field stays uncluttered. */}
@@ -481,7 +500,7 @@ function SidebarBody({
               ) : inFavorites ? (
                 <div
                   key="favorites"
-                  className="animate-in duration-200 fade-in-0 slide-in-from-right-4"
+                  className={cn(ENTER, "slide-in-from-right-4")}
                 >
                   <NavFavoritesPanel
                     sections={favoriteSectionList}
@@ -494,11 +513,12 @@ function SidebarBody({
               ) : (
                 // Keyed on the path so each level is its own mount and slides in
                 // from the side the move came from — deeper from the right, back
-                // from the left.
+                // from the left. Serialized rather than joined, so a label
+                // carrying the separator can't collide with a deeper path.
                 <div
-                  key={path.join("/")}
+                  key={JSON.stringify(path)}
                   className={cn(
-                    "animate-in duration-200 fade-in-0",
+                    ENTER,
                     dir === "forward"
                       ? "slide-in-from-right-4"
                       : "slide-in-from-left-4"
@@ -522,8 +542,19 @@ function SidebarBody({
   )
 }
 
-/** Backs pane 2 up one level — the mirror of drilling into a group. */
-function BackButton({ onClick }: { onClick: () => void }) {
+/**
+ * Backs pane 2 up one level — the mirror of drilling into a group. It lives in
+ * the header's collapsing slot, so it is `disabled` rather than unmounted when
+ * there is nowhere up: a disabled button is unfocusable, which is what keeps
+ * the clipped-away slot out of the tab order.
+ */
+function BackButton({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void
+  disabled?: boolean
+}) {
   const label = "Back"
   return (
     <Tooltip>
@@ -533,7 +564,8 @@ function BackButton({ onClick }: { onClick: () => void }) {
             variant="ghost"
             size="icon"
             aria-label={label}
-            className="-ml-1 size-7"
+            className="size-7"
+            disabled={disabled}
             onClick={onClick}
           >
             <ChevronLeftIcon strokeWidth={1.5} />
