@@ -107,24 +107,24 @@
   --status-critical: oklch(0.575 0.186 25.2);
   --radius: 0.625rem;
   /*
-     * The light chrome is a warm cream ramp, darkest at the app's edge and
-     * lightest where content lives: rail #efe9de → panel #f5f0e8 → content
-     * #faf9f5. The accent doubles as the panel's hover/active fill, one step
+     * The light chrome is a neutral zinc ramp, darkest at the app's edge and
+     * lightest where content lives: rail zinc-200 → panel zinc-100 → content
+     * zinc-50. The accent doubles as the panel's hover/active fill, one step
      * darker than the panel it sits on.
      */
-  --sidebar: oklch(0.957 0.012 79.8); /* #f5f0e8 */
+  --sidebar: oklch(0.967 0.001 286.375); /* zinc-100 */
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.936 0.016 82.8); /* #efe9de */
+  --sidebar-accent: oklch(0.92 0.004 286.32); /* zinc-200 */
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   /* The icon rail shares the accent's shade, so it needs its own hover/active
      * step — on the rail the panel's accent would vanish into the surface. */
-  --sidebar-rail: oklch(0.936 0.016 82.8); /* #efe9de */
-  --sidebar-rail-accent: oklch(0.9 0.018 83);
-  --background: oklch(0.982 0.005 95.1); /* #faf9f5 */
+  --sidebar-rail: oklch(0.92 0.004 286.32); /* zinc-200 */
+  --sidebar-rail-accent: oklch(0.871 0.006 286.286); /* zinc-300 */
+  --background: oklch(0.985 0.001 286.375); /* zinc-50 */
   --foreground: oklch(0.145 0 0);
 }
 
@@ -174,8 +174,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  /* Dark keeps rail and panel on one surface — the light ramp is a cream
-     * gradient with no dark counterpart, so the rail just follows the panel. */
+  /* Dark keeps rail and panel on one surface — the light zinc ramp has no
+     * dark counterpart, so the rail just follows the panel. */
   --sidebar-rail: var(--sidebar);
   --sidebar-rail-accent: var(--sidebar-accent);
 }
