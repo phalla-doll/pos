@@ -17,7 +17,7 @@ import {
   type NavCommand,
   type NavEntry,
 } from "@/lib/nav"
-import type { ScreenType } from "@/lib/screens"
+import type { Screen, ScreenType } from "@/lib/screens"
 import type { ScreenRef } from "@/lib/tab-identity"
 import { cn } from "@/lib/utils"
 
@@ -75,6 +75,54 @@ export type FavoriteControls = {
 }
 
 /**
+ * One launcher row: a link that opens the screen as a tab, reading as active
+ * when it is the focused one, with the marking star at its right edge.
+ *
+ * All three of pane 2's lists — the drill level, the search results, and the
+ * favorites — are lists *of this*, and differ only in how they gather and group
+ * the screens they show. Keeping the row itself in one place is what stops the
+ * three from drifting: the row height, the active rule, and the star are stated
+ * once and land everywhere.
+ *
+ * Clicking calls `onNavigate`, which is how an unpinned panel gets out of the
+ * way once a screen is picked. The star is a sibling of the launcher rather
+ * than a child (see {@link FavoriteToggle}), so it is omitted outright — never
+ * merely inert — when no `favorite` control is given.
+ */
+function ScreenRow({
+  screen,
+  hrefFor,
+  focusedType,
+  onNavigate,
+  favorite,
+}: {
+  screen: Screen
+  hrefFor: (ref: ScreenRef) => string
+  focusedType: ScreenType | null
+  onNavigate?: () => void
+  favorite?: FavoriteControls
+}) {
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        className="h-10"
+        isActive={focusedType === screen.type}
+        render={
+          <Link
+            href={hrefFor({ screenType: screen.type })}
+            onClick={onNavigate}
+          />
+        }
+      >
+        {screen.icon}
+        <span>{screen.label}</span>
+      </SidebarMenuButton>
+      {favorite && <FavoriteToggle type={screen.type} favorite={favorite} />}
+    </SidebarMenuItem>
+  )
+}
+
+/**
  * One level of pane 2, rendered as a *drill-in* list rather than a collapsing
  * tree: it shows exactly `items` — the top-level menu at the root, or one
  * group's children once drilled in — and going deeper replaces the level
@@ -112,24 +160,14 @@ export function NavPanel({
       <SidebarMenu className="gap-0.5">
         {items.map((child) =>
           child.kind === "screen" ? (
-            <SidebarMenuItem key={child.screen.type}>
-              <SidebarMenuButton
-                className="h-10"
-                isActive={focusedType === child.screen.type}
-                render={
-                  <Link
-                    href={hrefFor({ screenType: child.screen.type })}
-                    onClick={onNavigate}
-                  />
-                }
-              >
-                {child.screen.icon}
-                <span>{child.screen.label}</span>
-              </SidebarMenuButton>
-              {favorite && (
-                <FavoriteToggle type={child.screen.type} favorite={favorite} />
-              )}
-            </SidebarMenuItem>
+            <ScreenRow
+              key={child.screen.type}
+              screen={child.screen}
+              hrefFor={hrefFor}
+              focusedType={focusedType}
+              onNavigate={onNavigate}
+              favorite={favorite}
+            />
           ) : (
             <SidebarMenuItem key={child.label}>
               <SidebarMenuButton
@@ -189,24 +227,14 @@ export function NavSearchResults({
           <SidebarGroupLabel>{section.heading}</SidebarGroupLabel>
           <SidebarMenu className="gap-0.5">
             {section.commands.map(({ screen }) => (
-              <SidebarMenuItem key={screen.type}>
-                <SidebarMenuButton
-                  className="h-10"
-                  isActive={focusedType === screen.type}
-                  render={
-                    <Link
-                      href={hrefFor({ screenType: screen.type })}
-                      onClick={onNavigate}
-                    />
-                  }
-                >
-                  {screen.icon}
-                  <span>{screen.label}</span>
-                </SidebarMenuButton>
-                {favorite && (
-                  <FavoriteToggle type={screen.type} favorite={favorite} />
-                )}
-              </SidebarMenuItem>
+              <ScreenRow
+                key={screen.type}
+                screen={screen}
+                hrefFor={hrefFor}
+                focusedType={focusedType}
+                onNavigate={onNavigate}
+                favorite={favorite}
+              />
             ))}
           </SidebarMenu>
         </SidebarGroup>
@@ -253,22 +281,14 @@ export function NavFavoritesPanel({
           <SidebarGroupLabel>{section.label ?? "General"}</SidebarGroupLabel>
           <SidebarMenu className="gap-0.5">
             {section.screens.map((screen) => (
-              <SidebarMenuItem key={screen.type}>
-                <SidebarMenuButton
-                  className="h-10"
-                  isActive={focusedType === screen.type}
-                  render={
-                    <Link
-                      href={hrefFor({ screenType: screen.type })}
-                      onClick={onNavigate}
-                    />
-                  }
-                >
-                  {screen.icon}
-                  <span>{screen.label}</span>
-                </SidebarMenuButton>
-                <FavoriteToggle type={screen.type} favorite={favorite} />
-              </SidebarMenuItem>
+              <ScreenRow
+                key={screen.type}
+                screen={screen}
+                hrefFor={hrefFor}
+                focusedType={focusedType}
+                onNavigate={onNavigate}
+                favorite={favorite}
+              />
             ))}
           </SidebarMenu>
         </SidebarGroup>
