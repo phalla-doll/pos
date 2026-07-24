@@ -106,15 +106,21 @@
   --status-warning: oklch(0.811 0.164 78.5);
   --status-critical: oklch(0.575 0.186 25.2);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
+  /*
+     * The light chrome is a warm cream ramp, darkest at the app's edge and
+     * lightest where content lives: rail #efe9de → panel #f5f0e8 → content
+     * #faf9f5. The accent doubles as the panel's hover/active fill, one step
+     * darker than the panel it sits on.
+     */
+  --sidebar: oklch(0.957 0.012 79.8); /* #f5f0e8 */
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent: oklch(0.936 0.016 82.8); /* #efe9de */
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
+  --background: oklch(0.982 0.005 95.1); /* #faf9f5 */
   --foreground: oklch(0.145 0 0);
 }
 
