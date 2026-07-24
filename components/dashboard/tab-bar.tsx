@@ -30,14 +30,14 @@ import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
  * reads as connected to the content below, browser-tab style. The hairline is
  * an *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the
  * content box (border-box), so the strip's own children would sit 1px shy of
- * its full height and the h-9 chips would no longer meet the baseline cleanly.
+ * its full height and the h-8 chips would no longer meet the baseline cleanly.
  * A shadow takes no layout space, so the row fills the strip exactly and the
  * active tab's background simply paints over the inset line — no `-mb-px`
  * overflow needed. Shared so the Suspense fallback (`TabWorkspaceFallback`)
  * matches the bar's size exactly, instead of re-declaring the constant.
  */
 export const TAB_BAR_ROW =
-  "h-10 shrink-0 bg-background shadow-[inset_0_-1px_0_0_var(--border)]"
+  "h-9 shrink-0 bg-background shadow-[inset_0_-1px_0_0_var(--border)]"
 
 export type TabBarProps = {
   tabs: Tab[]
@@ -126,7 +126,7 @@ export function TabBar({
           width can be read — without it that pass would blow out the layout. */}
       <div
         ref={stripRef}
-        className="flex h-10 min-w-0 flex-1 items-end gap-1 overflow-hidden px-2"
+        className="flex h-9 min-w-0 flex-1 items-end gap-1 overflow-hidden px-2"
       >
         {visible.map((tab) => (
           <TabChip
@@ -180,7 +180,7 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
             ref={measure}
             type="button"
             aria-label={`Show ${tabs.length} more ${tabs.length === 1 ? "tab" : "tabs"}`}
-            className="flex h-9 shrink-0 items-center gap-1 rounded-t-lg px-2.5 text-sm font-normal text-muted-foreground transition-colors duration-150 hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+            className="flex h-8 shrink-0 items-center gap-1 rounded-t-lg px-2.5 text-sm font-normal text-muted-foreground transition-colors duration-150 hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
             <span>More</span>
             <span className="tabular-nums">{tabs.length}</span>
@@ -263,8 +263,8 @@ function TabChip({
               "[--tab-active:color-mix(in_oklab,var(--primary)_12%,var(--background))]",
               "dark:[--tab-active:var(--color-zinc-800)]",
               isActive
-                ? "h-9 bg-[var(--tab-active)] font-medium text-foreground"
-                : "h-9 font-normal text-muted-foreground hover:text-foreground"
+                ? "h-8 bg-[var(--tab-active)] font-medium text-foreground"
+                : "h-8 font-normal text-muted-foreground hover:text-foreground"
             )}
           />
         }
