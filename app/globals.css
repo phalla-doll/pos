@@ -62,7 +62,7 @@
      * back to the default for `.system-dark` and render light form controls on
      * a dark surface. CSS knows the mapping already. */
   color-scheme: light;
-  --card: oklch(1 0 0);
+  --card: oklch(0.97 0.001 286.375); /* zinc-100 */
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
