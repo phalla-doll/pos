@@ -234,6 +234,30 @@
   }
 }
 
+/* How the panel moves. The vendored sidebar animates its width `ease-linear`
+ * (`components/ui/sidebar.tsx`), which reads mechanical — a panel should arrive
+ * quickly and settle, not travel at one speed and stop dead. Those classes are
+ * not ours to edit, so the curve is restated here on the two slots that move:
+ * the in-flow `sidebar-gap` (what reflows the page on pin and unpin) and the
+ * floating `sidebar-container` (what slides). A decelerating curve with no
+ * overshoot — emphatic enough to feel intentional, quiet enough not to bounce.
+ *
+ * These rules sit outside every cascade layer, so they beat the utilities in
+ * `@layer utilities` no matter how specific those are — the same lever the
+ * overlay-mode block above relies on. */
+[data-slot="sidebar-gap"],
+[data-slot="sidebar-container"] {
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  transition-duration: 250ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"] {
+    transition-duration: 0.01ms;
+  }
+}
+
 /* A scrollbar that stays out of the way: thin, and coloured in only while the
  * pointer is over the thing that scrolls. Anything long enough to need one is
  * usually something you are reading, and a permanent bar down the edge of a
