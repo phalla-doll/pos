@@ -473,7 +473,13 @@ export function ListScreen<T>({
         level-1 landmark, and dropping it outright would leave a page whose
         name only exists as a tab label.
       */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/*
+        `gap-3` rather than `gap-2`: the only two things in this row are the
+        segmented group and Search, and the wider gap is what earns Search its
+        "different kind of thing" standing — at `gap-2` the split read as the
+        same spacing the group would take if it wrapped, saying nothing.
+      */}
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">{label}</h1>
         {/*
           No selection count and no Clear beside it: the count moved the whole
@@ -582,7 +588,7 @@ export function ListScreen<T>({
                   type="button"
                   variant="outline"
                   disabled={selectedCount === 0}
-                  className="pr-2.5 pl-2.5"
+                  className="pr-3 pl-2.5"
                 />
               }
             >
@@ -1129,7 +1135,7 @@ export function ListScreen<T>({
                               setFilter(column.key, event.target.value)
                             }
                             className={cn(
-                              "h-7 pl-6.5 text-[0.8125rem] md:text-[0.8125rem]",
+                              "h-7 rounded-sm pl-6.5 text-[0.8125rem] md:text-[0.8125rem]",
                               isLastFilter && filtersActive && "pr-7"
                             )}
                           />
