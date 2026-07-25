@@ -109,6 +109,7 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
+import { toolbarButton } from "@/lib/screen-toolbar"
 import {
   defaultPageSize,
   pageSizes,
@@ -210,19 +211,6 @@ const bulkMenuActions: {
   { label: "Print labels", icon: Printer, shortcut: "⌘P" },
   { label: "Mark as counted", icon: ClipboardCheck },
 ] as const
-
-/**
- * What every button in the row-action toolbar wears, the segmented group and
- * Search alike. The padding is shared so the two read as one row; `blue-solid`
- * (`app/globals.css`) is what makes them `default`-coloured on the blue palette
- * — the one the picker calls "System" — while the neutral palettes keep the
- * quiet `outline` look these are declared with.
- *
- * It goes on these buttons and no others: it is for the actions a screen leads
- * with. Delete stays `destructive` on every palette, and the pager's and
- * headers' `ghost` buttons are chrome rather than actions.
- */
-const toolbarButton = "blue-solid pr-3 pl-2.5"
 
 /**
  * "Copy row" / "Copy 3 rows" — a menu item names what it will actually act on,
