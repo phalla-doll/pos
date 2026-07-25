@@ -254,13 +254,19 @@ function TabChip({
               // the flared corners so they can never drift apart. It's a *mix*
               // of primary into the background rather than `primary/10` so it
               // stays fully opaque — the fill has to erase the strip's hairline
-              // beneath it. Dark mode drops the hue entirely and lifts a
-              // neutral zinc step off the near-black background instead: a
-              // tinted fill that reads as "raised" at L 0.145 has to be so
-              // saturated it turns into a colored block, which is louder than
-              // a tab chrome should be.
+              // beneath it. The mix is deliberately shallow: against a near-white
+              // background, `primary` being a near-black neutral means even a
+              // small percentage darkens fast, and anything heavier turns tab
+              // chrome into a grey block that outshouts the content it frames.
+              // 6% lands roughly a `--muted` step below the strip — enough to
+              // read as raised alongside the flared corners and the medium
+              // weight, which carry most of the "this one is active" signal.
+              // Dark mode drops the hue entirely and lifts a neutral zinc step
+              // off the near-black background instead: a tinted fill that reads
+              // as "raised" at L 0.145 has to be so saturated it turns into a
+              // colored block.
               "group/tab relative flex shrink-0 items-center gap-1 rounded-t-lg pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
-              "[--tab-active:color-mix(in_oklab,var(--primary)_12%,var(--background))]",
+              "[--tab-active:color-mix(in_oklab,var(--primary)_6%,var(--background))]",
               "dark:[--tab-active:var(--color-zinc-800)]",
               isActive
                 ? "h-8 bg-[var(--tab-active)] font-medium text-foreground"
