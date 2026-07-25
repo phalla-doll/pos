@@ -89,7 +89,7 @@ export function TabWorkspace() {
             <div
               key={tab.id}
               className={cn(
-                "flex min-h-0 flex-1 flex-col overflow-auto bg-background dark:bg-zinc-900",
+                "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content)",
                 tab.id !== activeId && "hidden"
               )}
             >
@@ -142,7 +142,7 @@ function SketchCard({ className }: { className?: string }) {
     <div
       aria-hidden
       className={cn(
-        "w-64 shrink-0 space-y-3 rounded-xl border bg-background p-3",
+        "w-64 shrink-0 space-y-3 rounded-xl border bg-card p-3",
         className
       )}
     >
@@ -219,7 +219,7 @@ const QUICK_START: readonly ScreenType[] = [
  */
 function EmptyState({ onOpen }: { onOpen: (screenType: ScreenType) => void }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-background dark:bg-zinc-900">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-(--content)">
       <Empty className="p-8">
         {/* Sits outside `EmptyHeader`, which caps its children at `max-w-sm` —
             the sketch needs the full width for its flanking cards to show. */}
@@ -240,7 +240,7 @@ function EmptyState({ onOpen }: { onOpen: (screenType: ScreenType) => void }) {
                 key={type}
                 type="button"
                 onClick={() => onOpen(type)}
-                className="group flex items-start gap-3 rounded-xl border bg-background p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="group flex items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary [&_svg]:size-4">
                   {screen.icon}

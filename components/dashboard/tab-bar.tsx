@@ -24,8 +24,13 @@ import type { Tab } from "@/hooks/use-tabs"
 import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
 
 /**
- * Height + bottom edge of the tab-bar row. The strip itself is transparent
- * (`background`); contrast comes from a bottom hairline, which the active tab
+ * Height + bottom edge of the tab-bar row. The strip shares the workspace
+ * surface it sits on (`--content`) rather than the page white — the two meet
+ * with no seam, and only the hairline below divides them, which is what lets
+ * the active tab punch through and look attached to the screen it opens. On
+ * the page white it would read as a bright band cutting across the one surface
+ * the app bar, the rail, and the workspace otherwise share. Contrast comes
+ * from that bottom hairline, which the active tab
  * punches through — its fill + flared corners erase the line beneath it, so it
  * reads as connected to the content below, browser-tab style. The hairline is
  * an *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the
@@ -37,7 +42,7 @@ import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
  * matches the bar's size exactly, instead of re-declaring the constant.
  */
 export const TAB_BAR_ROW =
-  "h-9 shrink-0 bg-background shadow-[inset_0_-1px_0_0_var(--border)]"
+  "h-9 shrink-0 bg-(--content) shadow-[inset_0_-1px_0_0_var(--border)]"
 
 export type TabBarProps = {
   tabs: Tab[]
@@ -252,22 +257,23 @@ function TabChip({
             className={cn(
               // `--tab-active` is the active tab's fill, shared by the body and
               // the flared corners so they can never drift apart. It's a *mix*
-              // of primary into the background rather than `primary/10` so it
-              // stays fully opaque — the fill has to erase the strip's hairline
-              // beneath it. The mix is deliberately shallow: against a near-white
-              // background, `primary` being a near-black neutral means even a
-              // small percentage darkens fast, and anything heavier turns tab
-              // chrome into a grey block that outshouts the content it frames.
-              // 6% lands roughly a `--muted` step below the strip — enough to
-              // read as raised alongside the flared corners and the medium
-              // weight, which carry most of the "this one is active" signal.
-              // Dark mode drops the hue entirely and lifts a neutral zinc step
-              // off the near-black background instead: a tinted fill that reads
-              // as "raised" at L 0.145 has to be so saturated it turns into a
-              // colored block.
+              // of primary into the strip's own surface rather than `primary/10`
+              // so it stays fully opaque — the fill has to erase the strip's
+              // hairline beneath it — and mixing into `--content` rather than a
+              // fixed white keeps the chip one step off whatever surface the
+              // strip is wearing. The mix is deliberately shallow: against a
+              // near-white surface, `primary` being a near-black neutral means
+              // even a small percentage darkens fast, and anything heavier turns
+              // tab chrome into a grey block that outshouts the content it
+              // frames. 6% lands roughly a `--muted` step below the strip —
+              // enough to read as raised alongside the flared corners and the
+              // medium weight, which carry most of the "this one is active"
+              // signal. Dark mode lifts a step *off* the near-black page in the
+              // other direction, because a tinted fill that reads as "raised" at
+              // L 0.153 has to be so saturated it turns into a colored block.
               "group/tab relative flex shrink-0 items-center gap-1 rounded-t-lg pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
-              "[--tab-active:color-mix(in_oklab,var(--primary)_6%,var(--background))]",
-              "dark:[--tab-active:var(--color-zinc-800)]",
+              "[--tab-active:color-mix(in_oklab,var(--primary)_6%,var(--content))]",
+              "dark:[--tab-active:var(--muted)]",
               isActive
                 ? "h-8 bg-[var(--tab-active)] font-medium text-foreground"
                 : "h-8 font-normal text-muted-foreground hover:text-foreground"

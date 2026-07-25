@@ -126,12 +126,14 @@
   --status-critical: oklch(0.575 0.186 25.2);
   --radius: 0.625rem;
   /*
-     * The light chrome keeps its shape — darkest at the app's edge, lightest
-     * where content lives — with the whole ramp pulled up towards white:
-     * rail 0.966 → panel 0.988 → content and card 1.
-     * The steps are small because the surfaces they separate are, and the
-     * border does the rest. The accent doubles as the panel's hover/active
-     * fill, one step darker than the panel it sits on.
+     * The light chrome, with the whole ramp pulled up towards white:
+     * rail and workspace 0.966 → panel 0.988 → card 1.
+     * What is lightest is no longer the region content lives in but the cards
+     * themselves — the workspace shares the rail's shade as the surface they
+     * are laid on (see `--content` below). The steps are small because the
+     * surfaces they separate are, and the border does the rest. The accent
+     * doubles as the panel's hover/active fill, one step darker than the panel
+     * it sits on.
      */
   --sidebar: oklch(0.988 0.003 106.5);
   --sidebar-foreground: oklch(0.153 0.006 107.1);
@@ -147,6 +149,23 @@
      * far as the panel, so the rail is derived by continuing it downwards. */
   --sidebar-rail: oklch(0.966 0.005 106.5);
   --sidebar-rail-accent: oklch(0.93 0.007 106.5);
+  /*
+     * The workspace surface — the desk the screens' cards are laid on, and the
+     * tab strip above them. Ours, not the palette's: the palette puts the page
+     * and the card on the same white, which leaves a card with nothing but its
+     * border to stand on. A white card sits 1.10:1 above this one, which is
+     * the separation the cream scheme used to give it.
+     *
+     * Written out rather than pointed at `--sidebar-accent`, which happens to
+     * be this same value — the two are equal by coincidence of the ramp, not
+     * because a workspace is a menu fill, and tying them would move this
+     * surface the next time that one is retuned.
+     *
+     * Spending the hue harder instead — a real olive — separated the cards by
+     * no more than this does and turned the whole middle of the app a colour,
+     * so the tint stays at the ramp's chroma and the lightness does the work.
+     */
+  --content: oklch(0.966 0.005 106.5);
   --background: oklch(1 0 0);
   --foreground: oklch(0.153 0.006 107.1);
 }
@@ -204,6 +223,11 @@
      * dark counterpart, so the rail just follows the panel. */
   --sidebar-rail: var(--sidebar);
   --sidebar-rail-accent: var(--sidebar-accent);
+  /* Dark needs no tint to separate the two: the card is already a step
+     * *lighter* than the page (1.16:1), which is the "sheet on a desk"
+     * relationship light gets by going the other way, so the workspace just
+     * takes the page. Deriving keeps it there if the page moves. */
+  --content: var(--background);
 }
 
 /*
