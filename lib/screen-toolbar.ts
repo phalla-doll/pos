@@ -13,20 +13,27 @@
  */
 
 /**
- * A button in that toolbar. The padding is shared so the segmented group and
- * the pill beside it read as one row; `blue-solid` (`app/globals.css`) is what
- * colours them like the `default` variant on the blue palette — the one the
- * picker calls "System" — while the neutral palettes keep the quiet `outline`
- * look these buttons are declared with.
+ * Being *in* the row: the metrics every segment shares, so the group and the
+ * pill beside it line up as one row. Wanted on its own by the button that
+ * takes the shape without the colour — see below.
+ */
+export const toolbarMetrics = "pr-3 pl-2.5"
+
+/**
+ * Being in the row *and* in the bar. `blue-solid` (`app/globals.css`) is what
+ * colours a button like the `default` variant on the blue palette — the one
+ * the picker calls "System" — while the neutral palettes keep the quiet
+ * `outline` look these buttons are declared with.
  *
  * It goes on the actions a screen leads with and no others. Two standing
  * exceptions:
  *
- * - **Destructive actions never take it.** Delete keeps its own colour on
- *   every palette; a solid-primary bar is not where "this is irreversible"
- *   belongs, and the fill would paint over the one signal that says so.
+ * - **Destructive actions never take it.** Delete wears `toolbarMetrics`
+ *   alone: it belongs to the row, so it keeps the shape, but a solid-primary
+ *   bar is not where "this is irreversible" belongs and the fill would paint
+ *   over the one signal that says so.
  * - **Chrome is not an action.** The pager's and column headers' `ghost`
  *   buttons stay quiet. So does a button already declared `default`, which is
  *   solid on every palette and has nothing to swap.
  */
-export const toolbarButton = "blue-solid pr-3 pl-2.5"
+export const toolbarButton = `blue-solid ${toolbarMetrics}`

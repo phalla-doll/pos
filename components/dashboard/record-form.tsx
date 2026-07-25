@@ -19,6 +19,8 @@ import { useWorkspace } from "@/hooks/use-workspace"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
 import { isDraft, recordId } from "@/lib/record-param"
+import { toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
+import { cn } from "@/lib/utils"
 
 export type RecordFormProps<T> = {
   /** The screen this record belongs to — "Inventory", "Customers". */
@@ -178,7 +180,7 @@ export function RecordForm<T>({
               type="submit"
               form={formId}
               variant="outline"
-              className="pr-3 pl-2.5"
+              className={toolbarButton}
             >
               {creating ? <Plus /> : <Save />}
               {creating ? `Create ${noun}` : "Save changes"}
@@ -191,7 +193,7 @@ export function RecordForm<T>({
             offering it there would promise the click does two things.
           */}
           {!creating && !missing && (
-            <Button type="button" variant="outline" className="pr-3 pl-2.5">
+            <Button type="button" variant="outline" className={toolbarButton}>
               <BadgeCheck />
               Approve
             </Button>
@@ -204,13 +206,21 @@ export function RecordForm<T>({
             This is where deleting one record lives now — the list's toolbar no
             longer carries it, so the deliberate act of opening a record is what
             puts its delete in reach.
+
+            The one segment with no `toolbarButton`: it keeps its own colour on
+            every palette, so on blue it stays quiet between the solid ones
+            rather than joining the bar. Deleting should not look like the
+            thing beside it.
           */}
           {!creating && !missing && (
             <Button
               type="button"
               variant="outline"
               onClick={() => setConfirmingDelete(true)}
-              className="pr-3 pl-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className={cn(
+                toolbarMetrics,
+                "text-destructive hover:bg-destructive/10 hover:text-destructive"
+              )}
             >
               <Trash2 />
               Delete
@@ -230,7 +240,7 @@ export function RecordForm<T>({
               variant="outline"
               disabled={!dirty}
               onClick={clearFields}
-              className="pr-3 pl-2.5"
+              className={toolbarButton}
             >
               <Eraser />
               Clear
@@ -253,7 +263,7 @@ export function RecordForm<T>({
             type="button"
             variant="outline"
             onClick={() => workspace.closeTab(tabId)}
-            className="rounded-full pr-3 pl-2.5"
+            className={cn(toolbarButton, "rounded-full")}
           >
             <X />
             Close
