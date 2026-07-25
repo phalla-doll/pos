@@ -1,6 +1,6 @@
 "use client"
 
-import { KeyRound, Pencil } from "lucide-react"
+import { History, KeyRound, LockKeyhole, LogOut, Pencil } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -71,11 +71,28 @@ export function NavProfilePanel({
         <InfoRow label="Login attempts" value={String(user.loginAttempts)} />
       </dl>
 
-      {/* Account actions. */}
+      {/* Account actions — each pairs with something the info block states:
+          the credentials behind this session, the sign-in history summarised
+          by "Last signed on"/"Login attempts", and ending the session itself. */}
       <div className="flex flex-col gap-2 border-t pt-4">
-        <Button variant="ghost" className="-mx-2 justify-start gap-2 px-2">
+        <Button variant="outline" className="justify-start gap-2">
           <KeyRound strokeWidth={1.5} />
           Reset password
+        </Button>
+        <Button variant="outline" className="justify-start gap-2">
+          <LockKeyhole strokeWidth={1.5} />
+          Change PIN
+        </Button>
+        <Button variant="outline" className="justify-start gap-2">
+          <History strokeWidth={1.5} />
+          Sign-in activity
+        </Button>
+        <Button
+          variant="outline"
+          className="justify-start gap-2 text-destructive hover:text-destructive"
+        >
+          <LogOut strokeWidth={1.5} />
+          Log out
         </Button>
       </div>
     </div>
