@@ -212,6 +212,13 @@ const bulkMenuActions: {
 ] as const
 
 /**
+ * What every button in the row-action toolbar wears, the segmented group and
+ * Search alike — stated once so the two go on reading as one row rather than
+ * drifting a notch apart the next time one of them is touched.
+ */
+const toolbarButton = "pr-3 pl-2.5"
+
+/**
  * "Copy row" / "Copy 3 rows" — a menu item names what it will actually act on,
  * which for a multi-row selection is not just the row under the cursor.
  */
@@ -527,7 +534,7 @@ export function ListScreen<T>({
               type="button"
               variant="outline"
               onClick={() => workspace?.openDraft(screenType)}
-              className="pr-3 pl-2.5"
+              className={toolbarButton}
             >
               <Plus />
               New
@@ -553,7 +560,7 @@ export function ListScreen<T>({
                 const [key] = [...selected]
                 if (key !== undefined) openRecord(key)
               }}
-              className="pr-3 pl-2.5"
+              className={toolbarButton}
             >
               <PencilLine />
               Edit
@@ -573,7 +580,7 @@ export function ListScreen<T>({
             type="button"
             variant="outline"
             disabled={selectedCount === 0}
-            className="pr-3 pl-2.5"
+            className={toolbarButton}
           >
             <BadgeCheck />
             Approve
@@ -602,7 +609,7 @@ export function ListScreen<T>({
                   type="button"
                   variant="outline"
                   disabled={selectedCount === 0}
-                  className="pr-3 pl-2.5"
+                  className={toolbarButton}
                 />
               }
             >
@@ -660,7 +667,8 @@ export function ListScreen<T>({
           // to look held down while it is on — `bg-accent` is the same surface
           // its own hover uses.
           className={cn(
-            "rounded-full pr-3 pl-2.5",
+            toolbarButton,
+            "rounded-full",
             advancedOpen && "bg-accent"
           )}
         >
