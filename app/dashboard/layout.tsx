@@ -35,8 +35,10 @@ export default function DashboardLayout({
           // Wears the rail's surface (pane 1's), not the page's: the bar and
           // the rail meet at the top-left corner under the brand, so a bar on
           // any other step would draw a seam right there. Together they read as
-          // one L-shaped frame around the content.
-          <header className="relative z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-(--sidebar-rail) px-4">
+          // one L-shaped frame around the content, and they carry that frame's
+          // edge — `--sidebar-rail-border`, drawn for the rail's surface rather
+          // than the card's, where the plain `--border` all but disappears.
+          <header className="relative z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b border-b-(--sidebar-rail-border) bg-(--sidebar-rail) px-4">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center [&_svg]:size-5!">
                 {sidebarWorkspace.logo}

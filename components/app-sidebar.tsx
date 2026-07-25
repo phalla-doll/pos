@@ -364,7 +364,7 @@ function SidebarBody({
           styles stay visible on it. */}
       <Sidebar
         collapsible="none"
-        className="w-[calc(var(--sidebar-width-icon)+1px)]! shrink-0 border-r bg-(--sidebar-rail) [--sidebar-accent:var(--sidebar-rail-accent)]"
+        className="w-[calc(var(--sidebar-width-icon)+1px)]! shrink-0 border-r border-r-(--sidebar-rail-border) bg-(--sidebar-rail) [--sidebar-accent:var(--sidebar-rail-accent)]"
       >
         <SidebarContent className="pt-2">
           <SidebarGroup className="px-1.5">

@@ -158,6 +158,14 @@
      * lift under the pointer (1.11:1) the pair had before the rail moved. */
   --sidebar-rail: oklch(0.94 0.008 106.5);
   --sidebar-rail-accent: oklch(0.905 0.01 106.5);
+  /* The line along the chrome's inner edge — the rail's right edge and the app
+     * bar's bottom one. `--border` is drawn for a white card and lands 1.03:1
+     * on the rail, close enough to vanish; this is the same *ratio* a card's
+     * border gets on white (1.20:1 here, 1.23:1 there), just measured against
+     * the darker surface it actually falls on. Light only — the dark block
+     * points it back at `--sidebar-border`, where the existing translucent
+     * white already reads against a near-black rail. */
+  --sidebar-rail-border: oklch(0.88 0.012 106.5);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
@@ -235,10 +243,21 @@
      * dark counterpart, so the rail just follows the panel. */
   --sidebar-rail: var(--sidebar);
   --sidebar-rail-accent: var(--sidebar-accent);
-  /* Dark needs no tint to separate the two: the card is already a step
-     * *lighter* than the page (1.16:1), which is the "sheet on a desk"
-     * relationship light gets by going the other way, so the workspace just
-     * takes the page. Deriving keeps it there if the page moves. */
+  /* Opaque, where the rest of the dark borders are a translucent white. It has
+     * to be: this one line is drawn twice over different backdrops — the app
+     * bar paints it over its own surface (0.228), while the panel container
+     * that draws the rail's edge has no background of its own, so the same
+     * `oklch(1 0 0 / 10%)` fell on the workspace (0.153) instead and rendered
+     * 0.262 against the bar's 0.322. One edge, two shades, depending only on
+     * which element happened to draw it. 0.322 is the shade the bar was
+     * already rendering, so the bar is unchanged and the rail's edge comes up
+     * to meet it. */
+  --sidebar-rail-border: oklch(0.322 0.014 107.1);
+  /* Dark takes the page, not pane 1 like the light block does: here the rail
+     * and the card are the same 0.228, so a workspace on the rail would leave
+     * every card invisible against the surface it sits on. The page is a step
+     * *below* the card (1.16:1), which is the same "sheet on a desk"
+     * relationship light gets by going the other way. */
   --content: var(--background);
 }
 
@@ -383,6 +402,28 @@
     box-shadow: 0 8px 24px -8px
       color-mix(in oklab, var(--foreground) 22%, transparent);
   }
+}
+
+/* The chrome's inner edge — the line the eye reads as the boundary between the
+ * sidebar and the workspace.
+ *
+ * It is *not* drawn by pane 1. The rail carries a `border-r` of its own, but
+ * the vendored `sidebar-container` is `fixed` and `z-10`, so when the panel is
+ * collapsed it sits directly on top of the rail and its own `border-r` is what
+ * shows; the rail's is covered by the content beside it. That container's
+ * border takes the plain `--border`, which is tuned for a hairline on a white
+ * card and lands 1.03:1 against the rail's darker surface — the line was being
+ * drawn, just not in a colour anyone could see there. The rail keeps its own
+ * border for the case the container isn't rendered at all (below `md`, where
+ * the panel is an off-canvas sheet).
+ *
+ * The same lever the overlay and transition rules use: unlayered, so it beats
+ * the utility the container sets. Scoped to a left sidebar because that is the
+ * side the vendored component puts the border on. When the panel is open this
+ * is the panel's right edge instead of the rail's — the same line either way,
+ * which is why one colour serves both. */
+[data-slot="sidebar-container"][data-side="left"] {
+  border-right-color: var(--sidebar-rail-border);
 }
 
 /* How the panel moves. The vendored sidebar animates its width `ease-linear`
