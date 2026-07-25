@@ -89,7 +89,7 @@ export function TabWorkspace() {
             <div
               key={tab.id}
               className={cn(
-                "flex min-h-0 flex-1 flex-col overflow-auto bg-zinc-50 dark:bg-zinc-900",
+                "flex min-h-0 flex-1 flex-col overflow-auto bg-background dark:bg-zinc-900",
                 tab.id !== activeId && "hidden"
               )}
             >
@@ -219,7 +219,7 @@ const QUICK_START: readonly ScreenType[] = [
  */
 function EmptyState({ onOpen }: { onOpen: (screenType: ScreenType) => void }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-zinc-50 dark:bg-zinc-900">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-background dark:bg-zinc-900">
       <Empty className="p-8">
         {/* Sits outside `EmptyHeader`, which caps its children at `max-w-sm` —
             the sketch needs the full width for its flanking cards to show. */}
