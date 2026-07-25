@@ -45,7 +45,7 @@ export function NavProfilePanel({
             size="icon"
             variant="secondary"
             aria-label="Edit profile picture"
-            className="absolute -right-1 -bottom-1 size-7 rounded-full border shadow-sm"
+            className="absolute -right-1 -bottom-1 size-7 rounded-full"
           >
             <Pencil strokeWidth={1.5} />
           </Button>
@@ -61,7 +61,7 @@ export function NavProfilePanel({
       </div>
 
       {/* Session and company info, read straight from the fixture. */}
-      <dl className="grid gap-3 rounded-lg border p-3">
+      <dl className="grid gap-3 border-t pt-4">
         <InfoRow
           label="Company"
           value={`${user.company} (${user.companyCode})`}
@@ -72,8 +72,8 @@ export function NavProfilePanel({
       </dl>
 
       {/* Account actions. */}
-      <div className="flex flex-col gap-2">
-        <Button variant="outline" className="justify-start gap-2">
+      <div className="flex flex-col gap-2 border-t pt-4">
+        <Button variant="ghost" className="-mx-2 justify-start gap-2 px-2">
           <KeyRound strokeWidth={1.5} />
           Reset password
         </Button>
