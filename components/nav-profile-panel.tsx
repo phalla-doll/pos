@@ -4,6 +4,7 @@ import { History, KeyRound, LockKeyhole, LogOut, Pencil } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { userInitials } from "@/lib/user-initials"
 
 /**
@@ -87,6 +88,9 @@ export function NavProfilePanel({
           <History strokeWidth={1.5} />
           Sign-in activity
         </Button>
+        {/* Log out ends the session rather than adjusting it, so it sits on
+            its own side of a rule instead of in the list above. */}
+        <Separator className="my-1" />
         <Button
           variant="outline"
           className="justify-start gap-2 text-destructive hover:text-destructive"
