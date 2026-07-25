@@ -149,9 +149,25 @@ export function RecordForm<T>({
         — its chip carries the id, and "Edit Inventory" would claim to be
         editing the screen itself.
       */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/*
+        `gap-3` rather than `gap-2`, matching the list's toolbar: the wider gap
+        is what earns Close its "different kind of thing" standing beside the
+        group — at `gap-2` the split read as the spacing the group itself would
+        take if it wrapped, saying nothing.
+      */}
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">{creating ? draftLabel : `Edit ${noun}`}</h1>
-        <ButtonGroup>
+        {/*
+          The same pill-ends, flat-joins radius the list's toolbar uses — see
+          `list-screen.tsx` for why both halves are needed and why the
+          right-hand rule writes `[data-slot]` twice. Stated in the same
+          selector form here rather than shared, since `ButtonGroup` is
+          vendored and neither call site may edit it.
+
+          The selectors are the group's own, so which segment is first or last
+          still follows the `creating`/`missing` conditions below.
+        */}
+        <ButtonGroup className="[&>[data-slot]:first-child]:rounded-l-full [&>[data-slot][data-slot]:not(:has(~[data-slot]))]:rounded-r-full!">
           {/*
             Save leads the toolbar, before the way out of the tab: the order is
             what you do here, then what you do to leave. `form` points it at
@@ -237,7 +253,7 @@ export function RecordForm<T>({
             type="button"
             variant="outline"
             onClick={() => workspace.closeTab(tabId)}
-            className="pr-3 pl-2.5"
+            className="rounded-full pr-3 pl-2.5"
           >
             <X />
             Close
