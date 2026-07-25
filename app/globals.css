@@ -63,42 +63,45 @@
      * a dark surface. CSS knows the mapping already. */
   color-scheme: light;
   /*
-     * The light surfaces are a warm cream ramp (hue ~83, the paper end of
-     * yellow) rather than a neutral grey one. Cards are the *lightest* thing
-     * on screen and the page is a step below them, so a panel reads as a sheet
-     * laid on the desk — the reverse of the grey scheme, where the page was
-     * lightest and cards sat on it as tinted blocks. Every fill below is on
-     * that one hue: a leftover neutral grey next to this much warmth reads as
-     * a colour mistake, not as "no colour".
+     * The light surfaces are a white page with a barely-warm ramp under it
+     * (hue ~107, the least yellow a grey can carry and still not be grey). The
+     * card and the page share that white and are told apart by the border
+     * alone; the tint only shows where a surface steps *off* white — the
+     * sidebar, the fills, the rules. The cream ramp this replaces put every
+     * surface a visible step below white, which read as milky. Every fill
+     * below is still on one hue: a leftover neutral grey next to a warm one
+     * reads as a colour mistake, not as "no colour".
      */
-  --card: oklch(0.982 0.005 95.1); /* #faf9f5 */
-  --card-foreground: oklch(0.145 0 0);
-  /* A popover is a card that floats, so it shares the card's surface — it no
-     * longer gets the pure white that used to set it apart from a grey one. */
-  --popover: oklch(0.982 0.005 95.1); /* #faf9f5 */
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.153 0.006 107.1);
+  /* A popover is a card that floats, so it shares the card's surface. */
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.153 0.006 107.1);
+  --primary: oklch(0.228 0.013 107.4);
+  --primary-foreground: oklch(0.988 0.003 106.5);
   /* One step under the card: this is the hover/fill on a card surface (table
      * rows, sort headers, avatar wells), so it has to be visible against
-     * `--card` rather than against the page. */
-  --secondary: oklch(0.949 0.012 84); /* #f2eee5 */
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.949 0.012 84); /* #f2eee5 */
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.949 0.012 84); /* #f2eee5 */
-  --accent-foreground: oklch(0.205 0 0);
+     * `--card` rather than against the page — which here are the same white. */
+  --secondary: oklch(0.966 0.005 106.5);
+  --secondary-foreground: oklch(0.228 0.013 107.4);
+  --muted: oklch(0.966 0.005 106.5);
+  --muted-foreground: oklch(0.58 0.031 107.3);
+  --accent: oklch(0.966 0.005 106.5);
+  --accent-foreground: oklch(0.228 0.013 107.4);
   --destructive: oklch(0.577 0.245 27.325);
-  /* Darker than the grey border it replaces (0.884 vs 0.922): it now has to
-     * separate two surfaces that are themselves closer together. */
-  --border: oklch(0.884 0.012 84); /* #dcd8d0 */
-  --input: oklch(0.884 0.012 84);
-  --ring: oklch(0.708 0 0);
+  /* The border now carries the whole card/page separation on its own, both
+     * surfaces being white, so it stays a definite rule rather than a hint. */
+  --border: oklch(0.93 0.007 106.5);
+  --input: oklch(0.93 0.007 106.5);
+  --ring: oklch(0.737 0.021 106.9);
   /*
      * Chart color comes in two families, each doing one job. `chart-1..5` is an
      * ordinal emerald ramp (magnitude / ordered steps, light→dark); the light
      * steps are darker than the dark ones so the light end still clears the
      * surface — on white the old 0.845 step sat at 1.52:1, under the 2:1 floor.
+     * These steps were re-checked against the white page above and hold it
+     * (light end 2.31:1); the blue ramp shipped with this palette does not
+     * (1.81:1), which is why the emerald one stayed.
      * `chart-cat-1..4` are categorical slots (identity, fixed order, never
      * cycled) for unordered series like payment methods. Both sets are
      * validated per theme; re-run the validator before changing a value.
@@ -124,26 +127,28 @@
   --radius: 0.625rem;
   /*
      * The light chrome keeps its shape — darkest at the app's edge, lightest
-     * where content lives — retoned onto the cream ramp and extended by one
-     * step now that the card is lighter than the page:
-     * rail 0.885 → panel 0.915 → content 0.936 → card 0.982.
-     * The accent doubles as the panel's hover/active fill, one step darker
-     * than the panel it sits on.
+     * where content lives — with the whole ramp pulled up towards white:
+     * rail 0.966 → panel 0.988 → content and card 1.
+     * The steps are small because the surfaces they separate are, and the
+     * border does the rest. The accent doubles as the panel's hover/active
+     * fill, one step darker than the panel it sits on.
      */
-  --sidebar: oklch(0.915 0.017 83); /* #e8e2d7 */
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.885 0.019 83); /* #dfd8cb */
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.884 0.012 84);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.988 0.003 106.5);
+  --sidebar-foreground: oklch(0.153 0.006 107.1);
+  --sidebar-primary: oklch(0.228 0.013 107.4);
+  --sidebar-primary-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-accent: oklch(0.966 0.005 106.5);
+  --sidebar-accent-foreground: oklch(0.228 0.013 107.4);
+  --sidebar-border: oklch(0.93 0.007 106.5);
+  --sidebar-ring: oklch(0.737 0.021 106.9);
   /* The icon rail shares the accent's shade, so it needs its own hover/active
-     * step — on the rail the panel's accent would vanish into the surface. */
-  --sidebar-rail: oklch(0.885 0.019 83); /* #dfd8cb */
-  --sidebar-rail-accent: oklch(0.85 0.021 83); /* #d4ccbe */
-  --background: oklch(0.936 0.016 82.8); /* #efe9de */
-  --foreground: oklch(0.145 0 0);
+     * step — on the rail the panel's accent would vanish into the surface.
+     * These two are ours, not the palette's: the ramp above only reaches as
+     * far as the panel, so the rail is derived by continuing it downwards. */
+  --sidebar-rail: oklch(0.966 0.005 106.5);
+  --sidebar-rail-accent: oklch(0.93 0.007 106.5);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.153 0.006 107.1);
 }
 
 /* The dark surface, shared by both dark themes. `.system-dark` below keeps the
@@ -152,24 +157,27 @@
 .dark,
 .system-dark {
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* The dark ramp carries the same faint warmth as the light one (hue ~107):
+     * page 0.153 → card and panel 0.228 → fills 0.286. A neutral grey dark
+     * mode under a warm light one is a visible seam on the theme switch. */
+  --background: oklch(0.153 0.006 107.1);
+  --foreground: oklch(0.988 0.003 106.5);
+  --card: oklch(0.228 0.013 107.4);
+  --card-foreground: oklch(0.988 0.003 106.5);
+  --popover: oklch(0.228 0.013 107.4);
+  --popover-foreground: oklch(0.988 0.003 106.5);
+  --primary: oklch(0.93 0.007 106.5);
+  --primary-foreground: oklch(0.228 0.013 107.4);
+  --secondary: oklch(0.286 0.016 107.4);
+  --secondary-foreground: oklch(0.988 0.003 106.5);
+  --muted: oklch(0.286 0.016 107.4);
+  --muted-foreground: oklch(0.737 0.021 106.9);
+  --accent: oklch(0.286 0.016 107.4);
+  --accent-foreground: oklch(0.988 0.003 106.5);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.58 0.031 107.3);
   /* The dark ramp is selected for the dark surface, not flipped from light —
      * these steps already clear it (light end 11.8:1, dark end 2.4:1). */
   --chart-1: oklch(0.845 0.143 164.978);
@@ -181,17 +189,17 @@
   --chart-cat-2: oklch(0.661 0.169 257.9);
   --chart-cat-3: oklch(0.66 0.164 54.7);
   --chart-cat-4: oklch(0.66 0.169 299.9);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.228 0.013 107.4);
+  --sidebar-foreground: oklch(0.988 0.003 106.5);
   /* Mirrors `--primary`/`--primary-foreground` above. The CLI's neutral theme
      * emits a blue `--sidebar-primary` here — a leftover from the blue theme's
      * light block — which would be the one blue left in a neutral palette. */
-  --sidebar-primary: oklch(0.922 0 0);
-  --sidebar-primary-foreground: oklch(0.205 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.93 0.007 106.5);
+  --sidebar-primary-foreground: oklch(0.228 0.013 107.4);
+  --sidebar-accent: oklch(0.286 0.016 107.4);
+  --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.58 0.031 107.3);
   /* Dark keeps rail and panel on one surface — the light zinc ramp has no
      * dark counterpart, so the rail just follows the panel. */
   --sidebar-rail: var(--sidebar);
@@ -210,10 +218,10 @@
  * below `:root` and `.dark`, and `theme.test.ts` asserts they do. Only one
  * theme class is ever present: `next-themes` clears the others on a switch.
  */
-/* Light blue carries no `--secondary` of its own. The CLI emitted a zinc pair
- * here that only differed from the neutral one in the third decimal; against
- * the cream surface that grey is a visible drift, and the accent is the only
- * thing this block is meant to move. */
+/* Neither block carries a `--secondary` of its own. The CLI emitted a zinc
+ * pair here that barely differed from the neutral one in brightness; against
+ * the warm surfaces that cool grey is a visible drift, and the accent is the
+ * only thing these blocks are meant to move. */
 .system {
   --primary: oklch(0.488 0.243 264.376);
   --primary-foreground: oklch(0.97 0.014 254.604);
@@ -228,9 +236,9 @@
    * `--primary-foreground` text, so it is chosen dark, while the ring is a
    * hairline and a translucent halo (`focus-visible:border-ring` +
    * `ring-ring/50`) that has to be seen *against* the surface. On the dark
-   * palette that difference decides it — `--primary` there reaches only 2.24:1
-   * on the page, below the neutral grey ring it would replace, where this one
-   * clears 5.26:1. Deriving rather than restating keeps both rings on whatever
+   * palette that difference decides it — `--primary` there reaches only 2.22:1
+   * on the page, below the neutral ring it would replace, where this one
+   * clears 5.21:1. Deriving rather than restating keeps both rings on whatever
    * blue the palette is next tuned to.
    */
   --ring: var(--sidebar-primary);
@@ -240,7 +248,6 @@
 .system-dark {
   --primary: oklch(0.424 0.199 265.638);
   --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.274 0.006 286.033);
   --sidebar-primary: oklch(0.623 0.214 259.815);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
   /* Same rule as the light block above, and this is the brightness that makes
