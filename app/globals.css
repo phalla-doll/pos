@@ -209,6 +209,60 @@
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
 }
 
+/*
+ * `blue-solid` — what a row-action button looks like on the blue palette. The
+ * neutral palettes keep the quiet `outline` toolbar; blue is the palette that
+ * *has* an accent worth spending, so there the row reads as one solid primary
+ * bar, which is the `default` variant's colouring. Destructive actions never
+ * carry the class: Delete keeps its own colour on every palette.
+ *
+ * A class rather than a `variant` prop because the theme lives in localStorage
+ * and `/dashboard` is prerendered — a prop only knows the answer after
+ * hydration, so it would paint the toolbar outlined and then flip it in front
+ * of the user. The theme class is on `<html>` before the first paint, so CSS
+ * has the answer already.
+ *
+ * `components/ui/button.tsx` is vendored, so this is written as a diff over the
+ * `outline` variant rather than as a variant of its own. Unlayered, like the
+ * sidebar rules below, so it beats every utility that variant sets — including
+ * its `dark:` half, which resolves to this same specificity and would otherwise
+ * be settled by Tailwind's emit order alone. `theme.test.ts` pins the selector
+ * to the palette, so a third blue theme can't be added without it.
+ */
+:is(.system, .system-dark) .blue-solid {
+  border-color: transparent;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Hover, and the held-down look of a button whose menu or panel is open —
+ * `aria-expanded` covers both the More trigger and the Search toggle. The same
+ * `primary/80` the `default` variant hovers to. */
+:is(.system, .system-dark) .blue-solid:hover,
+:is(.system, .system-dark) .blue-solid[aria-expanded="true"] {
+  background-color: color-mix(in oklab, var(--primary) 80%, transparent);
+}
+
+/* Restored explicitly: the rule above outranks `focus-visible:border-ring`, and
+ * the ring alone is a thinner keyboard cue than the button was designed with. */
+:is(.system, .system-dark) .blue-solid:focus-visible {
+  border-color: var(--ring);
+}
+
+/* The segment dividers. `button-group` drops each following segment's left
+ * border and lets the previous one's `border-border` draw the rule between them
+ * — which the solid fill has just painted out, leaving four buttons as one
+ * undivided slab. Opaque rather than a translucent white: the button base sets
+ * `bg-clip-padding`, so the border strip has no fill behind it and a
+ * translucent one would show the page through the divider. */
+:is(.system, .system-dark)
+  [data-slot="button-group"]
+  > .blue-solid
+  ~ .blue-solid {
+  border-inline-start: 1px solid
+    color-mix(in oklab, var(--primary-foreground) 30%, var(--primary));
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

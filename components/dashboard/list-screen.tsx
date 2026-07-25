@@ -213,10 +213,16 @@ const bulkMenuActions: {
 
 /**
  * What every button in the row-action toolbar wears, the segmented group and
- * Search alike — stated once so the two go on reading as one row rather than
- * drifting a notch apart the next time one of them is touched.
+ * Search alike. The padding is shared so the two read as one row; `blue-solid`
+ * (`app/globals.css`) is what makes them `default`-coloured on the blue palette
+ * — the one the picker calls "System" — while the neutral palettes keep the
+ * quiet `outline` look these are declared with.
+ *
+ * It goes on these buttons and no others: it is for the actions a screen leads
+ * with. Delete stays `destructive` on every palette, and the pager's and
+ * headers' `ghost` buttons are chrome rather than actions.
  */
-const toolbarButton = "pr-3 pl-2.5"
+const toolbarButton = "blue-solid pr-3 pl-2.5"
 
 /**
  * "Copy row" / "Copy 3 rows" — a menu item names what it will actually act on,
@@ -665,7 +671,9 @@ export function ListScreen<T>({
           aria-controls={advancedId}
           // The card is either open or shut, so the button is a toggle and has
           // to look held down while it is on — `bg-accent` is the same surface
-          // its own hover uses.
+          // its own hover uses. On the blue palette `blue-solid` draws that off
+          // the `aria-expanded` above instead, so the held-down look survives
+          // the swap without this needing to know which palette is on.
           className={cn(
             toolbarButton,
             "rounded-full",

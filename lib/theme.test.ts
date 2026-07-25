@@ -165,4 +165,21 @@ describe("globals.css", () => {
       expect(variant).toContain(`.${theme} `)
     }
   })
+
+  /**
+   * `blue-solid` is the palette's, not one theme's: it recolours a toolbar to
+   * `--primary`, which only the blue themes move. A blue theme left out of its
+   * selector would show the neutral outline toolbar while the rest of the app
+   * had gone blue.
+   */
+  it("scopes blue-solid to every blue theme", () => {
+    const selectors = css.match(/:is\(([^)]*)\)[^{]*\.blue-solid/g) ?? []
+    expect(selectors.length).toBeGreaterThan(0)
+
+    for (const theme of themes.filter((t) => paletteOf(t) === "blue")) {
+      for (const selector of selectors) {
+        expect(selector).toContain(`.${theme}`)
+      }
+    }
+  })
 })
