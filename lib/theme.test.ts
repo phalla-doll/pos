@@ -143,6 +143,17 @@ describe("globals.css", () => {
   )
   const classThemes = themes.filter((theme) => theme !== "light")
 
+  /**
+   * The declarations of the *last* block written for this theme's class alone —
+   * which, given the ordering asserted below, is the one that wins. For a blue
+   * theme that is its palette override; `.system-dark` also leads a shared
+   * block with `.dark`, and this deliberately reads past it to the override.
+   */
+  const paletteBlock = (theme: string) =>
+    [...css.matchAll(new RegExp(`^\\.${theme} \\{([^}]*)\\}`, "gm"))].at(
+      -1
+    )?.[1]
+
   it("defines a block for every theme that needs a class", () => {
     for (const theme of classThemes) {
       expect(css).toMatch(new RegExp(`^\\.${theme}[,\\s]`, "m"))
@@ -180,6 +191,22 @@ describe("globals.css", () => {
       for (const selector of selectors) {
         expect(selector).toContain(`.${theme}`)
       }
+    }
+  })
+
+  /**
+   * The focus ring is an accent, so a palette that moves the accent has to move
+   * it too. Inherited, the blue themes answered a focused input with the
+   * neutral grey — the one cue that exists to be noticed. Both rings are
+   * checked: `--sidebar-ring` is a separate variable, so a blue app could
+   * otherwise ring its inputs blue and its sidebar grey.
+   */
+  it("gives every blue theme its own focus ring", () => {
+    for (const theme of themes.filter((t) => paletteOf(t) === "blue")) {
+      const block = paletteBlock(theme)
+      expect(block).toBeDefined()
+      expect(block).toMatch(/--ring:/)
+      expect(block).toMatch(/--sidebar-ring:/)
     }
   })
 })

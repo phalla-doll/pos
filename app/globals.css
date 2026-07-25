@@ -148,7 +148,7 @@
 
 /* The dark surface, shared by both dark themes. `.system-dark` below keeps the
  * accent hue and inherits everything else from here, so the two dark palettes
- * differ by exactly the six accent variables and nothing else drifts. */
+ * differ by their accent variables alone and nothing else drifts. */
 .dark,
 .system-dark {
   color-scheme: dark;
@@ -219,6 +219,22 @@
   --primary-foreground: oklch(0.97 0.014 254.604);
   --sidebar-primary: oklch(0.546 0.245 262.881);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  /*
+   * The focus ring is the palette's, like every other accent here — inherited,
+   * it answered a focused input on a blue app with the neutral grey.
+   *
+   * It takes the *brighter* of the block's two blues, not `--primary`. The two
+   * are not interchangeable: `--primary` is a fill that has to carry
+   * `--primary-foreground` text, so it is chosen dark, while the ring is a
+   * hairline and a translucent halo (`focus-visible:border-ring` +
+   * `ring-ring/50`) that has to be seen *against* the surface. On the dark
+   * palette that difference decides it — `--primary` there reaches only 2.24:1
+   * on the page, below the neutral grey ring it would replace, where this one
+   * clears 5.26:1. Deriving rather than restating keeps both rings on whatever
+   * blue the palette is next tuned to.
+   */
+  --ring: var(--sidebar-primary);
+  --sidebar-ring: var(--sidebar-primary);
 }
 
 .system-dark {
@@ -227,6 +243,10 @@
   --secondary: oklch(0.274 0.006 286.033);
   --sidebar-primary: oklch(0.623 0.214 259.815);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  /* Same rule as the light block above, and this is the brightness that makes
+   * the case for it. */
+  --ring: var(--sidebar-primary);
+  --sidebar-ring: var(--sidebar-primary);
 }
 
 /*
