@@ -31,7 +31,12 @@ export default function DashboardLayout({
           // The full-width app bar: brand at the far left (above the rail),
           // then the breadcrumb, with the header tools pinned to the right. It
           // spans the whole top; the sidebar starts beneath it.
-          <header className="relative z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b px-4">
+          //
+          // Wears the rail's surface (pane 1's), not the page's: the bar and
+          // the rail meet at the top-left corner under the brand, so a bar on
+          // any other step would draw a seam right there. Together they read as
+          // one L-shaped frame around the content.
+          <header className="relative z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-(--sidebar-rail) px-4">
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center [&_svg]:size-5!">
                 {sidebarWorkspace.logo}
