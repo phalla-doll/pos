@@ -134,11 +134,12 @@ export function SidebarShell({
         // offset the fixed sidebar starts at (see `components/app-sidebar.tsx`).
         className="h-svh flex-col overflow-hidden"
         // The expanded sidebar is the icon rail plus the detail panel, so it
-        // runs wider than a one-column sidebar. `--sidebar-width-icon` is the
-        // rail alone — the width the whole thing collapses to.
+        // runs wider than a one-column sidebar: 3rem of rail and 17rem of
+        // panel. `--sidebar-width-icon` is the rail alone — the width the
+        // whole thing collapses to.
         style={
           {
-            "--sidebar-width": "19rem",
+            "--sidebar-width": "20rem",
             "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
             "--header-height": "3rem",
           } as React.CSSProperties
