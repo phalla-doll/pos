@@ -126,12 +126,13 @@
   --status-critical: oklch(0.575 0.186 25.2);
   --radius: 0.625rem;
   /*
-     * The light chrome, with the whole ramp pulled up towards white:
-     * rail and workspace 0.966 → panel 0.988 → card 1.
+     * The light chrome keeps its shape — darkest at the app's edge, lightest
+     * where the content is — with the whole ramp pulled up towards white:
+     * rail 0.94 → workspace 0.966 → panel 0.988 → card 1.
      * What is lightest is no longer the region content lives in but the cards
-     * themselves — the workspace shares the rail's shade as the surface they
-     * are laid on (see `--content` below). The steps are small because the
-     * surfaces they separate are, and the border does the rest. The accent
+     * themselves; the workspace is the surface they are laid on (`--content`
+     * below), and the chrome sits a step under it. The steps are small because
+     * the surfaces they separate are, and the border does the rest. The accent
      * doubles as the panel's hover/active fill, one step darker than the panel
      * it sits on.
      */
@@ -143,12 +144,20 @@
   --sidebar-accent-foreground: oklch(0.228 0.013 107.4);
   --sidebar-border: oklch(0.93 0.007 106.5);
   --sidebar-ring: oklch(0.737 0.021 106.9);
-  /* The icon rail shares the accent's shade, so it needs its own hover/active
-     * step — on the rail the panel's accent would vanish into the surface.
-     * These two are ours, not the palette's: the ramp above only reaches as
-     * far as the panel, so the rail is derived by continuing it downwards. */
-  --sidebar-rail: oklch(0.966 0.005 106.5);
-  --sidebar-rail-accent: oklch(0.93 0.007 106.5);
+  /* The rail — pane 1, and the app bar that continues it across the top. Ours,
+     * not the palette's: the ramp above only reaches as far as the panel, so
+     * this continues it downwards, one step *under* the workspace so the two
+     * read as a frame with the content raised inside it rather than as one
+     * unbroken sheet. The step alone carries that edge: `border-r` at 0.93 is
+     * all but invisible against 0.94, which is the point — the depth comes
+     * from the surfaces, not from a line drawn between them.
+     *
+     * The rail needs its own hover/active step because it no longer shares the
+     * panel's shade: the panel's accent is lighter than the rail and would
+     * read as a highlight rather than a press. 0.905 keeps the same relative
+     * lift under the pointer (1.11:1) the pair had before the rail moved. */
+  --sidebar-rail: oklch(0.94 0.008 106.5);
+  --sidebar-rail-accent: oklch(0.905 0.01 106.5);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
@@ -156,6 +165,9 @@
      * border to stand on. A white card sits 1.10:1 above this one, which is
      * the separation the cream scheme used to give it.
      *
+     * It holds the shade pane 1 used to wear, now that the rail and the app
+     * bar have moved a step under it: the workspace is the middle of the ramp,
+     * lifted off the chrome that frames it and still below the cards on it.
      * Written out rather than pointed at `--sidebar-accent`, which happens to
      * be this same value — the two are equal by coincidence of the ramp, not
      * because a workspace is a menu fill, and tying them would move this
