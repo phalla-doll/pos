@@ -501,7 +501,21 @@ export function ListScreen<T>({
           their meaning in their content instead — New keeps the only `+` in
           the row.
         */}
-        <ButtonGroup>
+        {/*
+          Pill ends, flat joins: `components/ui/button-group.tsx` is vendored,
+          so the two outer corners are rounded from here instead. Both halves
+          are needed — the group only squares the *inner* corners, leaving the
+          first segment's left radius to the button base's `rounded-lg` and
+          pinning the last segment's right radius to `rounded-r-lg!`. The
+          selectors are the group's own, so which segment is first or last
+          still follows `canCreate`/`canEdit` rather than being hardcoded.
+
+          `[data-slot]` is written twice on the right-hand rule to outspecify
+          that `!important`: Tailwind emits `rounded-r-full` *before*
+          `rounded-r-lg`, so at equal specificity the vendored `lg` would win
+          on source order. The extra attribute settles it without order luck.
+        */}
+        <ButtonGroup className="[&>[data-slot]:first-child]:rounded-l-full [&>[data-slot][data-slot]:not(:has(~[data-slot]))]:rounded-r-full!">
           {/*
             Opens a blank form in a new tab rather than unfolding one above the
             table. It is no longer a toggle, so it doesn't need a held-down
@@ -645,7 +659,10 @@ export function ListScreen<T>({
           // The card is either open or shut, so the button is a toggle and has
           // to look held down while it is on — `bg-accent` is the same surface
           // its own hover uses.
-          className={cn("pr-3 pl-2.5", advancedOpen && "bg-accent")}
+          className={cn(
+            "rounded-full pr-3 pl-2.5",
+            advancedOpen && "bg-accent"
+          )}
         >
           <Search />
           Search
