@@ -185,6 +185,32 @@ const indeterminateDash =
   "data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-indeterminate:[&_svg]:hidden before:absolute before:hidden before:h-0.5 before:w-2 before:rounded-full before:bg-current data-indeterminate:before:block"
 
 /**
+ * The header's surface, and the surface a sortable cell takes under the
+ * pointer. A pair, because the second only means anything relative to the
+ * first: the hover has to clear the band, and the band is a good deal darker
+ * than the `bg-muted` the hover used to be.
+ *
+ * Both are the chrome's shades — `--table-header` is pane 1's surface, the same
+ * one the sidebar rail wears, and the hover is that surface's own press. The
+ * two shades and the reason a header is chrome at all are stated once in
+ * `app/globals.css`; these are the utilities that spend them.
+ *
+ * Not `bg-muted`, and the body is why: rows alternate on `bg-muted/30`, so a
+ * header at `bg-muted` is the same grey the eye is already watching the rows
+ * flicker between — a stripe with emphasis rather than a different kind of row.
+ *
+ * And *not* `color-mix()`, which is how this was first written — mix `--muted`
+ * with `--foreground` and both themes come out faintly red. Mixing `in oklch`
+ * interpolates a hue channel, the two ends of that mix are near-neutral, and
+ * the result lands on `oklch(0.933 0.005 none)`: a missing hue, which renders
+ * as hue 0. That is the red axis, so what should have been a warm grey arrives
+ * with 0.005 of pink in it. Near-neutrals do not survive a polar mix; a token
+ * with a hue already in it does.
+ */
+const headerSurface = "[&_th]:bg-table-header"
+const headerSortHover = "hover:bg-table-header-accent"
+
+/**
  * The primary actions on a selection. Every entry is a UI-only stub until
  * there is a backend — they exist so the selection flow can be demoed end to
  * end — so they carry no handler and are listed as data rather than
@@ -955,9 +981,10 @@ export function ListScreen<T>({
             the padding between the label row and the search row.
 
             Cell backgrounds *are* painted with the sticky group, so `[&_th]`
-            covers the whole header. It stays out of the way of the sort
-            hover: `.[&_th]:bg-card th` scores (0,1,1) against
-            `.hover:bg-muted:hover` at (0,2,0), so the hover still wins.
+            covers the whole header — see `headerSurface` for what it paints.
+            It stays out of the way of the sort hover: a `[&_th]` rule scores
+            (0,1,1) against an element's own `hover:` at (0,2,0), so the hover
+            still wins.
 
             The rules between and beneath the header rows are drawn on the
             cells for the same reason the body's are — see the `Table` above.
@@ -967,12 +994,18 @@ export function ListScreen<T>({
           */}
           {/*
             `h-9` — 36px, the same height as a body row and as the search row
-            below. The header carries its weight in the label's colour and the
-            rule under it rather than in extra height, so there is nothing for
-            a taller row to say; what it must not be is *tighter* than a data
-            row, which the old 32px was the moment the rows opened up.
+            below. The header carries its weight in its own surface, the label's
+            colour, and the rule under it rather than in extra height, so there
+            is nothing for a taller row to say; what it must not be is *tighter*
+            than a data row, which the old 32px was the moment the rows opened
+            up.
           */}
-          <TableHeader className="sticky top-0 z-10 [&_th]:h-9 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
+          <TableHeader
+            className={cn(
+              "sticky top-0 z-10 [&_th]:h-9 [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b",
+              headerSurface
+            )}
+          >
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-0">
                 <Checkbox
@@ -1029,7 +1062,8 @@ export function ListScreen<T>({
                         ? "text-right tabular-nums"
                         : "text-center",
                       sortable &&
-                        "group/sort cursor-pointer transition-colors select-none hover:bg-muted"
+                        "group/sort cursor-pointer transition-colors select-none",
+                      sortable && headerSortHover
                     )}
                   >
                     {/*
