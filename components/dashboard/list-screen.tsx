@@ -791,11 +791,19 @@ export function ListScreen<T>({
               other, and the old 12-against-10 said the description was simply
               another row.
 
+              `pb-3` under the last field rather than the 16 above the first,
+              because what the block ends at is not the card's edge but the
+              footer's rule — and a rule wants equal air on both sides. At 16
+              it had 16 above and the footer's 12 below, which is a 29px void
+              with a hairline in it, in a card whose rows are 8px apart. That
+              gap was what made the footer read as slack, not the footer's own
+              padding, which is already tighter than this card's 16px inset.
+
               Whole 4px steps throughout — the half-steps this used to hold
               (`pt-0.5`, `gap-y-2.5`, and the header's `pb-2.5`) were the only
               ones on the screen.
             */}
-            <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-4 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
+            <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
               {filterable.map((column) => {
                 const operators = operatorsByKind[columnKind(column, rows)]
                 const active =
