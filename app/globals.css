@@ -169,19 +169,24 @@
      * white already reads against a near-black rail. */
   --sidebar-rail-border: oklch(0.88 0.012 106.5);
   /* A table's header band, and the shade a sortable header takes under the
-     * pointer. Pane 1's surface, pointed at rather than restated: a column
-     * header is chrome in the sense the rail is — a strip that frames the rows
-     * rather than being one — so the two are meant to be the same surface and
-     * to stay that way if the rail is ever retuned. That is the opposite call
-     * to `--content` below, which writes its value out precisely because its
-     * agreement with `--sidebar-accent` is a coincidence of the ramp.
+     * pointer. A column header is chrome in the sense the rail is — a strip
+     * that frames the rows rather than being one — and this was the rail's own
+     * surface for exactly that reason, pointed at rather than restated.
      *
-     * The hover follows the rail's own accent for the same reason: it is
-     * already the answer to "a press on this surface", tuned to a 1.11:1 step
-     * against it, and a header cell asking that question does not need a
-     * second answer. */
-  --table-header: var(--sidebar-rail);
-  --table-header-accent: var(--sidebar-rail-accent);
+     * It is written out now because the two want different *amounts* of that
+     * chrome. The rail's step is read against the workspace, with a whole pane
+     * of it at a time and a border to help; the header is read against the
+     * white card immediately under it, one band a row deep, and at the rail's
+     * 1.19:1 that band was the loudest horizontal in the screen — a stripe
+     * competing with the labels on it. 1.14:1 still separates the band from
+     * the rows without the header having to shout to be chrome.
+     *
+     * Same reason the hover is its own value rather than the rail's press: it
+     * is tuned to hold the pair's 1.11:1 step against the *new* band, so a
+     * sortable cell lifts by as much as it always did. The two numbers move
+     * together or the hover stops clearing the surface it sits on. */
+  --table-header: oklch(0.955 0.007 106.5);
+  --table-header-accent: oklch(0.92 0.01 106.5);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
