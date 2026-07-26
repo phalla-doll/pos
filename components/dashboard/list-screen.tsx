@@ -1017,7 +1017,16 @@ export function ListScreen<T>({
         `min-h-0` + `overflow-auto` hand it back its own scrollbar — which is
         also what the sticky header measures itself against.
       */}
-      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-table-header [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      {/*
+        `rounded-xl`, the radius every other panel in the app takes — the
+        advanced card above it and the record form's card alike. At `rounded-md`
+        this was the odd one out, and it showed most where it mattered: the two
+        panels sit 16px apart in the same column, so a 6px corner under a 12px
+        one read as two boxes from different sets rather than one surface split
+        in two. `overflow-auto` clips the header band to the corners, so the
+        square-cornered cells inside need nothing of their own.
+      */}
+      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-xl border bg-table-header [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
