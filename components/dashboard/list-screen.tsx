@@ -1212,8 +1212,15 @@ export function ListScreen<T>({
                             onChange={(event) =>
                               setFilter(column.key, event.target.value)
                             }
+                            // The field wears the body's surface, `bg-card`,
+                            // in both themes. The vendored input is
+                            // `bg-transparent` (plus a faint lift in dark),
+                            // which was invisible while the header matched the
+                            // rows and is a hole in the band now that it
+                            // doesn't — a search field has to read as
+                            // something you can type into, not as a gap.
                             className={cn(
-                              "h-7 rounded-sm pl-6.5 text-[0.8125rem] md:text-[0.8125rem]",
+                              "h-7 rounded-sm bg-card pl-6.5 text-[0.8125rem] md:text-[0.8125rem] dark:bg-card",
                               isLastFilter && filtersActive && "pr-7"
                             )}
                           />
