@@ -729,8 +729,11 @@ export function ListScreen<T>({
               `pt-4` matches the `px-4` beside it, so the card's top inset is
               the same 16px as its sides rather than the 12px it used to be —
               the one corner where the padding didn't square up.
+
+              `pb-3` is the top half of the gap to the fields; the grid's `pt-1`
+              is the rest. See there for why the pair adds to 16.
             */}
-            <div className="flex flex-row items-start justify-between gap-4 px-4 pt-4 pb-2.5">
+            <div className="flex flex-row items-start justify-between gap-4 px-4 pt-4 pb-3">
               <div className="flex flex-col gap-1">
                 {/* Named for the button that opens it, not for what it does:
                     "Search" alone repeated the word on the button an inch
@@ -780,8 +783,19 @@ export function ListScreen<T>({
               The pair repeats at `lg`: the popover was 28rem wide and had one
               condition per line, but a full-width card would stretch each
               field across the screen to say the same thing.
+
+              `pt-1` on top of the header's `pb-3` puts 16px between the
+              description and the first field, against `gap-y-2`'s 8px between
+              the fields themselves. The ratio is the point: a heading has to
+              sit further from its group than the group's items sit from each
+              other, and the old 12-against-10 said the description was simply
+              another row.
+
+              Whole 4px steps throughout — the half-steps this used to hold
+              (`pt-0.5`, `gap-y-2.5`, and the header's `pb-2.5`) were the only
+              ones on the screen.
             */}
-            <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 overflow-y-auto px-4 pt-0.5 pb-4 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
+            <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-4 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
               {filterable.map((column) => {
                 const operators = operatorsByKind[columnKind(column, rows)]
                 const active =
