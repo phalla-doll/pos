@@ -9,6 +9,8 @@
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
+  --color-table-header: var(--table-header);
+  --color-table-header-accent: var(--table-header-accent);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -166,6 +168,20 @@
      * points it back at `--sidebar-border`, where the existing translucent
      * white already reads against a near-black rail. */
   --sidebar-rail-border: oklch(0.88 0.012 106.5);
+  /* A table's header band, and the shade a sortable header takes under the
+     * pointer. Pane 1's surface, pointed at rather than restated: a column
+     * header is chrome in the sense the rail is — a strip that frames the rows
+     * rather than being one — so the two are meant to be the same surface and
+     * to stay that way if the rail is ever retuned. That is the opposite call
+     * to `--content` below, which writes its value out precisely because its
+     * agreement with `--sidebar-accent` is a coincidence of the ramp.
+     *
+     * The hover follows the rail's own accent for the same reason: it is
+     * already the answer to "a press on this surface", tuned to a 1.11:1 step
+     * against it, and a header cell asking that question does not need a
+     * second answer. */
+  --table-header: var(--sidebar-rail);
+  --table-header-accent: var(--sidebar-rail-accent);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
@@ -253,6 +269,20 @@
      * already rendering, so the bar is unchanged and the rail's edge comes up
      * to meet it. */
   --sidebar-rail-border: oklch(0.322 0.014 107.1);
+  /* Dark cannot borrow the rail the way light does — up there the rail is a
+     * step under the workspace, but here it *is* the card (0.228), so a header
+     * band on it would be the card it is meant to stand out from. It takes the
+     * ramp's next step instead, the same 0.286 fill the panel's accent uses:
+     * page 0.153 → card 0.228 → header 0.286, so the band is the top of the
+     * ramp and the rows below it are not.
+     *
+     * The hover keeps the light pair's 1.11:1 relative step, measured on this
+     * surface and going the other way — dark surfaces lift under the pointer
+     * where light ones sink. Written out because there is no fill at this shade
+     * to point at; `--sidebar-rail-border`'s 0.322 is close, but a line's
+     * colour and a surface's are not the same thing to keep in step. */
+  --table-header: var(--muted);
+  --table-header-accent: oklch(0.316 0.017 107.4);
   /* Dark takes the page, not pane 1 like the light block does: here the rail
      * and the card are the same 0.228, so a workspace on the rail would leave
      * every card invisible against the surface it sits on. The page is a step
