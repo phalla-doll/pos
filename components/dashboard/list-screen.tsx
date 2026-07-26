@@ -109,7 +109,7 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
-import { toolbarButton } from "@/lib/screen-toolbar"
+import { toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import {
   defaultPageSize,
   pageSizes,
@@ -863,7 +863,15 @@ export function ListScreen<T>({
               invites the wrong one.
             */}
             <div className="flex items-center gap-2 border-t px-4 py-3">
-              <Button type="submit" className="pr-3 pl-2.5">
+              {/*
+                `toolbarMetrics`, not the same two numbers written out again:
+                Apply leads this card the way New leads the toolbar, and the
+                padding an icon-led button in this app takes is stated once.
+                Not the full `toolbarButton` — that colours a button like the
+                `default` variant on the blue palette, and this one already
+                *is* `default`, so there is nothing for it to swap.
+              */}
+              <Button type="submit" className={toolbarMetrics}>
                 <Search />
                 Apply
               </Button>

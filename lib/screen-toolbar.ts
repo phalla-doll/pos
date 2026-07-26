@@ -14,8 +14,10 @@
 
 /**
  * Being *in* the row: the metrics every segment shares, so the group and the
- * pill beside it line up as one row. Wanted on its own by the button that
- * takes the shape without the colour — see below.
+ * pill beside it line up as one row. Wanted on its own by the buttons that
+ * take the shape without the colour — the destructive one described below, and
+ * the advanced card's Apply, which leads its surface the way New leads the
+ * toolbar and is already `default`, so it has no palette swap to make.
  */
 export const toolbarMetrics = "pr-3 pl-2.5"
 
