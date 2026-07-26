@@ -906,6 +906,30 @@ export function ListScreen<T>({
         them.
       */}
       {/*
+        This box wears the *header's* colour, not the card's, and `TableBody`
+        below paints the card back over the rows. That looks inside out until
+        you find the 6px down the right-hand side that neither the header nor
+        the rows can reach: `scrollbar-subtle` sets an explicit
+        `::-webkit-scrollbar` width, which makes the scrollbar take layout space
+        and leaves its track transparent, so the strip beside the table shows
+        whatever this element's background is. On `bg-card` that put a notch of
+        card colour at the end of the header band — invisible beside the white
+        rows, obvious beside a tinted header.
+
+        A table can't help: the strip is outside the table's box, so no cell,
+        row, or column can extend into it. What *can* cover it is this element,
+        which is why the two colours swap places. The strip is then the band's
+        colour for the table's full height, which beside the header is the band
+        and beside the rows is a tinted scrollbar track — a track is a
+        reasonable thing for a strip under a scrollbar to look like, where a
+        notch in the header is not.
+
+        A row group paints under its rows and cells, so `bg-card` on the body
+        changes nothing about the rows themselves: the zebra `even:bg-muted/30`,
+        the hover, and the selected fill all still composite over card exactly
+        as they did.
+      */}
+      {/*
         `overflow-visible` on the table's own container is what makes the
         sticky header work. `Table` wraps itself in an `overflow-x-auto` div,
         and a box with `overflow-x: auto` computes `overflow-y` to `auto` as
@@ -941,7 +965,7 @@ export function ListScreen<T>({
         `min-h-0` + `overflow-auto` hand it back its own scrollbar — which is
         also what the sticky header measures itself against.
       */}
-      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-table-header [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
@@ -1242,7 +1266,7 @@ export function ListScreen<T>({
               </TableRow>
             )}
           </TableHeader>
-          <TableBody>
+          <TableBody className="bg-card">
             {visibleRows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
