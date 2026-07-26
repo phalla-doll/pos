@@ -187,13 +187,14 @@ const indeterminateDash =
 /**
  * The header's surface, and the surface a sortable cell takes under the
  * pointer. A pair, because the second only means anything relative to the
- * first: the hover has to clear the band, and the band is a good deal darker
- * than the `bg-muted` the hover used to be.
+ * first: the hover has to clear the band, and the band is not the `bg-muted`
+ * the hover used to be.
  *
- * Both are the chrome's shades — `--table-header` is pane 1's surface, the same
- * one the sidebar rail wears, and the hover is that surface's own press. The
- * two shades and the reason a header is chrome at all are stated once in
- * `app/globals.css`; these are the utilities that spend them.
+ * Both are the chrome's shades — `--table-header` is the band, a step off the
+ * card in whichever direction the theme goes, and the hover is that surface's
+ * own press. The two shades, the step between them, and the reason a header is
+ * chrome at all are stated once in `app/globals.css`; these are the utilities
+ * that spend them.
  *
  * Not `bg-muted`, and the body is why: rows alternate on `bg-muted/30`, so a
  * header at `bg-muted` is the same grey the eye is already watching the rows
