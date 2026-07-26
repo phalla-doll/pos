@@ -809,7 +809,7 @@ export function ListScreen<T>({
               enough to eat into the fields.
             */}
             <div className="grid scrollbar-subtle max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
-              {filterable.map((column) => {
+              {filterable.map((column, index) => {
                 const operators = operatorsByKind[columnKind(column, rows)]
                 const active =
                   operators.find((o) => o.op === draft[column.key]?.op) ??
@@ -822,10 +822,23 @@ export function ListScreen<T>({
                       field's name — which is what it was when it sat above the
                       input, but not what it is on a shared row where the eye
                       compares the two directly.
+
+                      `lg:pl-2` on the second of the pair is what keeps the two
+                      conditions on a row reading as two. There is one `gap-x`
+                      for every column, so at `lg` a label sat 24px from the
+                      field it names *and* 24px from the field before it —
+                      equidistant between the two, belonging to neither. The
+                      padding is inside the label's own track, so it widens the
+                      gap the eye crosses between pairs to 32 while the one
+                      inside a pair stays 24. Only at `lg`: below it there is
+                      one pair per row and nothing to separate.
                     */}
                     <label
                       htmlFor={`adv-${column.key}`}
-                      className="truncate text-sm font-medium"
+                      className={cn(
+                        "truncate text-sm font-medium",
+                        index % 2 === 1 && "lg:pl-2"
+                      )}
                     >
                       {column.header}
                     </label>
