@@ -865,9 +865,14 @@ export function ListScreen<T>({
         The line-height stays inherited, which keeps the rows from tightening.
 
         Smaller text is not licence to squeeze the box around it, though.
-        `py-2.5` puts a row at 40px against the 13px text's inherited 20px
-        line-height — an equal 10px above and below, which is what stops a
+        `py-2` puts a row at 36px against the 13px text's inherited 20px
+        line-height — an equal 8px above and below, which is what stops a
         column of values reading as one block of text with rules through it.
+
+        36px is also what both header rows are, so every row in the table is
+        one height: the label row, the search row under it, and the data. A
+        single step down the whole table is what makes the two sticky rows read
+        as the top of these rows rather than as a strip of chrome above them.
 
         `px-3` widens the gutters to 24px between neighbouring columns, and it
         is set on `th` and `td` alike: the two share this padding, so a change
@@ -910,7 +915,7 @@ export function ListScreen<T>({
         `min-h-0` + `overflow-auto` hand it back its own scrollbar — which is
         also what the sticky header measures itself against.
       */}
-      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
@@ -961,10 +966,11 @@ export function ListScreen<T>({
             for part of the table's border geometry.
           */}
           {/*
-            `h-9` — a notch under the 40px body row rather than level with it.
-            The header is a label for the column, so it should not out-weigh a
-            row of the data; what it must not be is *tighter* than one, which
-            the old 32px was the moment the rows opened up.
+            `h-9` — 36px, the same height as a body row and as the search row
+            below. The header carries its weight in the label's colour and the
+            rule under it rather than in extra height, so there is nothing for
+            a taller row to say; what it must not be is *tighter* than a data
+            row, which the old 32px was the moment the rows opened up.
           */}
           <TableHeader className="sticky top-0 z-10 [&_th]:h-9 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
             <TableRow className="hover:bg-transparent">
