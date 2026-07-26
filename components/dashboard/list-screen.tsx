@@ -864,9 +864,15 @@ export function ListScreen<T>({
         wide table fit more per screen without the chrome shrinking with it.
         The line-height stays inherited, which keeps the rows from tightening.
 
-        `py-1.5` trims the cell padding to match — vertical only, since the
-        horizontal padding is shared with the header cells above and changing
-        it here would knock the columns out of alignment with them.
+        Smaller text is not licence to squeeze the box around it, though.
+        `py-2.5` puts a row at 40px against the 13px text's inherited 20px
+        line-height — an equal 10px above and below, which is what stops a
+        column of values reading as one block of text with rules through it.
+
+        `px-3` widens the gutters to 24px between neighbouring columns, and it
+        is set on `th` and `td` alike: the two share this padding, so a change
+        to one alone would knock the labels out of line with the values under
+        them.
       */}
       {/*
         `overflow-visible` on the table's own container is what makes the
@@ -880,9 +886,14 @@ export function ListScreen<T>({
       {/*
         The checkbox column is padded on both sides. The vendored table zeroes
         the right padding of any cell holding a checkbox, so the column read as
-        4px of gutter left of the tick and only the next cell's 8px to its
-        right — the tick sat nearer its label than the table edge. `pr-2` puts
-        the same 16px on both sides of it.
+        4px of gutter left of the tick and only the next cell's padding to its
+        right — the tick sat nearer its label than the table edge. `pl-4` and
+        `pr-1` put the same 16px on both sides of it: 4px here plus the next
+        cell's 12px of `px-3`.
+
+        So this one number follows the gutter rather than standing on its own —
+        widening the columns without it would leave the tick pinned to the edge
+        it was moved off.
 
         It has to be spelled as the same kind of descendant override as the
         `pl-4` beside it: the vendored rule is `:has([role=checkbox])`, which
@@ -899,7 +910,7 @@ export function ListScreen<T>({
         `min-h-0` + `overflow-auto` hand it back its own scrollbar — which is
         also what the sticky header measures itself against.
       */}
-      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:py-1.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-2 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pr-2 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-md border bg-card [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2.5 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
@@ -949,7 +960,13 @@ export function ListScreen<T>({
             the edge the scrolling body meets, and a shadow can't be mistaken
             for part of the table's border geometry.
           */}
-          <TableHeader className="sticky top-0 z-10 [&_th]:h-8 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
+          {/*
+            `h-9` — a notch under the 40px body row rather than level with it.
+            The header is a label for the column, so it should not out-weigh a
+            row of the data; what it must not be is *tighter* than one, which
+            the old 32px was the moment the rows opened up.
+          */}
+          <TableHeader className="sticky top-0 z-10 [&_th]:h-9 [&_th]:bg-card [&_tr:last-child_th]:shadow-[inset_0_-1px_0_var(--border)] [&_tr:not(:last-child)_th]:border-b">
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-0">
                 <Checkbox
@@ -1130,11 +1147,11 @@ export function ListScreen<T>({
                     canFilter &&
                     filterable[filterable.length - 1]?.key === column.key
                   return (
-                    // `py-0.5` around the `h-7` input puts this row at the same
-                    // 32px as the label row above it — the two read as one
+                    // `py-1` around the `h-7` input puts this row at the same
+                    // 36px as the label row above it — the two read as one
                     // header rather than a header with a taller strip bolted
                     // under it.
-                    <TableHead key={column.key} className="py-0.5">
+                    <TableHead key={column.key} className="py-1">
                       {canFilter ? (
                         <div className="relative">
                           <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
