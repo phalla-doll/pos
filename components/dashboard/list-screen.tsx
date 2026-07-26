@@ -722,9 +722,11 @@ export function ListScreen<T>({
         <div id={advancedId} className="rounded-xl border bg-card">
           <form onSubmit={applyAdvanced} className="flex flex-col">
             {/*
-              `items-start` rather than `items-center`: the header is two lines
-              tall, and Clear belongs beside the title it sits with, not centred
-              against the description below it.
+              `items-center` now that the header is a single line: the title and
+              Clear are two things on one row, and centring is what puts them on
+              it. It read `items-start` while a description sat under the title,
+              where Clear had to be pinned to the line it belongs beside rather
+              than centred against the whole two-line block.
 
               `pt-4` matches the `px-4` beside it, so the card's top inset is
               the same 16px as its sides rather than the 12px it used to be —
@@ -732,30 +734,36 @@ export function ListScreen<T>({
 
               `pb-3` is the top half of the gap to the fields; the grid's `pt-1`
               is the rest. See there for why the pair adds to 16.
+
+              `min-h-6` holds the row at Clear's height whether Clear is there
+              or not. Without it the row is the title's 20px line box until the
+              first keystroke fills a condition, at which point Clear appears at
+              24 and shoves every field down 4px — a card that flinches as you
+              start typing into it. The two-line header this replaced was taller
+              than the button and so never had the problem.
             */}
-            <div className="flex flex-row items-start justify-between gap-4 px-4 pt-4 pb-3">
-              <div className="flex flex-col gap-1">
-                {/* Named for the button that opens it, not for what it does:
-                    "Search" alone repeated the word on the button an inch
-                    above, leaving nothing to say this is the deeper of the two
-                    surfaces. */}
-                <p className="text-sm font-semibold">Advanced search</p>
-                {/*
-                  Says the thing the card does not show on its own: that the
-                  conditions combine rather than replacing each other.
-                */}
-                <p className="text-sm text-muted-foreground">
-                  Match on several columns at once.
-                </p>
-              </div>
+            <div className="flex min-h-6 flex-row items-center justify-between gap-4 px-4 pt-4 pb-3">
+              {/* Named for the button that opens it, not for what it does:
+                  "Search" alone repeated the word on the button an inch above,
+                  leaving nothing to say this is the deeper of the two surfaces.
+
+                  It stands alone. A description under it once said the
+                  conditions combine rather than replacing each other, which the
+                  card does not show on its own — but it said it on every open,
+                  forever, about a card whose four labelled rows and single
+                  Apply are not hard to read. A permanent sentence explaining a
+                  surface is a cost the surface pays every time. */}
+              <p className="text-sm font-semibold">Advanced search</p>
               {draftActive && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="xs"
-                  // Shifted up to sit on the title's line, undoing the button's
-                  // own vertical slack against a one-line title.
-                  className="-mt-0.5 shrink-0"
+                  // No vertical nudge: the row centres the two now, and the
+                  // button is taller than the title's line box, so it is what
+                  // sets the row's height rather than needing to be aligned
+                  // into it.
+                  className="shrink-0"
                   onClick={() => setDraft({})}
                 >
                   Clear
