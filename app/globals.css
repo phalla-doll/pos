@@ -276,18 +276,25 @@
   --sidebar-rail-border: oklch(0.322 0.014 107.1);
   /* Dark cannot borrow the rail the way light does — up there the rail is a
      * step under the workspace, but here it *is* the card (0.228), so a header
-     * band on it would be the card it is meant to stand out from. It takes the
-     * ramp's next step instead, the same 0.286 fill the panel's accent uses:
-     * page 0.153 → card 0.228 → header 0.286, so the band is the top of the
-     * ramp and the rows below it are not.
+     * band on it would be the card it is meant to stand out from. It sits
+     * between the card and `--muted`'s 0.286 instead: page 0.153 → card 0.228
+     * → header 0.274, so the band is still the top of the ramp and the rows
+     * below it are not.
+     *
+     * Not `--muted` itself, which is what this was. That put the band 1.19:1
+     * over the card — the same step light's rail gave it, and too loud for the
+     * same reason: a header is one row-deep strip read against the rows right
+     * under it, not a pane. 1.14:1 is the step both themes take now, so the
+     * band reads as the same amount of chrome whichever one is on.
      *
      * The hover keeps the light pair's 1.11:1 relative step, measured on this
      * surface and going the other way — dark surfaces lift under the pointer
-     * where light ones sink. Written out because there is no fill at this shade
-     * to point at; `--sidebar-rail-border`'s 0.322 is close, but a line's
-     * colour and a surface's are not the same thing to keep in step. */
-  --table-header: var(--muted);
-  --table-header-accent: oklch(0.316 0.017 107.4);
+     * where light ones sink. Both are written out because there is no fill at
+     * either shade to point at; `--sidebar-rail-border`'s 0.322 is near the
+     * hover, but a line's colour and a surface's are not the same thing to
+     * keep in step. */
+  --table-header: oklch(0.274 0.015 107.4);
+  --table-header-accent: oklch(0.305 0.016 107.4);
   /* Dark takes the page, not pane 1 like the light block does: here the rail
      * and the card are the same 0.228, so a workspace on the rail would leave
      * every card invisible against the surface it sits on. The page is a step
