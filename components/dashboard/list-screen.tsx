@@ -725,8 +725,12 @@ export function ListScreen<T>({
               `items-start` rather than `items-center`: the header is two lines
               tall, and Clear belongs beside the title it sits with, not centred
               against the description below it.
+
+              `pt-4` matches the `px-4` beside it, so the card's top inset is
+              the same 16px as its sides rather than the 12px it used to be —
+              the one corner where the padding didn't square up.
             */}
-            <div className="flex flex-row items-start justify-between gap-4 px-4 pt-3 pb-2.5">
+            <div className="flex flex-row items-start justify-between gap-4 px-4 pt-4 pb-2.5">
               <div className="flex flex-col gap-1">
                 {/* Named for the button that opens it, not for what it does:
                     "Search" alone repeated the word on the button an inch
