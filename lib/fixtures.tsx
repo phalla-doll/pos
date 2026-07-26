@@ -5,6 +5,7 @@
  */
 
 import { BrandMark } from "@/components/brand-mark"
+import { assetPath } from "@/lib/asset-path"
 
 export type Customer = {
   id: string
@@ -728,7 +729,7 @@ export const businessDate = "Thu 16 Jul"
 export const sidebarUser = {
   name: "shadcn",
   email: "m@example.com",
-  avatar: "/avatars/shadcn.png",
+  avatar: assetPath("/avatars/shadcn.png"),
   // The identity card above the menu search: session and company context.
   lastSignedOn: "01 JAN 2025 at 06:29",
   loginAttempts: 0,
