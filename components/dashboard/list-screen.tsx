@@ -802,8 +802,13 @@ export function ListScreen<T>({
               Whole 4px steps throughout — the half-steps this used to hold
               (`pt-0.5`, `gap-y-2.5`, and the header's `pb-2.5`) were the only
               ones on the screen.
+
+              `scrollbar-subtle` for the same reason the table box wears it:
+              once there are enough filterable columns to scroll, a default
+              scrollbar is both louder than the one 16px below it and wide
+              enough to eat into the fields.
             */}
-            <div className="grid max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
+            <div className="grid scrollbar-subtle max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
               {filterable.map((column) => {
                 const operators = operatorsByKind[columnKind(column, rows)]
                 const active =
