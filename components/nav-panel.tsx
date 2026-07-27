@@ -18,6 +18,7 @@ import {
   type NavEntry,
 } from "@/lib/nav"
 import type { Screen, ScreenType } from "@/lib/screens"
+import { navItemText } from "@/lib/sidebar-metrics"
 import type { ScreenRef } from "@/lib/tab-identity"
 import { cn } from "@/lib/utils"
 
@@ -105,7 +106,7 @@ function ScreenRow({
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        className="h-10"
+        className={cn("h-10", navItemText)}
         isActive={focusedType === screen.type}
         render={
           <Link
@@ -171,7 +172,7 @@ export function NavPanel({
           ) : (
             <SidebarMenuItem key={child.label}>
               <SidebarMenuButton
-                className="h-10"
+                className={cn("h-10", navItemText)}
                 onClick={() => onDrill(child.label)}
               >
                 {child.icon}

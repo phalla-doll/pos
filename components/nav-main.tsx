@@ -18,6 +18,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { useTabLauncherHref } from "@/hooks/use-tabs"
+import { navItemText, navSubItemText } from "@/lib/sidebar-metrics"
 import { cn } from "@/lib/utils"
 import type { NavEntry } from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
@@ -74,16 +75,6 @@ export function NavMain({
     </SidebarGroup>
   )
 }
-
-/**
- * Nav items sit a half-step under the sidebar primitive's `text-sm` (13.5px).
- * Stated twice because the two primitives declare their size differently:
- * `SidebarMenuButton` uses a plain `text-sm` that tailwind-merge drops, while
- * `SidebarMenuSubButton` states it under `data-[size=md]`, which outranks a
- * bare class on specificity — so the override has to match that variant.
- */
-const navItemText = "text-[0.84375rem]"
-const navSubItemText = "data-[size=md]:text-[0.84375rem]"
 
 /**
  * One nav entry, rendered recursively. A single code path handles both a

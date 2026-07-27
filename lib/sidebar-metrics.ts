@@ -31,3 +31,21 @@ export const SIDEBAR_WIDTH_ICON = "3rem"
  */
 export const railButton =
   "size-9! group-data-[collapsible=icon]:size-9! justify-center [&_svg]:size-4!"
+
+/**
+ * A nav item's label size: 13.5px, a half-step under the vendored `text-sm`.
+ *
+ * Stated here rather than at each call site because both sidebars render nav
+ * items — pane 2's drill-in panel on desktop (`components/nav-panel.tsx`), the
+ * whole tree in the off-canvas sheet on mobile (`components/nav-main.tsx`) —
+ * and a size that only lands on one of them is the drift this file exists to
+ * prevent.
+ *
+ * Two constants because the two primitives declare their size differently:
+ * `SidebarMenuButton` uses a plain `text-sm` that tailwind-merge drops in
+ * favour of whatever `className` brings, while `SidebarMenuSubButton` states
+ * its size under `data-[size=md]`, whose attribute selector outranks a bare
+ * class — so the override has to re-assert under the same variant to win.
+ */
+export const navItemText = "text-[0.84375rem]"
+export const navSubItemText = "data-[size=md]:text-[0.84375rem]"
