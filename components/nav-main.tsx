@@ -76,6 +76,16 @@ export function NavMain({
 }
 
 /**
+ * Nav items sit a half-step under the sidebar primitive's `text-sm` (13.5px).
+ * Stated twice because the two primitives declare their size differently:
+ * `SidebarMenuButton` uses a plain `text-sm` that tailwind-merge drops, while
+ * `SidebarMenuSubButton` states it under `data-[size=md]`, which outranks a
+ * bare class on specificity — so the override has to match that variant.
+ */
+const navItemText = "text-[0.84375rem]"
+const navSubItemText = "data-[size=md]:text-[0.84375rem]"
+
+/**
  * One nav entry, rendered recursively. A single code path handles both a
  * `screen` leaf (a tab launcher) and a collapsible `group`; the link is
  * constructed once and the trigger content is shared. The only thing that
@@ -108,7 +118,7 @@ function NavNode({
       <SidebarMenuItem>
         <SidebarMenuButton
           tooltip={screen.label}
-          className="h-10"
+          className={cn("h-10", navItemText)}
           render={link}
         >
           {content}
@@ -116,7 +126,10 @@ function NavNode({
       </SidebarMenuItem>
     ) : (
       <SidebarMenuSubItem>
-        <SidebarMenuSubButton className="h-8" render={link}>
+        <SidebarMenuSubButton
+          className={cn("h-8", navSubItemText)}
+          render={link}
+        >
           {content}
         </SidebarMenuSubButton>
       </SidebarMenuSubItem>
@@ -166,7 +179,7 @@ function NavNode({
           render={
             <SidebarMenuButton
               tooltip={entry.label}
-              className="group/collapsible h-10"
+              className={cn("group/collapsible h-10", navItemText)}
             >
               {triggerContent}
             </SidebarMenuButton>
@@ -176,7 +189,9 @@ function NavNode({
         <CollapsibleTrigger
           nativeButton={false}
           render={
-            <SidebarMenuSubButton className="group/collapsible-sub h-8">
+            <SidebarMenuSubButton
+              className={cn("group/collapsible-sub h-8", navSubItemText)}
+            >
               {triggerContent}
             </SidebarMenuSubButton>
           }
