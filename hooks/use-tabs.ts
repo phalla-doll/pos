@@ -1,13 +1,14 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { useQueryStates } from "nuqs"
 
 import type { ScreenType } from "@/lib/screens"
 import { draftParam } from "@/lib/record-param"
 import type { ScreenRef, Tab } from "@/lib/tab-identity"
 import {
-  contentFromParams,
+  contentFromSearch,
   launcherHref,
   tabParsers,
   toTabParams,
@@ -84,11 +85,33 @@ function newId() {
  * `freshWorkspaceHref` until the client knows what's open.
  */
 export function useTabLauncherHref(): (ref: ScreenRef) => string {
-  const [{ tabs, i }] = useQueryStates(tabParsers, tabUrlOptions)
+  const search = useUrlSearch()
   return React.useCallback(
-    (ref: ScreenRef) => launcherHref(contentFromParams({ tabs, i }), ref),
-    [tabs, i]
+    (ref: ScreenRef) => launcherHref(contentFromSearch(search), ref),
+    [search]
   )
+}
+
+/**
+ * The raw query string everything here reads the workspace out of.
+ *
+ * `useSearchParams` directly, rather than subscribing through nuqs. That is
+ * deliberate, and it is a bug fix:
+ * `useQueryStates` caches its parsed value behind refs it mutates during
+ * render, and a render React discards poisons that cache. The panel's own
+ * click handler does exactly that — selecting a screen navigates *and* retires
+ * an unpinned panel, so the urgent `setTransientOpen(false)` interrupts the
+ * navigation's transition render. nuqs then kept handing back the *previous*
+ * URL's tabs forever: launcher hrefs were built from a workspace one screen
+ * out of date, so the link replaced the open tab instead of adding to it, and
+ * the workspace stopped mounting the tabs the URL already named.
+ *
+ * Reading the URL straight has no cache to go stale — the answer is a pure
+ * function of the query string React just rendered with. nuqs still owns the
+ * write, where its throttling and atomic multi-param update are the point.
+ */
+function useUrlSearch(): string {
+  return useSearchParams().toString()
 }
 
 /**
@@ -105,12 +128,12 @@ export function useSidebarLaunchState(): {
   hrefFor: (ref: ScreenRef) => string
   focusedType: ScreenType | null
 } {
-  const [{ tabs, i }] = useQueryStates(tabParsers, tabUrlOptions)
+  const search = useUrlSearch()
   const hrefFor = React.useCallback(
-    (ref: ScreenRef) => launcherHref(contentFromParams({ tabs, i }), ref),
-    [tabs, i]
+    (ref: ScreenRef) => launcherHref(contentFromSearch(search), ref),
+    [search]
   )
-  const content = contentFromParams({ tabs, i })
+  const content = contentFromSearch(search)
   const focusedType = content.refs[content.activeIndex]?.screenType ?? null
   return { hrefFor, focusedType }
 }
@@ -135,12 +158,21 @@ export function useSidebarLaunchState(): {
  * This hook is a thin **adapter**: the algebra is the pure {@link tabsReducer},
  * and nuqs owns the router write.
  *
+ * The read and the write come from different places on purpose. nuqs still
+ * owns the *write* — one atomic, throttled update of both params. But the
+ * *read* is `useSearchParams` straight, for the reason spelled out on
+ * {@link useUrlSearch}: `useQueryStates` caches its parsed value behind
+ * refs it mutates during render, and a render React discards leaves that cache
+ * permanently one URL behind. The workspace is interrupted mid-navigation
+ * routinely — the sidebar panel retires itself on the same click that opens a
+ * screen — so it hit exactly that, and stopped picking up tabs the URL had.
+ *
  * Uses `useSearchParams` underneath, so callers must sit inside `<Suspense>`.
  */
 export function useTabs(): TabsApi {
-  const [params, setParams] = useQueryStates(tabParsers, tabUrlOptions)
+  const [, setParams] = useQueryStates(tabParsers, tabUrlOptions)
   const [state, setState] = React.useState(initialWorkspaceState)
-  const urlContent = contentFromParams(params)
+  const urlContent = contentFromSearch(useUrlSearch())
 
   // Reconcile only when the URL *changed*, and only when that change isn't
   // just our own write echoing back. Both conditions matter:
