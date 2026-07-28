@@ -621,6 +621,30 @@
 .toolbar-tint:hover,
 .toolbar-tint[aria-expanded="true"] {
   background-color: var(--toolbar-chip);
+  /* And an edge on it, drawn the same way the tray's rim is: the accent mixed
+   * into the surface it borders, so it is that surface's own edge rather than a
+   * line laid around it. The button already carries a transparent 1px border,
+   * so this is a colour arriving, not a box growing — the row can't shift under
+   * the pointer.
+   *
+   * It is what finishes the lift. The chip rises off the tray by dropping the
+   * blue, which is a change of saturation at almost no change in depth (see
+   * `--toolbar-chip`), and a raised surface with no edge reads as a patch where
+   * the tint was wiped off. The rim is what a raised thing has.
+   *
+   * 25% against the tray's 20%, which is the difference in what each has to
+   * cross. The tray's rim separates the tray from the page — the full step from
+   * a tint to white. This one separates the chip from the tint, which is a
+   * fraction of that distance, so the same percentage would leave the edge with
+   * the harder job the weaker of the two. At these numbers they come out level:
+   * each sits about 0.09 of lightness off the surface behind it, so the row
+   * reads as one object edged once, not as a chip outlined louder than the tray
+   * holding it. */
+  border-color: color-mix(
+    in oklab,
+    var(--toolbar-accent) 25%,
+    var(--toolbar-chip)
+  );
 }
 
 /* Restored explicitly: the rules above outrank `focus-visible:border-ring`, and
