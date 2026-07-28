@@ -41,8 +41,17 @@
  * a row of them, matching the tray makes the end ones look like its own caps. A
  * button *alone* in a tray has no row to be part of and takes the pill at its
  * call site, where that case is argued.
+ *
+ * `font-normal` against the button base's `font-medium`. Five or six labels in a
+ * row, all at the same emphasis, is a row that shouts every option equally — and
+ * this row is chrome above the screen's content, so nothing in it is the thing
+ * you came to read. Body weight leaves the emphasis to the parts that carry
+ * meaning: the accent on the icons, Delete's red, and the chip a hover lifts
+ * out of the tray. It is stated here rather than on `toolbarButton` so the
+ * buttons that take the shape without the tint — Delete, and the advanced
+ * card's Apply — keep the same type as the row they sit in.
  */
-export const toolbarMetrics = "h-7 rounded-[0.75rem] pr-3 pl-2.5"
+export const toolbarMetrics = "h-7 rounded-[0.75rem] pr-3 pl-2.5 font-normal"
 
 /**
  * The tray the buttons sit in — the tinted surface itself, which is the thing
