@@ -99,6 +99,7 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
+import { conditionGroups } from "@/lib/list-filter-grid"
 import { deleteParam } from "@/lib/record-param"
 import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
 import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
@@ -764,33 +765,28 @@ export function ListScreen<T>({
               )}
             </div>
             {/*
-              One grid rather than a stack of per-row flexes: the label column
-              is shared, so every field starts at the same x no matter how long
-              its header is.
+              The outer grid: one track per column of conditions, laid down
+              whether or not there is anything to put in it. One, two at `lg`.
 
-              `fit-content(8rem)` sizes that column to the longest label instead
-              of a fixed width. A fixed one sets the gap to `width - label +
-              gap`, so it grew as labels got shorter and "SKU" sat nearly twice
-              as far from its field as "Category" did. Sizing to content makes
-              the *widest* label define the column, so the tightest row is
-              exactly `gap-x` and no row is arbitrarily loose. The 8rem cap
-              keeps one long header from eating the input's width; `truncate`
-              handles the rest.
+              The tracks are unconditional, and the conditions are grouped to
+              suit them rather than the other way round: `conditionGroups` fills
+              a column before starting the next, so seven conditions are 4/3
+              rather than the 3/2/2 the grid would have spread them into. See
+              `lib/list-filter-grid.ts`.
 
-              `minmax(0,1fr)` lets the input column actually shrink — a bare
-              `1fr` floors at the input's intrinsic width and would push the
-              card wider.
+              `items-start`, so a short last column tops out with the others
+              rather than being stretched down to the tallest one's height.
 
-              The pair repeats at `lg`: the popover was 28rem wide and had one
-              condition per line, but a full-width card would stretch each
-              field across the screen to say the same thing.
+              `gap-x-8` between tracks against the inner grid's `gap-x-4`
+              between a label and its field: the gap the eye crosses to reach
+              the next column has to be plainly wider than the one inside a
+              condition, or the two read as one long row.
 
-              `pt-1` on top of the header's `pb-3` puts 16px between the
-              description and the first field, against `gap-y-2`'s 8px between
-              the fields themselves. The ratio is the point: a heading has to
-              sit further from its group than the group's items sit from each
-              other, and the old 12-against-10 said the description was simply
-              another row.
+              `pt-1` on top of the header's `pb-3` puts 16px between the title
+              and the first field, against `gap-y-2`'s 8px between the fields
+              themselves. The ratio is the point: a heading has to sit further
+              from its group than the group's items sit from each other, and the
+              old 12-against-10 said the title was simply another row.
 
               `pb-3` under the last field rather than the 16 above the first,
               because what the block ends at is not the card's edge but the
@@ -809,96 +805,128 @@ export function ListScreen<T>({
               scrollbar is both louder than the one 16px below it and wide
               enough to eat into the fields.
             */}
-            <div className="grid scrollbar-subtle max-h-[min(26rem,50vh)] grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-[fit-content(8rem)_minmax(0,1fr)_fit-content(8rem)_minmax(0,1fr)] lg:gap-x-6">
-              {filterable.map((column, index) => {
-                const operators = operatorsByKind[columnKind(column, rows)]
-                const active =
-                  operators.find((o) => o.op === draft[column.key]?.op) ??
-                  operators[0]
-                return (
-                  <React.Fragment key={column.key}>
-                    {/*
-                      `text-sm`, matching the input beside it. At `text-xs` the
-                      label read as a caption *about* the field rather than the
-                      field's name — which is what it was when it sat above the
-                      input, but not what it is on a shared row where the eye
-                      compares the two directly.
+            <div className="grid scrollbar-subtle max-h-[min(26rem,50vh)] grid-cols-1 items-start gap-x-8 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-2">
+              {/*
+                A column of conditions, and its own two-track grid: the label
+                column is shared down the column, so every field in it starts at
+                the same x no matter how long its header is.
 
-                      `lg:pl-2` on the second of the pair is what keeps the two
-                      conditions on a row reading as two. There is one `gap-x`
-                      for every column, so at `lg` a label sat 24px from the
-                      field it names *and* 24px from the field before it —
-                      equidistant between the two, belonging to neither. The
-                      padding is inside the label's own track, so it widens the
-                      gap the eye crosses between pairs to 32 while the one
-                      inside a pair stays 24. Only at `lg`: below it there is
-                      one pair per row and nothing to separate.
-                    */}
-                    <label
-                      htmlFor={`adv-${column.key}`}
-                      className={cn(
-                        "truncate text-sm font-medium",
-                        index % 2 === 1 && "lg:pl-2"
-                      )}
-                    >
-                      {column.header}
-                    </label>
-                    <InputGroup>
-                      <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <InputGroupButton
-                                aria-label={`${column.header} operator`}
-                                // A fixed width so every field's divider lands
-                                // in the same place — "=" and "contains" must
-                                // not stagger the inputs.
-                                className="mr-1.5 w-20 justify-between font-normal"
-                              />
-                            }
-                          >
-                            {active.short}
-                            <ChevronDown className="text-muted-foreground/70" />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-56">
-                            {operators.map((operator) => (
-                              <DropdownMenuItem
-                                key={operator.op}
-                                onClick={() =>
-                                  setDraftOperator(column.key, operator.op)
+                `fit-content(8rem)` sizes that track to the longest label
+                instead of a fixed width. A fixed one sets the gap to `width -
+                label + gap`, so it grew as labels got shorter and "SKU" sat
+                nearly twice as far from its field as "Category" did. Sizing to
+                content makes the *widest* label define the track, so the
+                tightest row is exactly `gap-x` and no row is arbitrarily loose.
+                The 8rem cap keeps one long header from eating the input's
+                width; `truncate` handles the rest.
+
+                Per column rather than one label track shared across the card,
+                which is also what killed the `pl-2` this used to need: with the
+                pairs laid out by one grid, a label sat the same `gap-x` from
+                the field it named and from the field before it, so the second
+                of a pair had to be padded away from its neighbour. Separate
+                grids put a real gap between columns, and the label track sizes
+                to its own column's longest header rather than the card's.
+
+                `minmax(0,1fr)` lets the input track actually shrink — a bare
+                `1fr` floors at the input's intrinsic width and would push the
+                card wider.
+              */}
+              {conditionGroups(filterable).map((group) => (
+                <div
+                  // The first condition names the column: groups are rebuilt
+                  // whenever the filterable set changes, and a positional key
+                  // would let React reuse a column's DOM under a new set of
+                  // fields.
+                  key={group[0].key}
+                  className="grid grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2"
+                >
+                  {group.map((column) => {
+                    const operators = operatorsByKind[columnKind(column, rows)]
+                    const active =
+                      operators.find((o) => o.op === draft[column.key]?.op) ??
+                      operators[0]
+                    return (
+                      <React.Fragment key={column.key}>
+                        {/*
+                          `text-sm`, matching the input beside it. At `text-xs`
+                          the label read as a caption *about* the field rather
+                          than the field's name — which is what it was when it
+                          sat above the input, but not what it is on a shared
+                          row where the eye compares the two directly.
+
+                          No padding to hold it off the column beside it: the
+                          columns are separate grids now, so the outer
+                          `gap-x-8` is a real gap rather than one more track
+                          boundary the label sat in the middle of.
+                        */}
+                        <label
+                          htmlFor={`adv-${column.key}`}
+                          className="truncate text-sm font-medium"
+                        >
+                          {column.header}
+                        </label>
+                        <InputGroup>
+                          <InputGroupAddon className="mr-1 border-r border-input py-0 pr-0">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                render={
+                                  <InputGroupButton
+                                    aria-label={`${column.header} operator`}
+                                    // A fixed width so every field's divider lands
+                                    // in the same place — "=" and "contains" must
+                                    // not stagger the inputs.
+                                    className="mr-1.5 w-20 justify-between font-normal"
+                                  />
                                 }
                               >
-                                <span className="w-14 shrink-0 text-muted-foreground">
-                                  {operator.short}
-                                </span>
-                                {operator.label}
-                                {operator.op === active.op && (
-                                  <Check className="ml-auto" />
-                                )}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        id={`adv-${column.key}`}
-                        value={draft[column.key]?.value ?? ""}
-                        onChange={(event) =>
-                          setDraftValue(
-                            column.key,
-                            event.target.value,
-                            active.op
-                          )
-                        }
-                        // The label beside it already names the column, so
-                        // repeating the header here would say the same word
-                        // twice on one row.
-                        placeholder="Value…"
-                      />
-                    </InputGroup>
-                  </React.Fragment>
-                )
-              })}
+                                {active.short}
+                                <ChevronDown className="text-muted-foreground/70" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="start"
+                                className="w-56"
+                              >
+                                {operators.map((operator) => (
+                                  <DropdownMenuItem
+                                    key={operator.op}
+                                    onClick={() =>
+                                      setDraftOperator(column.key, operator.op)
+                                    }
+                                  >
+                                    <span className="w-14 shrink-0 text-muted-foreground">
+                                      {operator.short}
+                                    </span>
+                                    {operator.label}
+                                    {operator.op === active.op && (
+                                      <Check className="ml-auto" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </InputGroupAddon>
+                          <InputGroupInput
+                            id={`adv-${column.key}`}
+                            value={draft[column.key]?.value ?? ""}
+                            onChange={(event) =>
+                              setDraftValue(
+                                column.key,
+                                event.target.value,
+                                active.op
+                              )
+                            }
+                            // The label beside it already names the column, so
+                            // repeating the header here would say the same word
+                            // twice on one row.
+                            placeholder="Value…"
+                          />
+                        </InputGroup>
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
+              ))}
             </div>
             {/*
               Apply leads the footer, under the first condition rather than
