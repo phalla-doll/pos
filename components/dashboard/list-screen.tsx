@@ -581,22 +581,21 @@ export function ListScreen<T>({
             what it is about to remove, which is what makes a destructive
             action safe to put in a toolbar at all.
 
-            The one button in the tray without `toolbarButton`: it takes
-            `toolbarMetrics` so it belongs to the row, but not the tint, so it
-            stays red among the accented ones. `ghost` rather than `outline`
-            for the same reason — the tint's job on the others is to strip the
-            outline back to the tray, and a button that skips the tint needs
-            the same nothing underneath it.
+            And that is why it is no longer red. It used to take
+            `toolbarMetrics` alone so it kept the destructive colour among the
+            accented ones — but the colour is the app's mark for a click that
+            can't be taken back, and this click only asks a question. The
+            answer is where the red belongs, and that is where it still is: the
+            delete tab's Process, and the dialog's own Delete. A warning worn
+            by a button that merely opens the warning is one the eye learns to
+            read past.
           */}
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             disabled={selectedCount === 0}
             onClick={() => requestDelete([...selected])}
-            className={cn(
-              toolbarMetrics,
-              "text-destructive hover:bg-destructive/10 hover:text-destructive"
-            )}
+            className={toolbarButton}
           >
             <Trash2 />
             Delete
