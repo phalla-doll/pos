@@ -766,13 +766,23 @@ export function ListScreen<T>({
             </div>
             {/*
               The outer grid: one track per column of conditions, laid down
-              whether or not there is anything to put in it. One, two at `lg`.
+              whether or not there is anything to put in it. One, two at `lg`,
+              three at `xl`.
+
+              Three only from `xl`, not from `lg`. The value input is what gives
+              way when the card divides — the operator button beside it is a
+              fixed 5rem — so at 1024px minus the sidebar a third track leaves
+              each input around 6rem, narrower than most of what gets typed into
+              it. 1280px is where three of them still read as fields.
 
               The tracks are unconditional, and the conditions are grouped to
               suit them rather than the other way round: `conditionGroups` fills
-              a column before starting the next, so seven conditions are 4/3
-              rather than the 3/2/2 the grid would have spread them into. See
-              `lib/list-filter-grid.ts`.
+              a column before starting the next, so seven conditions are 4/3 and
+              the third track at `xl` is simply empty. Letting the grid place
+              them would spread the same seven as 3/2/2 — every column a stub,
+              and each row of the card three unrelated fields read across. An
+              empty track is the better shape of the two, and it is the one this
+              was asked for. See `lib/list-filter-grid.ts`.
 
               `items-start`, so a short last column tops out with the others
               rather than being stretched down to the tallest one's height.
@@ -805,7 +815,7 @@ export function ListScreen<T>({
               scrollbar is both louder than the one 16px below it and wide
               enough to eat into the fields.
             */}
-            <div className="grid scrollbar-subtle max-h-[min(26rem,50vh)] grid-cols-1 items-start gap-x-8 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-2">
+            <div className="grid scrollbar-subtle max-h-[min(26rem,50vh)] grid-cols-1 items-start gap-x-8 gap-y-2 overflow-y-auto px-4 pt-1 pb-3 lg:grid-cols-2 xl:grid-cols-3">
               {/*
                 A column of conditions, and its own two-track grid: the label
                 column is shared down the column, so every field in it starts at
