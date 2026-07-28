@@ -178,19 +178,56 @@ describe("globals.css", () => {
   })
 
   /**
-   * `blue-solid` is the palette's, not one theme's: it recolours a toolbar to
-   * `--primary`, which only the blue themes move. A blue theme left out of its
-   * selector would show the neutral outline toolbar while the rest of the app
-   * had gone blue.
+   * Every top-level rule in the file, as `[, selector, declarations]`. Comments
+   * are stripped first: one of them contains `{false}`, which would otherwise
+   * end `:root`'s body early and hide half the palette from these checks.
+   * Nested rules are skipped by the leading `[.:[]` — a declaration is indented
+   * and an at-rule starts with `@`.
    */
-  it("scopes blue-solid to every blue theme", () => {
-    const selectors = css.match(/:is\(([^)]*)\)[^{]*\.blue-solid/g) ?? []
+  const rules = [
+    ...css
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .matchAll(/^([.:[][^{}]*)\{([^{}]*)\}/gm),
+  ]
+
+  /**
+   * The toolbar's look — the tray and the buttons in it alike — is the app's,
+   * not one palette's: all four themes wear it. It was scoped to the blue
+   * palette once, and this is the half of that change a later edit could
+   * quietly undo — reintroducing a theme class here would leave the palettes it
+   * left out with an untinted toolbar.
+   */
+  it("tints the toolbar on every theme", () => {
+    const selectors = rules
+      .map(([, selector]) => selector)
+      .filter((selector) => /\.toolbar-(bar|tint)/.test(selector))
     expect(selectors.length).toBeGreaterThan(0)
 
-    for (const theme of themes.filter((t) => paletteOf(t) === "blue")) {
-      for (const selector of selectors) {
-        expect(selector).toContain(`.${theme}`)
+    for (const selector of selectors) {
+      for (const theme of classThemes) {
+        expect(selector).not.toContain(`.${theme}`)
       }
+    }
+  })
+
+  /**
+   * The other half. Those rules read one variable, so a theme that answers
+   * nothing for it mixes its tint from an empty value and renders a toolbar
+   * with no surface at all. The neutral palettes have no accent to derive it
+   * from and carry the blue outright; the blue ones point it at their own.
+   */
+  it("answers the toolbar accent from every theme", () => {
+    for (const theme of themes) {
+      const applies = (selector: string) =>
+        selector.includes(":root") ||
+        new RegExp(`\\.${theme}(?![\\w-])`).test(selector)
+
+      expect(
+        rules.some(
+          ([, selector, body]) =>
+            applies(selector) && body.includes("--toolbar-accent:")
+        )
+      ).toBe(true)
     }
   })
 

@@ -4,7 +4,6 @@ import * as React from "react"
 import { BadgeCheck, Eraser, Plus, Save, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
 import {
   Dialog,
   DialogClose,
@@ -19,7 +18,7 @@ import { useWorkspace } from "@/hooks/use-workspace"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
 import { isDraft, recordId } from "@/lib/record-param"
-import { toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
+import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import { cn } from "@/lib/utils"
 
 export type RecordFormProps<T> = {
@@ -154,22 +153,17 @@ export function RecordForm<T>({
       {/*
         `gap-3` rather than `gap-2`, matching the list's toolbar: the wider gap
         is what earns Close its "different kind of thing" standing beside the
-        group — at `gap-2` the split read as the spacing the group itself would
-        take if it wrapped, saying nothing.
+        actions — at `gap-2` the split read as the spacing inside a tray,
+        saying nothing.
       */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">{creating ? draftLabel : `Edit ${noun}`}</h1>
         {/*
-          The same pill-ends, flat-joins radius the list's toolbar uses — see
-          `list-screen.tsx` for why both halves are needed and why the
-          right-hand rule writes `[data-slot]` twice. Stated in the same
-          selector form here rather than shared, since `ButtonGroup` is
-          vendored and neither call site may edit it.
-
-          The selectors are the group's own, so which segment is first or last
-          still follows the `creating`/`missing` conditions below.
+          The same tray the list's toolbar leads with, and the whole of what it
+          looks like is `toolbarBar` — so the two rows can't drift apart the
+          way they did while each call site spelled its own radius out.
         */}
-        <ButtonGroup className="[&>[data-slot]:first-child]:rounded-l-full [&>[data-slot][data-slot]:not(:has(~[data-slot]))]:rounded-r-full!">
+        <div role="group" className={toolbarBar}>
           {/*
             Save leads the toolbar, before the way out of the tab: the order is
             what you do here, then what you do to leave. `form` points it at
@@ -207,15 +201,22 @@ export function RecordForm<T>({
             longer carries it, so the deliberate act of opening a record is what
             puts its delete in reach.
 
-            The one segment with no `toolbarButton`: it keeps its own colour on
-            every palette, so on blue it stays quiet between the solid ones
-            rather than joining the bar. Deleting should not look like the
-            thing beside it.
+            The one button in the tray with no `toolbarButton`: it keeps its own
+            colour on every theme, staying red among the accented ones rather
+            than joining them. Deleting should not look like the thing beside
+            it.
+
+            `ghost`, where the rest are `outline`: what `toolbar-tint` does for
+            them is strip the outline back to the tray, and this button — which
+            takes the metrics but not the tint — needs the same nothing
+            underneath it. Asking for a variant that has no fill is cheaper than
+            turning one off. Its hover is red rather than the tray's neutral,
+            which is the point of it not being a `toolbarButton`.
           */}
           {!creating && !missing && (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => setConfirmingDelete(true)}
               className={cn(
                 toolbarMetrics,
@@ -246,28 +247,33 @@ export function RecordForm<T>({
               Clear
             </Button>
           )}
-        </ButtonGroup>
+        </div>
         {/*
-          Close stands apart from the group, the way Search does on the list:
-          everything in the group acts on the record — saves it, approves it,
-          deletes it — while this one only puts the tab away, and the record is
-          untouched either way. A stray click on the end of the group should
-          not be able to close the tab.
+          Close stands in a tray of its own, the way Search does on the list:
+          everything in the tray beside it acts on the record — saves it,
+          approves it, deletes it — while this one only puts the tab away, and
+          the record is untouched either way. A stray click on the end of that
+          tray should not be able to close the tab.
+
+          `rounded-full` for the same reason Search takes it: alone in a tray,
+          a chip has only the pill around it to read against.
 
           Closing is the workspace's job, so the button only exists inside one.
           It never isn't, in practice — but `useWorkspace` is allowed to answer
           null and this is cheaper than asserting it can't.
         */}
         {workspace && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => workspace.closeTab(tabId)}
-            className={cn(toolbarButton, "rounded-full")}
-          >
-            <X />
-            Close
-          </Button>
+          <div className={toolbarBar}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => workspace.closeTab(tabId)}
+              className={cn(toolbarButton, "rounded-full")}
+            >
+              <X />
+              Close
+            </Button>
+          </div>
         )}
         {/*
           Beside the button that caused it, now that saving is up here.

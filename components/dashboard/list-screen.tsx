@@ -30,7 +30,6 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   ContextMenu,
@@ -109,7 +108,7 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
-import { toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
+import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import {
   defaultPageSize,
   pageSizes,
@@ -503,9 +502,9 @@ export function ListScreen<T>({
       */}
       {/*
         `gap-3` rather than `gap-2`: the only two things in this row are the
-        segmented group and Search, and the wider gap is what earns Search its
+        actions tray and Search's, and the wider gap is what earns Search its
         "different kind of thing" standing — at `gap-2` the split read as the
-        same spacing the group would take if it wrapped, saying nothing.
+        spacing inside a tray, saying nothing.
       */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">{label}</h1>
@@ -518,32 +517,21 @@ export function ListScreen<T>({
           delete confirmation names the rows one by one.
         */}
         {/*
-          One segmented group rather than four buttons spaced apart: every
-          segment in it acts on rows — makes one, edits one, deletes them, or
-          opens the menu of the rest — so joining them says they are one kind
-          of thing. Search, which changes what the table shows rather than what
-          it holds, stands outside it.
+          One tray rather than four buttons spaced apart: everything in it acts
+          on rows — makes one, edits one, approves them, or opens the menu of
+          the rest — so one surface holding them says they are one kind of
+          thing. Search, which changes what the table shows rather than what it
+          holds, gets a tray of its own.
 
-          Everything in it is `outline`, which is what a segmented group needs
-          to draw one continuous outline. The two that used to stand out carry
-          their meaning in their content instead — New keeps the only `+` in
-          the row.
-        */}
-        {/*
-          Pill ends, flat joins: `components/ui/button-group.tsx` is vendored,
-          so the two outer corners are rounded from here instead. Both halves
-          are needed — the group only squares the *inner* corners, leaving the
-          first segment's left radius to the button base's `rounded-lg` and
-          pinning the last segment's right radius to `rounded-r-lg!`. The
-          selectors are the group's own, so which segment is first or last
-          still follows `canCreate`/`canEdit` rather than being hardcoded.
+          Everything in it is `outline`, which `toolbarButton` then strips back
+          to the tray behind it. The two that used to stand out carry their
+          meaning in their content instead — New keeps the only `+` in the row.
 
-          `[data-slot]` is written twice on the right-hand rule to outspecify
-          that `!important`: Tailwind emits `rounded-r-full` *before*
-          `rounded-r-lg`, so at equal specificity the vendored `lg` would win
-          on source order. The extra attribute settles it without order luck.
+          The tray is a plain grouping element: `role="group"` is what a set of
+          related controls is, and the rest is `toolbarBar`'s. See there for why
+          this is not `ButtonGroup`.
         */}
-        <ButtonGroup className="[&>[data-slot]:first-child]:rounded-l-full [&>[data-slot][data-slot]:not(:has(~[data-slot]))]:rounded-r-full!">
+        <div role="group" className={toolbarBar}>
           {/*
             Opens a blank form in a new tab rather than unfolding one above the
             table. It is no longer a toggle, so it doesn't need a held-down
@@ -666,11 +654,11 @@ export function ListScreen<T>({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </ButtonGroup>
+        </div>
         {/*
-          Search sits apart from the group on purpose: everything in the group
-          acts on rows — makes one, edits one, approves or deletes them — while
-          this one changes what the table shows. Joining them would have said
+          Search sits in a tray of its own on purpose: everything in the tray
+          beside it acts on rows — makes one, edits one, approves them — while
+          this one changes what the table shows. Sharing a tray would have said
           the two were the same kind of thing.
 
           It opens the advanced card below rather than the per-column row: the
@@ -678,35 +666,37 @@ export function ListScreen<T>({
           the surface the other one opens is a button with nothing of its own
           to do.
         */}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => openAdvanced(!advancedOpen)}
-          aria-expanded={advancedOpen}
-          aria-controls={advancedId}
-          // The card is either open or shut, so the button is a toggle and has
-          // to look held down while it is on — `bg-accent` is the same surface
-          // its own hover uses. On the blue palette `blue-solid` draws that off
-          // the `aria-expanded` above instead, so the held-down look survives
-          // the swap without this needing to know which palette is on.
-          className={cn(
-            toolbarButton,
-            "rounded-full",
-            advancedOpen && "bg-accent"
-          )}
-        >
-          <Search />
-          Search
-          {/*
-            Inline rather than a corner badge: the dot marks a filter that
-            neither surface is currently showing, and reading in the flow of
-            the label is what makes it a caption on the button instead of
-            decoration floating beside it.
-          */}
-          {filtersActive && (
-            <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-          )}
-        </Button>
+        <div className={toolbarBar}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => openAdvanced(!advancedOpen)}
+            aria-expanded={advancedOpen}
+            aria-controls={advancedId}
+            // The card is either open or shut, so the button is a toggle and
+            // has to look held down while it is on. `toolbar-tint` draws that
+            // off the `aria-expanded` above — the same neutral press its own
+            // hover takes — so the state is already handled here.
+            //
+            // `rounded-full` because it is alone in its tray: a chip takes a
+            // tighter corner than the tray around it so it reads as sitting
+            // *in* something, and with one button there is no row of chips for
+            // it to read as part of — only the pill it is centred in.
+            className={cn(toolbarButton, "rounded-full")}
+          >
+            <Search />
+            Search
+            {/*
+              Inline rather than a corner badge: the dot marks a filter that
+              neither surface is currently showing, and reading in the flow of
+              the label is what makes it a caption on the button instead of
+              decoration floating beside it.
+            */}
+            {filtersActive && (
+              <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {/*
@@ -920,9 +910,10 @@ export function ListScreen<T>({
                 `toolbarMetrics`, not the same two numbers written out again:
                 Apply leads this card the way New leads the toolbar, and the
                 padding an icon-led button in this app takes is stated once.
-                Not the full `toolbarButton` — that colours a button like the
-                `default` variant on the blue palette, and this one already
-                *is* `default`, so there is nothing for it to swap.
+                Not the full `toolbarButton` — the tint is what the toolbar
+                wears, and this button leads a card of its own; `default`'s
+                solid fill is the stronger lead a submit wants, and the two
+                looks stacked would be a tint painted over by a fill.
               */}
               <Button type="submit" className={toolbarMetrics}>
                 <Search />
