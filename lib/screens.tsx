@@ -8,7 +8,7 @@ import {
 import { RecordForm } from "@/components/dashboard/record-form"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import { sampleCustomers, sampleInventory } from "@/lib/fixtures"
-import { paramKind } from "@/lib/record-param"
+import { paramKind, recordId } from "@/lib/record-param"
 
 import {
   Landmark,
@@ -57,8 +57,10 @@ export type Screen = {
   component: ComponentType<ScreenProps>
   /**
    * The screen's *parameterized* view, opened as a tab of its own: one record,
-   * for creating or editing. Screens without one accept no `param`, and a
-   * `?tabs=` token that supplies one anyway falls back to the bare screen.
+   * for creating, editing, or deleting — which of the three is the param's to
+   * say (see `@/lib/record-param`), not a distinction drawn here. Screens
+   * without a detail accept no `param`, and a `?tabs=` token that supplies one
+   * anyway falls back to the bare screen.
    *
    * Declared here rather than as separate registry entries because a record
    * form is not a new screen — it is the same screen's columns over one row,
@@ -87,7 +89,10 @@ export type ScreenProps = {
 export type ScreenDetail = {
   /** Rendered in place of `component` when the tab carries a param. */
   component: ComponentType<ScreenProps & { param: string }>
-  /** Tab-bar label for a param — "New item", or the record's own id. */
+  /**
+   * Tab-bar label for a param — "New item", the record's own id, or
+   * "Delete SKU-0001".
+   */
   label: (param: string) => string
   /**
    * Whether a param is one this screen can actually show. The URL codec calls
@@ -177,7 +182,7 @@ function listScreen<T>(
     detail:
       creatable || editable
         ? {
-            component: ({ param, tabId }) => (
+            component: ({ param, screenType, tabId }) => (
               <RecordForm
                 label={label}
                 noun={noun}
@@ -186,6 +191,7 @@ function listScreen<T>(
                 rows={rows}
                 rowKey={keyOf}
                 param={param}
+                screenType={screenType}
                 tabId={tabId}
               />
             ),
@@ -198,17 +204,35 @@ function listScreen<T>(
             // shorter and already what the user clicked. Prefixing it with the
             // screen would push the useful half of "Inventory SKU-0001" past
             // the chip's truncation.
-            label: (param) =>
-              paramKind(param) === "draft" ? draftLabel : param,
-            // Drafts are accepted only where creating is offered, and record
-            // ids only where editing is — and only for a row that is actually
-            // there, so a stale link drops the tab instead of opening a form
-            // over nothing.
-            accepts: (param) =>
-              paramKind(param) === "draft"
-                ? Boolean(creatable)
-                : Boolean(editable) &&
-                  rows.some((row, i) => String(keyOf(row, i)) === param),
+            //
+            // A deletion is the one that has to spend those characters. Its
+            // whole point is that it can sit beside the record's own tab, and
+            // two chips both reading "SKU-0001" would be a workspace you
+            // cannot navigate — so the verb leads, where truncation reaches it
+            // last.
+            label: (param) => {
+              switch (paramKind(param)) {
+                case "draft":
+                  return draftLabel
+                case "delete":
+                  return `Delete ${recordId(param)}`
+                case "record":
+                  return param
+              }
+            },
+            // Drafts are accepted only where creating is offered. Record ids
+            // and deletions both need `editable`, which is what says this
+            // screen's rows can be addressed one at a time at all — and both
+            // need the row to actually be there, so a stale link drops the tab
+            // instead of opening a form over nothing.
+            accepts: (param) => {
+              if (paramKind(param) === "draft") return Boolean(creatable)
+              const id = recordId(param)
+              return (
+                Boolean(editable) &&
+                rows.some((row, i) => String(keyOf(row, i)) === id)
+              )
+            },
           }
         : undefined,
   }

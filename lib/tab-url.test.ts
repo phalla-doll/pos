@@ -90,6 +90,29 @@ describe("contentFromSearch", () => {
     )
   })
 
+  it("reads a delete token", () => {
+    expect(contentFromSearch("?tabs=inventory:delete-SKU-0001")).toEqual(
+      content(["inventory:delete-SKU-0001"], 0)
+    )
+  })
+
+  it("keeps a record's edit and delete tabs apart", () => {
+    // The pair a delete tab exists to make possible: two tabs about one
+    // record, which only works because their params differ.
+    expect(
+      contentFromSearch("?tabs=inventory:SKU-0001,inventory:delete-SKU-0001")
+    ).toEqual(content(["inventory:SKU-0001", "inventory:delete-SKU-0001"], 0))
+  })
+
+  it("drops a deletion of a record that no longer exists", () => {
+    // The prefix is stripped before the row is looked for, so a stale delete
+    // link is dropped for the same reason a stale edit link is — and not
+    // silently kept because `delete-GONE-999` isn't any row's key.
+    expect(
+      contentFromSearch("?tabs=inventory,inventory:delete-GONE-999")
+    ).toEqual(content(["inventory"], 0))
+  })
+
   it("drops a record that no longer exists", () => {
     // A stale link shouldn't open a form over nothing — better to land on
     // whatever else was open.

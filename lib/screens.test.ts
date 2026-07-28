@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { draftParam } from "@/lib/record-param"
+import { deleteParam, draftParam } from "@/lib/record-param"
 import { screenKeys, screens, type Screen } from "@/lib/screens"
 
 /**
@@ -75,6 +75,23 @@ describe("a screen's record-form contract", () => {
     )
   })
 
+  it.each(withDetail)(
+    "$type tells a deletion apart from a record",
+    (screen) => {
+      // The pair has to be distinguishable in the tab bar, because both tabs can
+      // be open at once — the whole reason a deletion gets its own param.
+      expect(screen.detail.label(deleteParam("SKU-0001"))).not.toBe(
+        screen.detail.label("SKU-0001")
+      )
+    }
+  )
+
+  it.each(withDetail)("$type names the record a deletion is of", (screen) => {
+    // Whatever phrasing it picks, the id has to survive into the chip — a
+    // workspace of tabs all reading "Delete" is one you can't navigate.
+    expect(screen.detail.label(deleteParam("SKU-0001"))).toContain("SKU-0001")
+  })
+
   it.each(withDetail)("$type rejects a record that doesn't exist", (screen) => {
     // `accepts` runs in the URL codec before a token becomes a tab, so this is
     // what stops a stale link opening a form over nothing.
@@ -87,6 +104,25 @@ describe("a screen's record-form contract", () => {
 
   it.each(withDetail)("$type rejects an empty param", (screen) => {
     expect(screen.detail.accepts("")).toBe(false)
+  })
+
+  it.each(withDetail)(
+    "$type rejects a deletion of a record that doesn't exist",
+    (screen) => {
+      // The prefix has to be stripped before the row is looked for. Were it
+      // not, this would be rejected for the wrong reason — and a *valid*
+      // deletion would be rejected too, since `delete-SKU-0001` is no row's
+      // key either.
+      expect(screen.detail.accepts(deleteParam("definitely-not-real"))).toBe(
+        false
+      )
+    }
+  )
+
+  it.each(withDetail)("$type rejects a bare delete prefix", (screen) => {
+    // `delete-` names no record, so it is an ordinary unknown key rather than
+    // a deletion of nothing.
+    expect(screen.detail.accepts("delete-")).toBe(false)
   })
 })
 

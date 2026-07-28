@@ -14,15 +14,6 @@ import {
 
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,9 +25,10 @@ import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/hooks/use-workspace"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
-import { paramKind, recordId } from "@/lib/record-param"
+import { deleteParam, paramKind, recordId } from "@/lib/record-param"
+import type { ScreenType } from "@/lib/screens"
 import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
-import { toolbarBar, toolbarButton } from "@/lib/screen-toolbar"
+import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import { cn } from "@/lib/utils"
 
 export type RecordFormProps<T> = {
@@ -56,28 +48,45 @@ export type RecordFormProps<T> = {
   rows: T[]
   /** Row identity — the other half of the `param` a record tab carries. */
   rowKey: (row: T, index: number) => RowKey
-  /** This tab's param: a draft token, or the key of the row to edit. */
+  /**
+   * This tab's param: a draft token, the key of the row to edit, or that key
+   * marked for deletion. Which of the three is `@/lib/record-param`'s to say.
+   */
   param: string
+  /**
+   * The screen this record's tabs belong to, so the form can open another one
+   * of its own — the delete tab, which is a sibling ref on the same screen.
+   */
+  screenType: ScreenType
   /** This tab's id, so the form can close the tab it is rendered in. */
   tabId: string
 }
 
 /**
- * One record, open in its own tab — the create form and the edit form, which
- * are the same fields over a different starting point and so are one component
- * rather than two.
+ * One record, open in its own tab — the create form, the edit form, and the
+ * delete form, which are the same fields over a different starting point and a
+ * different question, and so are one component rather than three.
  *
  * Which one it is comes entirely from the tab's `param`: a draft token starts
- * blank, a row key seeds from that row. Nothing else distinguishes them, and
- * nothing here decides *when* to be a draft — that is the reuse rule in
- * `openOrReuse`, and this component only reads its consequence.
+ * blank, a row key seeds from that row, and a `delete-` param seeds from that
+ * same row but locks it. Nothing else distinguishes them, and nothing here
+ * decides *when* to be each — that is the reuse rule in `openOrReuse` over the
+ * params `@/lib/record-param` defines, and this component only reads the
+ * consequence.
+ *
+ * Deleting is a form rather than a dialog because a dialog is a bad place to
+ * read a record: it interrupts, it can't be left open while you check
+ * something else, and it names a row or two where the fields name all of them.
+ * A tab is none of those, and it costs nothing extra here — the readonly form
+ * *is* the edit form with its inputs locked.
  *
  * Fields derive from the list's own `columns`, so a column added to a screen
  * shows up here without being restated — the same single-source rule the
  * filter row and the table already follow.
  *
- * Submit is a UI-only stub: there is no backend to save to, so it reports
- * success and leaves the values on screen rather than pretending to persist.
+ * Every action is a UI-only stub: there is no backend to save to or delete
+ * from, so submit reports success and leaves the values on screen, and Process
+ * closes the tab rather than pretending to persist anything.
  */
 export function RecordForm<T>({
   label,
@@ -87,10 +96,19 @@ export function RecordForm<T>({
   rows,
   rowKey,
   param,
+  screenType,
   tabId,
 }: RecordFormProps<T>) {
   const workspace = useWorkspace()
-  const creating = paramKind(param) === "draft"
+
+  // What this tab is *for*, which the param carries along with which record —
+  // see `@/lib/record-param`. Three modes over one set of fields, because the
+  // fields are the same question in each: what does this record say? Creating
+  // asks it of a blank one, editing of a saved one, deleting of one on its way
+  // out.
+  const kind = paramKind(param)
+  const creating = kind === "draft"
+  const deleting = kind === "delete"
 
   // The row this tab edits, found once by the key the param carries. A record
   // tab can outlive its row (a stale link, a deleted record), so this is
@@ -115,11 +133,6 @@ export function RecordForm<T>({
   )
   const [saved, setSaved] = React.useState(false)
 
-  // Deleting can't be undone by clicking again, so it goes through a
-  // confirmation — the same rule the list screen's dialog follows, over one
-  // record rather than a selection.
-  const [confirmingDelete, setConfirmingDelete] = React.useState(false)
-
   // The submit button sits in the toolbar above the form rather than inside
   // it, so it reaches the form the way HTML lets a button outside one do:
   // by id. Same button, same submit — only the position moved.
@@ -139,15 +152,20 @@ export function RecordForm<T>({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    // A delete tab renders no submit button, but Enter in a field still asks
+    // the form to submit — and "saved" is not a thing that can happen to a
+    // record you are removing. Refusing here rather than not rendering a
+    // `<form>` keeps the two modes one markup tree.
+    if (deleting) return
     // UI-only stub: no persistence yet.
     setSaved(true)
   }
 
-  // UI-only stub, like submit. What it can do honestly is close the tab: a
-  // record form left open over a record that is supposed to be gone is the one
-  // state this shouldn't leave behind.
-  function confirmDelete() {
-    setConfirmingDelete(false)
+  // Process, and Cancel, and the tab's own ✕ all end the same way — this tab
+  // goes away. Only the first of them claims to have deleted anything, and
+  // even that is a UI-only stub, like submit; what it can honestly do is stop
+  // showing you a record that is supposed to be gone.
+  function closeSelf() {
     workspace?.closeTab(tabId)
   }
 
@@ -164,9 +182,9 @@ export function RecordForm<T>({
 
         The heading survives as `sr-only`, since it is the screen's level-1
         landmark, and it is still built from different halves: creating uses
-        the registry's draft label, while editing names the *row* ("Edit item")
-        — its chip carries the id, and "Edit Inventory" would claim to be
-        editing the screen itself.
+        the registry's draft label, while editing and deleting name the *row*
+        ("Edit item", "Delete item") — the chip carries the id, and "Edit
+        Inventory" would claim to be editing the screen itself.
       */}
       {/*
         `gap-3` rather than `gap-2`, matching the list's toolbar: the wider gap
@@ -175,7 +193,9 @@ export function RecordForm<T>({
         saying nothing.
       */}
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="sr-only">{creating ? draftLabel : `Edit ${noun}`}</h1>
+        <h1 className="sr-only">
+          {creating ? draftLabel : `${deleting ? "Delete" : "Edit"} ${noun}`}
+        </h1>
         {/*
           The same tray the list's toolbar leads with, and the whole of what it
           looks like is `toolbarBar` — so the two rows can't drift apart the
@@ -183,6 +203,108 @@ export function RecordForm<T>({
         */}
         <div role="group" className={toolbarBar}>
           {/*
+            A delete tab is the same fields under a different question, so it
+            is the same tray under a different set of verbs — not a screen of
+            its own. Nothing below is shared between the two branches on
+            purpose: a record you are about to remove has nothing to save,
+            nothing to clear, and no state to put on hold.
+          */}
+          {deleting ? (
+            <>
+              {/*
+                Process is the irreversible click this whole tab exists to
+                frame — so it takes the colour every destructive action in the
+                app takes, and none of the tint. It leads the row anyway: this
+                is what you came here to do, and a red button leading a row is
+                only alarming when the row didn't warn you, which the readonly
+                fields below and the tab's own "Delete …" chip already did.
+
+                A stub, like the rest — there is no backend to delete from —
+                so what it actually does is stop showing you the record.
+              */}
+              {!missing && (
+                <Button
+                  type="button"
+                  onClick={closeSelf}
+                  variant="ghost"
+                  className={cn(
+                    toolbarMetrics,
+                    "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  )}
+                >
+                  <Trash2 />
+                  Process
+                </Button>
+              )}
+              {/*
+                Cancel is the way out, and it is why this branch renders no
+                Close tray: both would close the tab, and two buttons one gap
+                apart doing the identical thing is worse than either alone.
+                Cancel wins the slot because it answers the question the tab
+                asked — the record is untouched, which "Close" doesn't say.
+
+                Rendered whether or not a workspace answered: `closeSelf`
+                tolerates the null, and a delete tab with no visible way out
+                would be worse than a button that no-ops in a case that cannot
+                arise. Close, which is optional chrome, is gated instead.
+              */}
+              <Button
+                type="button"
+                onClick={closeSelf}
+                variant="outline"
+                className={toolbarButton}
+              >
+                <X />
+                Cancel
+              </Button>
+              {/*
+                The same menu the edit form ends with, minus its Delete: you
+                are already looking at one. What is left reads as the
+                alternatives — Export it before it goes, or Archive it instead
+                — which is exactly what a menu beside "Process" should offer.
+              */}
+              {!missing && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={toolbarButton}
+                      />
+                    }
+                  >
+                    <Ellipsis />
+                    More
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    {primaryRowActions.map(({ label: action, icon: Icon }) => (
+                      <DropdownMenuItem key={action}>
+                        <Icon strokeWidth={1.5} />
+                        {action}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    {secondaryRowActions.map(
+                      ({ label: action, icon: Icon, shortcut }) => (
+                        <DropdownMenuItem key={action}>
+                          <Icon strokeWidth={1.5} />
+                          {action}
+                          {shortcut && (
+                            <DropdownMenuShortcut>
+                              {shortcut}
+                            </DropdownMenuShortcut>
+                          )}
+                        </DropdownMenuItem>
+                      )
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </>
+          ) : (
+            <>
+              {/*
             Save leads the toolbar, before the way out of the tab: the order is
             what you do here, then what you do to leave. `form` points it at
             the fields below, since the button no longer lives inside them.
@@ -194,18 +316,18 @@ export function RecordForm<T>({
             noun ("Create item") because there the button is also what *names*
             what is about to exist.
           */}
-          {!missing && (
-            <Button
-              type="submit"
-              form={formId}
-              variant="outline"
-              className={toolbarButton}
-            >
-              {creating ? <Plus /> : <Save />}
-              {creating ? `Create ${noun}` : "Save"}
-            </Button>
-          )}
-          {/*
+              {!missing && (
+                <Button
+                  type="submit"
+                  form={formId}
+                  variant="outline"
+                  className={toolbarButton}
+                >
+                  {creating ? <Plus /> : <Save />}
+                  {creating ? `Create ${noun}` : "Save"}
+                </Button>
+              )}
+              {/*
             Verify and Hold: the two things done *to* a record once it exists,
             and the pair the list's toolbar can't offer — it acts over a
             selection, where "hold" would have to mean holding several things
@@ -216,19 +338,27 @@ export function RecordForm<T>({
             verified or put on hold, and offering either there would promise
             the click does two things — save it, then act on it.
           */}
-          {!creating && !missing && (
-            <Button type="button" variant="outline" className={toolbarButton}>
-              <BadgeCheck />
-              Verify
-            </Button>
-          )}
-          {!creating && !missing && (
-            <Button type="button" variant="outline" className={toolbarButton}>
-              <Pause />
-              Hold
-            </Button>
-          )}
-          {/*
+              {!creating && !missing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={toolbarButton}
+                >
+                  <BadgeCheck />
+                  Verify
+                </Button>
+              )}
+              {!creating && !missing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={toolbarButton}
+                >
+                  <Pause />
+                  Hold
+                </Button>
+              )}
+              {/*
             On both forms, and meaning the same thing on each: empty every
             field. It was once a draft-only button on the grounds that on an
             edit "clear" could mean either blanking the record or putting back
@@ -241,19 +371,19 @@ export function RecordForm<T>({
             nothing. On an edit that is only true once you have emptied the
             form by hand.
           */}
-          {!missing && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!dirty}
-              onClick={clearFields}
-              className={toolbarButton}
-            >
-              <Eraser />
-              Clear
-            </Button>
-          )}
-          {/*
+              {!missing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!dirty}
+                  onClick={clearFields}
+                  className={toolbarButton}
+                >
+                  <Eraser />
+                  Clear
+                </Button>
+              )}
+              {/*
             The leftovers, behind one menu — the same shape the list's toolbar
             ends with, reading from the same `lib/row-actions` list, so the two
             surfaces can't drift apart. Bare labels here: the list says "Export
@@ -264,56 +394,70 @@ export function RecordForm<T>({
             button in this row, and this is the demotion the list screen paid
             for: deleting one record is reachable from that toolbar too now, so
             the case for spending a slot on it here is weaker than the case for
-            not sitting a destructive click beside Clear. It still opens the
-            confirmation rather than deleting — a menu item is easier to reach
-            by accident than a button, not harder.
+            not sitting a destructive click beside Clear. It opens the record's
+            delete tab rather than deleting — so a slip lands on a form asking
+            the question, which is the same place the list's Delete lands.
+
+            That tab is a *second* tab for this record, beside the one you are
+            reading. The two carry different params and so can't collide, and
+            the pair is the point: what a delete tab is for is being read next
+            to the record it would remove.
 
             Editing only, like Verify and Hold: every action in it is about a
             record that exists.
           */}
-          {!creating && !missing && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={toolbarButton}
-                  />
-                }
-              >
-                <Ellipsis />
-                More
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                {primaryRowActions.map(({ label: action, icon: Icon }) => (
-                  <DropdownMenuItem key={action}>
-                    <Icon strokeWidth={1.5} />
-                    {action}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                {secondaryRowActions.map(
-                  ({ label: action, icon: Icon, shortcut }) => (
-                    <DropdownMenuItem key={action}>
-                      <Icon strokeWidth={1.5} />
-                      {action}
-                      {shortcut && (
-                        <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
-                      )}
+              {!creating && !missing && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={toolbarButton}
+                      />
+                    }
+                  >
+                    <Ellipsis />
+                    More
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    {primaryRowActions.map(({ label: action, icon: Icon }) => (
+                      <DropdownMenuItem key={action}>
+                        <Icon strokeWidth={1.5} />
+                        {action}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    {secondaryRowActions.map(
+                      ({ label: action, icon: Icon, shortcut }) => (
+                        <DropdownMenuItem key={action}>
+                          <Icon strokeWidth={1.5} />
+                          {action}
+                          {shortcut && (
+                            <DropdownMenuShortcut>
+                              {shortcut}
+                            </DropdownMenuShortcut>
+                          )}
+                        </DropdownMenuItem>
+                      )
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() =>
+                        workspace?.openTab({
+                          screenType,
+                          param: deleteParam(param),
+                        })
+                      }
+                    >
+                      <Trash2 strokeWidth={1.5} />
+                      Delete {noun}
                     </DropdownMenuItem>
-                  )
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => setConfirmingDelete(true)}
-                >
-                  <Trash2 strokeWidth={1.5} />
-                  Delete {noun}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </>
           )}
         </div>
         {/*
@@ -329,8 +473,11 @@ export function RecordForm<T>({
           Closing is the workspace's job, so the button only exists inside one.
           It never isn't, in practice — but `useWorkspace` is allowed to answer
           null and this is cheaper than asserting it can't.
+
+          Not on a delete tab, which carries Cancel in the tray beside this
+          one and needs no second button that does the same thing. See there.
         */}
-        {workspace && (
+        {workspace && !deleting && (
           <div className={toolbarBar}>
             <Button
               type="button"
@@ -353,68 +500,88 @@ export function RecordForm<T>({
         )}
       </div>
 
+      {/*
+        The id, not the raw param: a delete tab's param carries a `delete-`
+        prefix, and a message about a missing record should name the record
+        rather than the token that addressed it.
+      */}
       {missing ? (
         <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
-          No {noun} with the id <span className="font-medium">{param}</span> in{" "}
-          {label}. It may have been deleted since this tab was opened.
+          No {noun} with the id{" "}
+          <span className="font-medium">{recordId(param)}</span> in {label}. It
+          may have been deleted since this tab was opened.
         </div>
       ) : (
-        <form
-          id={formId}
-          onSubmit={handleSubmit}
-          className="rounded-xl border bg-card p-4"
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {columns.map((column) => (
-              <div key={column.key} className="flex flex-col gap-1.5">
-                <label
-                  htmlFor={`field-${column.key}`}
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  {column.header}
-                </label>
-                <Input
-                  id={`field-${column.key}`}
-                  value={values[column.key] ?? ""}
-                  placeholder={`Enter ${column.header.toLowerCase()}…`}
-                  onChange={(event) => {
-                    setValues((prev) => ({
-                      ...prev,
-                      [column.key]: event.target.value,
-                    }))
-                    setSaved(false)
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </form>
-      )}
+        <>
+          {/*
+            The one line a delete tab adds to the form. The fields below say
+            *what* the record is; nothing in them says it is about to go, and
+            the toolbar's red is a colour rather than a sentence. It sits above
+            the card rather than inside it because it is about the card.
+          */}
+          {deleting && (
+            <p className="text-sm text-muted-foreground">
+              This {noun} will be removed from {label}. Review it below, then
+              Process — or Cancel to leave it alone. This can&apos;t be undone.
+            </p>
+          )}
+          <form
+            id={formId}
+            onSubmit={handleSubmit}
+            className="rounded-xl border bg-card p-4"
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {columns.map((column) => (
+                <div key={column.key} className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor={`field-${column.key}`}
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    {column.header}
+                  </label>
+                  {/*
+                    `readOnly` rather than `disabled` on a delete tab. A
+                    disabled input is skipped by the tab key and refuses to be
+                    selected, and this form's whole job is to be *read* — you
+                    should be able to tab through it and copy a value out
+                    before the record goes. What must not happen is an edit,
+                    which is exactly what `readOnly` stops.
 
-      {/*
-        Names the record rather than asking "are you sure?" about an abstract
-        one — the same rule the list's confirmation follows.
-      */}
-      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete {noun}?</DialogTitle>
-            <DialogDescription>
-              <span className="font-medium">{param}</span> will be removed from{" "}
-              {label}. This can&apos;t be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
-              Cancel
-            </DialogClose>
-            <Button type="button" variant="destructive" onClick={confirmDelete}>
-              <Trash2 />
-              Delete {noun}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                    The muted fill is what says so at a glance, since a
+                    readonly input is otherwise indistinguishable from an
+                    editable one. `cursor-default` drops the text caret the
+                    field would otherwise still advertise.
+
+                    No placeholder either: "Enter name…" is an invitation, and
+                    an empty field here means the record's value is empty, not
+                    that you should fill it in.
+                  */}
+                  <Input
+                    id={`field-${column.key}`}
+                    value={values[column.key] ?? ""}
+                    readOnly={deleting}
+                    placeholder={
+                      deleting
+                        ? undefined
+                        : `Enter ${column.header.toLowerCase()}…`
+                    }
+                    onChange={(event) => {
+                      setValues((prev) => ({
+                        ...prev,
+                        [column.key]: event.target.value,
+                      }))
+                      setSaved(false)
+                    }}
+                    className={cn(
+                      deleting && "cursor-default bg-muted/50 dark:bg-muted/50"
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
+          </form>
+        </>
+      )}
     </div>
   )
 }
