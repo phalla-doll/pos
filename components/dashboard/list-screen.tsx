@@ -946,20 +946,24 @@ export function ListScreen<T>({
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
       {/*
-        Body rows sit a notch below the table's `text-sm`: the header, filter
-        row, and controls keep that size, so shrinking only the data lets a
-        wide table fit more per screen without the chrome shrinking with it.
-        The line-height stays inherited, which keeps the rows from tightening.
+        Body rows sit two steps below the table's `text-sm`, at 12px: the
+        header, filter row, and controls keep 14px, so shrinking only the data
+        lets a wide table fit more per screen without the chrome shrinking with
+        it.
+
+        Spelled `text-[0.75rem]` rather than `text-xs`, which is the same 12px
+        with a `line-height: 1rem` attached. The leading is left to inherit on
+        purpose: Tailwind's `text-sm` on the table sets a *unitless* ratio, so
+        a cell scales its own line box off its own size and the rows keep the
+        table's proportion instead of being pinned to a height picked for 14px
+        text.
 
         Smaller text is not licence to squeeze the box around it, though.
-        `py-2` puts a row at 36px against the 13px text's inherited 20px
-        line-height — an equal 8px above and below, which is what stops a
-        column of values reading as one block of text with rules through it.
-
-        36px is also what both header rows are, so every row in the table is
-        one height: the label row, the search row under it, and the data. A
-        single step down the whole table is what makes the two sticky rows read
-        as the top of these rows rather than as a strip of chrome above them.
+        `py-2` keeps an equal 8px above and below that line box, which is what
+        stops a column of values reading as one block of text with rules
+        through it — so the row came down with the text and no further,
+        landing a couple of pixels under the header's 36px rather than
+        tightening around it.
 
         `px-3` widens the gutters to 24px between neighbouring columns, and it
         is set on `th` and `td` alike: the two share this padding, so a change
@@ -1035,7 +1039,7 @@ export function ListScreen<T>({
         in two. `overflow-auto` clips the header band to the corners, so the
         square-cornered cells inside need nothing of their own.
       */}
-      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-xl border bg-table-header [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.8125rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+      <div className="scrollbar-subtle min-h-0 overflow-auto rounded-xl border bg-table-header [&_[data-slot=table-container]]:overflow-visible [&_td]:px-3 [&_td]:py-2 [&_td]:text-[0.75rem] [&_td:first-child]:pr-1 [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th]:px-3 [&_th:first-child]:pr-1 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
         {/*
           The separated border model, against Tailwind's `border-collapse:
           collapse` default. A collapsed table paints in two passes — every
@@ -1087,12 +1091,12 @@ export function ListScreen<T>({
             for part of the table's border geometry.
           */}
           {/*
-            `h-9` — 36px, the same height as a body row and as the search row
-            below. The header carries its weight in its own surface, the label's
-            colour, and the rule under it rather than in extra height, so there
-            is nothing for a taller row to say; what it must not be is *tighter*
-            than a data row, which the old 32px was the moment the rows opened
-            up.
+            `h-9` — 36px, the same height as the search row below and a hair
+            over a body row. The header carries its weight in its own surface,
+            the label's colour, and the rule under it rather than in extra
+            height, so there is nothing for a taller row to say; what it must
+            not be is *tighter* than a data row, which the old 32px was the
+            moment the rows opened up.
           */}
           <TableHeader
             className={cn(
@@ -1290,11 +1294,13 @@ export function ListScreen<T>({
                         <div className="relative">
                           <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                           {/*
-                            A notch below the vendored `h-8`/`text-sm`, matching
-                            the body rows underneath rather than the header
-                            controls above: this row sits *in* the table, so it
-                            should read at the table's density, not the
-                            toolbar's.
+                            Under the vendored `h-8`/`text-sm`, at the body
+                            rows' 12px rather than the header controls' 14:
+                            this row sits *in* the table, so it reads at the
+                            table's density, not the toolbar's. The `md:` half
+                            is not a duplicate — the vendored input goes back
+                            up to `text-sm` at that breakpoint, so the size has
+                            to be restated to hold.
                           */}
                           <Input
                             aria-label={`Search ${column.header}`}
@@ -1314,7 +1320,7 @@ export function ListScreen<T>({
                             // doesn't — a search field has to read as
                             // something you can type into, not as a gap.
                             className={cn(
-                              "h-7 rounded-sm bg-card pl-6.5 text-[0.8125rem] md:text-[0.8125rem] dark:bg-card",
+                              "h-7 rounded-sm bg-card pl-6.5 text-[0.75rem] md:text-[0.75rem] dark:bg-card",
                               isLastFilter && filtersActive && "pr-7"
                             )}
                           />
