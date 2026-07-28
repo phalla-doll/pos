@@ -73,6 +73,15 @@
      * surface a visible step below white, which read as milky. Every fill
      * below is still on one hue: a leftover neutral grey next to a warm one
      * reads as a colour mistake, not as "no colour".
+     *
+     * One thing is off that hue on purpose — the chrome frame (`--sidebar-rail`
+     * and the three tokens with it), which is now a cool blue-white. That is
+     * the exception the rule above is guarding against, taken deliberately: it
+     * is not a *grey* beside a warm grey, which is the mistake, but a surface
+     * carrying enough colour to read as a chosen tint. It works because the
+     * boundary is the frame's own edge — chrome is blue, content is warm, and
+     * the two never interleave. Tint anything inside the content column and
+     * that reading collapses back into drift.
      */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.153 0.006 107.1);
@@ -158,13 +167,19 @@
   /*
      * The light chrome keeps its shape — darkest at the app's edge, lightest
      * where the content is — with the whole ramp pulled up towards white:
-     * rail 0.94 → workspace 0.966 → panel 0.988 → card 1.
+     * rail 0.955 → workspace 0.966 → panel 0.988 → card 1.
      * What is lightest is no longer the region content lives in but the cards
      * themselves; the workspace is the surface they are laid on (`--content`
      * below), and the chrome sits a step under it. The steps are small because
      * the surfaces they separate are, and the border does the rest. The accent
      * doubles as the panel's hover/active fill, one step darker than the panel
      * it sits on.
+     *
+     * The rail's step is now the smallest of them (1.04:1 on the workspace,
+     * where it was 1.08:1), because the tint it took is a light one. So the
+     * frame is drawn by *colour* where it used to be drawn by depth, and
+     * `--sidebar-rail-border` carries proportionally more of the edge than it
+     * did — see both tokens below.
      */
   --sidebar: oklch(0.988 0.003 106.5);
   --sidebar-foreground: oklch(0.153 0.006 107.1);
@@ -186,24 +201,55 @@
      * not the palette's: the ramp above only reaches as far as the panel, so
      * this continues it downwards, one step *under* the workspace so the two
      * read as a frame with the content raised inside it rather than as one
-     * unbroken sheet. The step alone carries that edge: `border-r` at 0.93 is
-     * all but invisible against 0.94, which is the point — the depth comes
-     * from the surfaces, not from a line drawn between them.
+     * unbroken sheet.
      *
-     * The rail needs its own hover/active step because it no longer shares the
+     * `#ecefff` exactly — the value design asked for, and it round-trips, so
+     * this is that hex and not an approximation of it. It is written in oklch
+     * like every other surface here rather than as the hex it came in as: the
+     * two tokens under it are derived from this one by moving L and C, which
+     * is arithmetic you can only do in the space the ramp is stated in.
+     *
+     * The tint replaces the depth this used to work by. At 0.94 warm the rail
+     * was a clear step under the workspace (1.08:1) and the step *was* the
+     * edge — the comment here used to say the depth came from the surfaces and
+     * not from a line between them. 0.955 is only 1.04:1 under the workspace,
+     * near enough to nothing, so what separates chrome from content now is
+     * that one is blue and one is warm. That reads at a glance, and at a bigger
+     * distance than the old half-step did. What it does not do is survive
+     * being desaturated, so the border below is no longer optional trim.
+     *
+     * Hue 277.5, which is off the toolbar's 262.9 — this is a violet-leaning
+     * blue-white, not the accent thinned into the page, and `color-mix`ing it
+     * out of `--toolbar-accent` would land at #ecf3ff and be a different
+     * colour. So it is stated outright, and the two tokens below follow *it*
+     * rather than the accent, so the frame stays one colour internally.
+     *
+     * The rail needs its own hover/active step because it does not share the
      * panel's shade: the panel's accent is lighter than the rail and would
-     * read as a highlight rather than a press. 0.905 keeps the same relative
-     * lift under the pointer (1.11:1) the pair had before the rail moved. */
-  --sidebar-rail: oklch(0.94 0.008 106.5);
-  --sidebar-rail-accent: oklch(0.905 0.01 106.5);
+     * read as a highlight rather than a press. This holds the pair's 1.11:1
+     * lift under the pointer, re-measured on the new surface, and takes the
+     * chroma up by the same 1.25× the warm ramp used to — a fill that darkens
+     * without gaining colour drifts grey against the surface it sits on. */
+  --sidebar-rail: oklch(0.955 0.022 277.5);
+  --sidebar-rail-accent: oklch(0.919 0.027 277.5);
   /* The line along the chrome's inner edge — the rail's right edge and the app
-     * bar's bottom one. `--border` is drawn for a white card and lands 1.03:1
-     * on the rail, close enough to vanish; this is the same *ratio* a card's
-     * border gets on white (1.20:1 here, 1.23:1 there), just measured against
-     * the darker surface it actually falls on. Light only — the dark block
-     * points it back at `--sidebar-border`, where the existing translucent
-     * white already reads against a near-black rail. */
-  --sidebar-rail-border: oklch(0.88 0.012 106.5);
+     * bar's bottom one. `--border` is drawn for a white card and lands 1.01:1
+     * on the rail, closer to vanishing than ever; this is the same *ratio* a
+     * card's border gets on white (1.21:1 here, 1.23:1 there), just measured
+     * against the surface it actually falls on.
+     *
+     * That ratio is unchanged and it is now doing a bigger job. The rail used
+     * to be far enough under the workspace that this line was confirming an
+     * edge you could already see; at 1.04:1 it is most of what draws it, and
+     * it is the whole of what draws it for anyone who cannot separate the two
+     * hues. Which is why it holds the ratio rather than softening to suit a
+     * lighter surface — the frame is one accessible step wide, and this is the
+     * step. Chroma up 1.5× off the rail, the warm ramp's own proportion, for
+     * the reason given on the hover above.
+     *
+     * Light only — the dark block points it back at `--sidebar-border`, where
+     * the existing translucent white already reads against a near-black rail. */
+  --sidebar-rail-border: oklch(0.894 0.033 277.5);
   /* A table's header band, and the shade a sortable header takes under the
      * pointer. A column header is chrome in the sense the rail is — a strip
      * that frames the rows rather than being one — and it was written in the
