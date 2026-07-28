@@ -107,12 +107,13 @@ export const toolbarBar =
  * It goes on the actions a screen leads with and no others. Two standing
  * exceptions:
  *
- * - **Destructive actions never take it.** The list's Delete wears
- *   `toolbarMetrics` alone: it belongs to the row, so it keeps the shape, but
- *   it must not go transparent into the tray with the rest — its colour is the
- *   one signal saying the click can't be taken back. A record's Delete is a
- *   `More` item rather than a button, so the question doesn't reach it; the
- *   menu marks it destructive in its own way.
+ * - **The click that can't be taken back never takes it.** That is the delete
+ *   tab's Process, which wears `toolbarMetrics` alone: it belongs to the row,
+ *   so it keeps the shape, but it must not go transparent into the tray with
+ *   the rest — its colour is the one signal saying the record goes now.
+ *   Asking is not doing, so the list's Delete is *not* an exception: it opens
+ *   a tab or a dialog and takes the tint like its neighbours. Wearing the
+ *   warning at both steps is how a warning stops being read.
  * - **Chrome is not an action.** The pager's and column headers' `ghost`
  *   buttons stay quiet. So does a button already declared `default`, whose
  *   solid fill leads a surface of its own rather than joining this row.

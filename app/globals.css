@@ -504,8 +504,10 @@
  * The row-action toolbar: `toolbar-bar` is the tinted tray, `toolbar-tint` is
  * what a button inside it looks like. `--toolbar-accent` and `--toolbar-chip`
  * (declared per theme, up in `:root`) are what let both live on every theme,
- * including the palettes holding no blue of their own. Destructive actions
- * never take the button class: Delete keeps its own colour everywhere.
+ * including the palettes holding no blue of their own. The one click that
+ * can't be taken back never takes the button class: the delete tab's Process
+ * keeps its own colour everywhere. See `lib/screen-toolbar.ts` for why a
+ * Delete that only asks the question is not that click.
  *
  * The tint is on the *tray*, not on each button. The two look nearly the same
  * standing still and are not the same thing at all: a row of tinted buttons is
