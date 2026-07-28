@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { TabBar, TAB_BAR_ROW } from "@/components/dashboard/tab-bar"
 import { MetaKey } from "@/components/header-search"
+import { Card } from "@/components/ui/card"
 import {
   Empty,
   EmptyDescription,
@@ -89,11 +90,28 @@ export function TabWorkspace() {
             <div
               key={tab.id}
               className={cn(
-                "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content)",
+                "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content) p-3",
                 tab.id !== activeId && "hidden"
               )}
             >
-              <ScreenContent tab={tab} />
+              {/*
+                One card per tab, holding whatever that screen renders. The
+                workspace surface (`--content`) now only shows as the gutter
+                around it, so a tab reads as a sheet laid on the frame rather
+                than as content painted straight onto it.
+
+                `gap-0 py-0` empties the card of its own spacing: the screens
+                already open with `p-4 pt-6`, and that padding becomes the
+                card's interior instead of stacking with it — no screen has to
+                know it is inside a card.
+
+                `min-h-0` is what keeps the list screens' inner scrollers
+                working: without it the card takes its content's full height
+                and the tab scrolls instead of the table.
+              */}
+              <Card className="flex min-h-0 flex-1 flex-col gap-0 py-0">
+                <ScreenContent tab={tab} />
+              </Card>
             </div>
           ))
         ) : (
