@@ -255,4 +255,22 @@ describe("globals.css", () => {
       expect(block).toMatch(/--sidebar-ring:/)
     }
   })
+
+  /**
+   * ...and then draws it as a border rather than a halo. The rule that turns
+   * the halo off zeroes a variable the vendored components set from
+   * `@layer utilities`, so it only wins by sitting outside every layer — moved
+   * into `@layer base` for tidiness it would lose to all of them silently and
+   * every ring would come back. `rules` is built from *top-level* rules alone
+   * (a layered one is indented past the `^`), so finding it there is the
+   * assertion.
+   */
+  it("turns off the focus ring from outside the cascade layers", () => {
+    expect(
+      rules.some(
+        ([, selector, body]) =>
+          selector.includes(":focus-visible") && /--tw-ring-shadow:/.test(body)
+      )
+    ).toBe(true)
+  })
 })

@@ -561,6 +561,92 @@
   }
 }
 
+/*
+ * No focus halo. Every control in `components/ui` states its focus twice —
+ * `focus-visible:border-ring` recolours the edge, and `focus-visible:ring-3
+ * ring-ring/50` puts a 3px translucent bloom around it — and the second one is
+ * what a dense screen cannot afford: a form of small fields tabbed through
+ * grows a smudge per cell, and the bloom is drawn *outside* the control, so it
+ * also overlaps whatever sits next to it. The recoloured border says the same
+ * thing inside the shape the control already occupies. The border stays, the
+ * ring goes.
+ *
+ * Done by zeroing the variable Tailwind composes the ring into, not by editing
+ * the classes: `components/ui/*` is vendored (see CLAUDE.md), so a
+ * `focus-visible:ring-*` deleted there returns the next time that component is
+ * re-added, and every component added after this would arrive ringed again.
+ * One rule covers both.
+ *
+ * Unlayered — the same lever the sidebar rules below use. The ring utilities
+ * live in `@layer utilities`, and an unlayered declaration beats a layered one
+ * whatever the specificity; moved inside `@layer base` this rule would lose to
+ * every one of them and do nothing at all.
+ *
+ * The exemption is the popup surfaces. They spend `ring-1 ring-foreground/10`
+ * on their *hairline edge* — the same variable, set in the base state rather
+ * than on focus — and Base UI moves focus onto a dialog or a menu when it
+ * opens, which the browser counts as `:focus-visible` whenever the keyboard is
+ * what opened it. Without this they would lose that edge for exactly as long
+ * as they were open. `:where` holds the exclusion at zero specificity; being
+ * unlayered is what wins here, and this rule should not start a specificity
+ * race the utilities can rejoin.
+ *
+ * The second selector is `InputGroup`, and it is the reason one selector was
+ * not enough. Every other control rings *itself* on focus; an input group rings
+ * the wrapper when the field inside it is focused
+ * (`has-[[data-slot=input-group-control]:focus-visible]:ring-3`), so the
+ * element wearing the ring never matches `:focus-visible` at all and the rule
+ * above walked straight past it — which is exactly the ring left around the
+ * advanced-search fields. Stated as the same `:has()` the utility is built
+ * from, so the two cannot come apart. Its `…:border-ring` half is untouched, so
+ * the group still outlines on focus like a plain input.
+ *
+ * `aria-invalid:ring-*` is deliberately untouched: that ring says a field is
+ * wrong, not that it is focused, and it is the only thing saying so.
+ */
+:focus-visible:not(
+  :where(
+    [data-slot="dialog-content"],
+    [data-slot="popover-content"],
+    [data-slot="select-content"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dropdown-menu-sub-content"],
+    [data-slot="context-menu-content"],
+    [data-slot="context-menu-sub-content"]
+  )
+),
+:has([data-slot="input-group-control"]:focus-visible) {
+  --tw-ring-shadow: 0 0 #0000;
+}
+
+/*
+ * The sidebar's controls are what the rule above needs a hand with. They carry
+ * `ring-sidebar-ring focus-visible:ring-2` and `outline-hidden` and no border
+ * at all, so the halo was not their second cue — it was their only one, and
+ * zeroing it would leave a keyboard user with nothing to see on the app's main
+ * navigation.
+ *
+ * So they get what the rest of the app gets, an edge in the ring colour, drawn
+ * as an outline because there is no border here to recolour. Inset by its own
+ * width so it lands *on* the button's rounded shape rather than around it —
+ * outside is where the halo was, and being outside is most of why it went.
+ *
+ * These five are exactly the sidebar parts that focus with no border of their
+ * own; the trigger and the sidebar's input are a `Button` and an `Input` and
+ * already recolour theirs, so naming `[data-sidebar]` wholesale would give
+ * those two the cue twice over.
+ */
+:is(
+  [data-sidebar="group-label"],
+  [data-sidebar="group-action"],
+  [data-sidebar="menu-button"],
+  [data-sidebar="menu-action"],
+  [data-sidebar="menu-sub-button"]
+):focus-visible {
+  outline: 1px solid var(--sidebar-ring);
+  outline-offset: -1px;
+}
+
 /* Overlay mode for the two-pane sidebar: an *unpinned* menu panel slides over
  * the page instead of reflowing it; only a pinned panel pushes the content.
  *

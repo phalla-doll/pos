@@ -240,7 +240,7 @@ function EmptyState({ onOpen }: { onOpen: (screenType: ScreenType) => void }) {
                 key={type}
                 type="button"
                 onClick={() => onOpen(type)}
-                className="group flex items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="group flex items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:border-ring focus-visible:outline-none"
               >
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary [&_svg]:size-4">
                   {screen.icon}
