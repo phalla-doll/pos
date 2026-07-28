@@ -170,23 +170,29 @@
   --sidebar-rail-border: oklch(0.88 0.012 106.5);
   /* A table's header band, and the shade a sortable header takes under the
      * pointer. A column header is chrome in the sense the rail is — a strip
-     * that frames the rows rather than being one — and this was the rail's own
-     * surface for exactly that reason, pointed at rather than restated.
+     * that frames the rows rather than being one — and it was written in the
+     * rail's own register for exactly that reason: a surface stepped well off
+     * the card, first at the rail's 1.19:1 and then softened to 1.14:1.
      *
-     * It is written out now because the two want different *amounts* of that
-     * chrome. The rail's step is read against the workspace, with a whole pane
-     * of it at a time and a border to help; the header is read against the
-     * white card immediately under it, one band a row deep, and at the rail's
-     * 1.19:1 that band was the loudest horizontal in the screen — a stripe
-     * competing with the labels on it. 1.14:1 still separates the band from
-     * the rows without the header having to shout to be chrome.
+     * Both were too much of it. The card under this band is white and so is
+     * the page, so a header at 0.955 was the darkest horizontal anywhere in
+     * the content column — a grey lid on a white sheet, and the reason a table
+     * read pale beside the cards it shares a screen with. It takes the panel's
+     * rung now (1.03:1), so the band is white's own shade rather than the
+     * rail's, and the table is one white surface from its first row to its
+     * last.
      *
-     * Same reason the hover is its own value rather than the rail's press: it
-     * is tuned to hold the pair's 1.11:1 step against the *new* band, so a
-     * sortable cell lifts by as much as it always did. The two numbers move
-     * together or the hover stops clearing the surface it sits on. */
-  --table-header: oklch(0.955 0.007 106.5);
-  --table-header-accent: oklch(0.92 0.01 106.5);
+     * What tells the header from the rows is then the inset rule under it and
+     * the weight and colour of its labels — both already there, both already
+     * saying it, so the surface was the third voice saying the same thing and
+     * the only one that cost the table its white.
+     *
+     * The hover holds the pair's 1.11:1 step, re-measured against the new band:
+     * a sortable cell darkens under the pointer by as much as it always did,
+     * it just starts higher. The two numbers move together or the hover stops
+     * clearing the surface it sits on. */
+  --table-header: oklch(0.988 0.003 106.5);
+  --table-header-accent: oklch(0.952 0.006 106.5);
   /* The blue a screen's row-action toolbar is tinted with, and the one colour
      * in this app that outlives the palette: the toolbar wears it on all four
      * themes, so the neutral palettes carry it outright while the blue ones
@@ -305,25 +311,26 @@
   --sidebar-rail-border: oklch(0.322 0.014 107.1);
   /* Dark cannot borrow the rail the way light does — up there the rail is a
      * step under the workspace, but here it *is* the card (0.228), so a header
-     * band on it would be the card it is meant to stand out from. It sits
-     * between the card and `--muted`'s 0.286 instead: page 0.153 → card 0.228
-     * → header 0.274, so the band is still the top of the ramp and the rows
-     * below it are not.
+     * band on it would be the card it is meant to stand out from. It sits just
+     * over the card instead, short of `--muted`'s 0.286: page 0.153 → card
+     * 0.228 → header 0.239, so the band is still the top of the ramp and the
+     * rows below it are not.
      *
-     * Not `--muted` itself, which is what this was. That put the band 1.19:1
-     * over the card — the same step light's rail gave it, and too loud for the
-     * same reason: a header is one row-deep strip read against the rows right
-     * under it, not a pane. 1.14:1 is the step both themes take now, so the
-     * band reads as the same amount of chrome whichever one is on.
+     * Not `--muted` itself, which is what this was, and not the 0.274 that
+     * replaced it. Those put the band 1.19:1 and 1.14:1 over the card, and the
+     * light block above has the argument against both — a header is one
+     * row-deep strip read against the rows right under it, and the rule and
+     * the label weight were already telling it apart. 1.03:1 is the step both
+     * themes take now, so the band reads as the same amount of chrome
+     * whichever one is on; a dark table is one surface for its whole height
+     * the way the light one is.
      *
      * The hover keeps the light pair's 1.11:1 relative step, measured on this
      * surface and going the other way — dark surfaces lift under the pointer
      * where light ones sink. Both are written out because there is no fill at
-     * either shade to point at; `--sidebar-rail-border`'s 0.322 is near the
-     * hover, but a line's colour and a surface's are not the same thing to
-     * keep in step. */
-  --table-header: oklch(0.274 0.015 107.4);
-  --table-header-accent: oklch(0.305 0.016 107.4);
+     * either shade to point at. */
+  --table-header: oklch(0.239 0.013 107.4);
+  --table-header-accent: oklch(0.275 0.015 107.4);
   /* The dark step of the toolbar's blue — see the light block for why this one
      * colour is the palette's exception. Lighter than the light theme's, like
      * every accent here: it is mixed into a dark surface and worn by icons on
