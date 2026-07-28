@@ -99,6 +99,7 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
+import { deleteParam } from "@/lib/record-param"
 import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
 import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import {
@@ -452,6 +453,32 @@ export function ListScreen<T>({
   const canCreate = Boolean(creatable) && workspace !== null
   const canEdit = Boolean(editable) && workspace !== null
 
+  /**
+   * Ask to delete some rows — one row opens the record's delete tab, several
+   * fall back to the confirmation dialog.
+   *
+   * The split is not two minds about the same action; it is the only place the
+   * two surfaces can differ. A delete tab is the record's own fields, readonly,
+   * which is a far better thing to review than a dialog line — but a form shows
+   * *one* record, and a selection of nine has nine. Opening nine tabs would
+   * answer a bulk gesture with a pile of work, so the many-row case keeps the
+   * dialog, which is built for exactly that: it lists the rows, and it says how
+   * many are hidden by the current filters.
+   *
+   * `canEdit` gates the tab path because `editable` is what says this screen's
+   * rows can be addressed one at a time at all — the registry accepts a
+   * `delete-` param on the same condition. A screen without it degrades to the
+   * dialog rather than to nothing.
+   */
+  function requestDelete(keys: RowKey[]) {
+    const [only] = keys
+    if (keys.length === 1 && only !== undefined && canEdit) {
+      workspace?.openTab({ screenType, param: deleteParam(String(only)) })
+      return
+    }
+    setConfirmingDelete(true)
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-6">
       {/*
@@ -548,24 +575,24 @@ export function ListScreen<T>({
             </Button>
           )}
           {/*
-            Delete leads to the same confirmation a row's context menu opens —
-            it does not delete on click. That dialog names the rows one by one,
-            which is what makes a destructive action safe to put in a toolbar
-            at all: the button opens a question, and the question is where the
-            selection is spelled out.
+            Delete never deletes on click — it opens the question, and which
+            surface asks it depends on how many rows are ticked. See
+            `requestDelete`. Either way the click lands somewhere that names
+            what it is about to remove, which is what makes a destructive
+            action safe to put in a toolbar at all.
 
-            The one button in the tray without `toolbarButton`, matching the
-            record form's Delete: it takes `toolbarMetrics` so it belongs to
-            the row, but not the tint, so it stays red among the accented ones.
-            `ghost` rather than `outline` for the same reason — the tint's job
-            on the others is to strip the outline back to the tray, and a
-            button that skips the tint needs the same nothing underneath it.
+            The one button in the tray without `toolbarButton`: it takes
+            `toolbarMetrics` so it belongs to the row, but not the tint, so it
+            stays red among the accented ones. `ghost` rather than `outline`
+            for the same reason — the tint's job on the others is to strip the
+            outline back to the tray, and a button that skips the tint needs
+            the same nothing underneath it.
           */}
           <Button
             type="button"
             variant="ghost"
             disabled={selectedCount === 0}
-            onClick={() => setConfirmingDelete(true)}
+            onClick={() => requestDelete([...selected])}
             className={cn(
               toolbarMetrics,
               "text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -1432,13 +1459,14 @@ export function ListScreen<T>({
                       <ContextMenuSeparator />
                       {/*
                         The right-click already made the selection match what
-                        the menu acts on (`selectionForMenu`), so this opens the
-                        confirmation below, which is now the only way to reach
-                        it.
+                        the menu acts on (`selectionForMenu`), so this and the
+                        toolbar's Delete are asking about the same rows and go
+                        the same way — one row to its own delete tab, several
+                        to the dialog. See `requestDelete`.
                       */}
                       <ContextMenuItem
                         variant="destructive"
-                        onClick={() => setConfirmingDelete(true)}
+                        onClick={() => requestDelete(targets)}
                       >
                         <Trash2 strokeWidth={1.5} />
                         <span>{rowWord("Delete", targets.length)}</span>
@@ -1563,11 +1591,13 @@ export function ListScreen<T>({
       </div>
 
       {/*
-        Delete confirmation — the only irreversible action here, so it names
-        the rows instead of asking "are you sure?" about an abstract count.
-        Both the toolbar's Delete and a row's context menu open this same
-        dialog, so neither can remove anything without the rows being read back
-        first.
+        Delete confirmation — now the *multi-row* half of deleting, since a
+        single row goes to a delete tab instead (see `requestDelete`). It keeps
+        the job the tab can't do: naming several rows at once, and saying how
+        many of them the current filters are hiding.
+
+        Still the same rule as before — it names the rows rather than asking
+        "are you sure?" about an abstract count.
       */}
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="sm:max-w-md">
