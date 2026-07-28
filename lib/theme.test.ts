@@ -143,17 +143,6 @@ describe("globals.css", () => {
   )
   const classThemes = themes.filter((theme) => theme !== "light")
 
-  /**
-   * The declarations of the *last* block written for this theme's class alone —
-   * which, given the ordering asserted below, is the one that wins. For a blue
-   * theme that is its palette override; `.system-dark` also leads a shared
-   * block with `.dark`, and this deliberately reads past it to the override.
-   */
-  const paletteBlock = (theme: string) =>
-    [...css.matchAll(new RegExp(`^\\.${theme} \\{([^}]*)\\}`, "gm"))].at(
-      -1
-    )?.[1]
-
   it("defines a block for every theme that needs a class", () => {
     for (const theme of classThemes) {
       expect(css).toMatch(new RegExp(`^\\.${theme}[,\\s]`, "m"))
@@ -241,19 +230,32 @@ describe("globals.css", () => {
   )
 
   /**
-   * The focus ring is an accent, so a palette that moves the accent has to move
-   * it too. Inherited, the blue themes answered a focused input with the
-   * neutral grey — the one cue that exists to be noticed. Both rings are
-   * checked: `--sidebar-ring` is a separate variable, so a blue app could
-   * otherwise ring its inputs blue and its sidebar grey.
+   * The focus edge is an accent, so a palette that moves the accent has to move
+   * it too — left inherited, the blue themes answered a focused input with the
+   * neutral grey, and it is the one cue that exists to be noticed.
+   *
+   * Each block restating its own ring is what that used to mean, and a block
+   * forgetting to is what it could not catch. So the edge is mixed from
+   * `--toolbar-accent` instead — a token the test above already pins every
+   * theme to answering — and the invariant becomes the stronger one: exactly
+   * one declaration, in `:root`, derived rather than written out. A theme
+   * cannot then be added with a grey ring, because it cannot be added with a
+   * ring of its own at all.
+   *
+   * Both are checked. `--sidebar-ring` is a separate variable mixed towards a
+   * separate surface, so a blue app could otherwise focus its inputs blue and
+   * its sidebar grey.
    */
-  it("gives every blue theme its own focus ring", () => {
-    for (const theme of themes.filter((t) => paletteOf(t) === "blue")) {
-      const block = paletteBlock(theme)
-      expect(block).toBeDefined()
-      expect(block).toMatch(/--ring:/)
-      expect(block).toMatch(/--sidebar-ring:/)
-    }
+  it.each([
+    ["--ring", /(?<![\w-])--ring:\s*([^;]*)/],
+    ["--sidebar-ring", /(?<![\w-])--sidebar-ring:\s*([^;]*)/],
+  ])("derives %s from the accent, in one place", (_token, pattern) => {
+    const declarations = rules.filter(([, , body]) => pattern.test(body))
+
+    expect(declarations).toHaveLength(1)
+    const [[, selector, body]] = declarations
+    expect(selector).toContain(":root")
+    expect(body.match(pattern)?.[1]).toContain("--toolbar-accent")
   })
 
   /**
