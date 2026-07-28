@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-  Archive,
   BadgeCheck,
   ChevronDown,
   ChevronLeft,
@@ -11,22 +10,14 @@ import {
   ChevronUp,
   Check,
   ClipboardCopy,
-  ClipboardCheck,
-  Copy,
-  Download,
   Ellipsis,
   Filter,
-  FolderInput,
-  PackagePlus,
   PencilLine,
   Plus,
-  Printer,
   Search,
   SquareCheck,
-  Tag,
   Trash2,
   X,
-  type LucideIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -108,6 +99,7 @@ import {
   type SortState,
 } from "@/lib/list-rows"
 import { deletePlan } from "@/lib/list-delete"
+import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
 import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import {
   defaultPageSize,
@@ -209,34 +201,6 @@ const indeterminateDash =
  */
 const headerSurface = "[&_th]:bg-table-header"
 const headerSortHover = "hover:bg-table-header-accent"
-
-/**
- * The primary actions on a selection. Every entry is a UI-only stub until
- * there is a backend — they exist so the selection flow can be demoed end to
- * end — so they carry no handler and are listed as data rather than
- * hand-written twice, once in the header's Actions menu and once in a row's
- * context menu. Destructive delete is rendered separately, set apart by a
- * divider — and in the header it is a button of its own beside the menu.
- * Nothing derives from that split; it is only where each surface puts it.
- */
-const bulkActions = [
-  { label: "Export", icon: Download },
-  { label: "Duplicate", icon: Copy },
-  { label: "Archive", icon: Archive },
-] as const
-
-/** Lower-traffic actions, sat below a divider from the primary ones. */
-const bulkMenuActions: {
-  label: string
-  icon: LucideIcon
-  shortcut?: string
-}[] = [
-  { label: "Assign tag", icon: Tag, shortcut: "⌘T" },
-  { label: "Change category", icon: FolderInput },
-  { label: "Adjust stock", icon: PackagePlus },
-  { label: "Print labels", icon: Printer, shortcut: "⌘P" },
-  { label: "Mark as counted", icon: ClipboardCheck },
-] as const
 
 /**
  * "Copy row" / "Copy 3 rows" — a menu item names what it will actually act on,
@@ -634,14 +598,14 @@ export function ListScreen<T>({
                     : "1 row selected"}
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
-              {bulkActions.map(({ label: action, icon: Icon }) => (
+              {primaryRowActions.map(({ label: action, icon: Icon }) => (
                 <DropdownMenuItem key={action}>
                   <Icon strokeWidth={1.5} />
                   {rowWord(action, selectedCount)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              {bulkMenuActions.map(
+              {secondaryRowActions.map(
                 ({ label: action, icon: Icon, shortcut }) => (
                   <DropdownMenuItem key={action}>
                     <Icon strokeWidth={1.5} />
@@ -1433,7 +1397,7 @@ export function ListScreen<T>({
                         The same actions the header's Actions menu offers, so
                         the two can't drift apart. Stubs, as there.
                       */}
-                      {bulkActions.map(({ label, icon: Icon }) => (
+                      {primaryRowActions.map(({ label, icon: Icon }) => (
                         <ContextMenuItem key={label}>
                           <Icon strokeWidth={1.5} />
                           <span>{rowWord(label, targets.length)}</span>
@@ -1445,7 +1409,7 @@ export function ListScreen<T>({
                           <span>More actions</span>
                         </ContextMenuSubTrigger>
                         <ContextMenuSubContent className="w-52">
-                          {bulkMenuActions.map(({ label, icon: Icon }) => (
+                          {secondaryRowActions.map(({ label, icon: Icon }) => (
                             <ContextMenuItem key={label}>
                               <Icon strokeWidth={1.5} />
                               <span>{label}</span>
