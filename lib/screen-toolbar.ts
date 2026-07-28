@@ -2,7 +2,7 @@
  * What a screen's row-action toolbar wears, declared once.
  *
  * Two screens draw this row — the list's Create/View/Delete/More/Search, and a
- * record's Create-or-Save/Approve/Delete/Clear/Close — and they are meant to
+ * record's Save/Verify/Hold/Clear/More/Close — and they are meant to
  * read as the same row seen at two altitudes. It lived as a local in
  * `list-screen.tsx`, which is exactly why the record form went without: a
  * palette rule stated inside one call site can only ever reach that one.
@@ -98,10 +98,12 @@ export const toolbarBar =
  * It goes on the actions a screen leads with and no others. Two standing
  * exceptions:
  *
- * - **Destructive actions never take it.** Delete wears `toolbarMetrics`
- *   alone: it belongs to the row, so it keeps the shape, but it must not go
- *   transparent into the tray with the rest — its colour is the one signal
- *   saying the click can't be taken back.
+ * - **Destructive actions never take it.** The list's Delete wears
+ *   `toolbarMetrics` alone: it belongs to the row, so it keeps the shape, but
+ *   it must not go transparent into the tray with the rest — its colour is the
+ *   one signal saying the click can't be taken back. A record's Delete is a
+ *   `More` item rather than a button, so the question doesn't reach it; the
+ *   menu marks it destructive in its own way.
  * - **Chrome is not an action.** The pager's and column headers' `ghost`
  *   buttons stay quiet. So does a button already declared `default`, whose
  *   solid fill leads a surface of its own rather than joining this row.

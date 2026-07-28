@@ -1,7 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { BadgeCheck, Eraser, Plus, Save, Trash2, X } from "lucide-react"
+import {
+  BadgeCheck,
+  Ellipsis,
+  Eraser,
+  Pause,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,12 +22,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/hooks/use-workspace"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
 import { isDraft, recordId } from "@/lib/record-param"
-import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
+import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
+import { toolbarBar, toolbarButton } from "@/lib/screen-toolbar"
 import { cn } from "@/lib/utils"
 
 export type RecordFormProps<T> = {
@@ -168,6 +186,13 @@ export function RecordForm<T>({
             Save leads the toolbar, before the way out of the tab: the order is
             what you do here, then what you do to leave. `form` points it at
             the fields below, since the button no longer lives inside them.
+
+            One word on an edit, where it used to read "Save changes". The row
+            beside it is four more verbs of the same length, and the only one
+            that had a noun bolted on was the one whose object is least in
+            doubt — you are looking at the record it saves. A draft keeps its
+            noun ("Create item") because there the button is also what *names*
+            what is about to exist.
           */}
           {!missing && (
             <Button
@@ -177,65 +202,46 @@ export function RecordForm<T>({
               className={toolbarButton}
             >
               {creating ? <Plus /> : <Save />}
-              {creating ? `Create ${noun}` : "Save changes"}
+              {creating ? `Create ${noun}` : "Save"}
             </Button>
           )}
           {/*
-            A UI-only stub, like the one on the list's toolbar — there is no
-            backend to approve against yet, so it carries no handler. Editing
-            only: a draft is not a record anyone can have approved, and
-            offering it there would promise the click does two things.
+            Verify and Hold: the two things done *to* a record once it exists,
+            and the pair the list's toolbar can't offer — it acts over a
+            selection, where "hold" would have to mean holding several things
+            at once. UI-only stubs, like the rest, so neither carries a
+            handler.
+
+            Editing only, both of them. A draft is not a record anyone can have
+            verified or put on hold, and offering either there would promise
+            the click does two things — save it, then act on it.
           */}
           {!creating && !missing && (
             <Button type="button" variant="outline" className={toolbarButton}>
               <BadgeCheck />
-              Approve
+              Verify
             </Button>
           )}
-          {/*
-            Only on an edit: a draft has no record to delete, and "Delete" over
-            a form that has never been saved would mean nothing but Clear,
-            which is already offered beside it.
-
-            This is where deleting one record lives now — the list's toolbar no
-            longer carries it, so the deliberate act of opening a record is what
-            puts its delete in reach.
-
-            The one button in the tray with no `toolbarButton`: it keeps its own
-            colour on every theme, staying red among the accented ones rather
-            than joining them. Deleting should not look like the thing beside
-            it.
-
-            `ghost`, where the rest are `outline`: what `toolbar-tint` does for
-            them is strip the outline back to the tray, and this button — which
-            takes the metrics but not the tint — needs the same nothing
-            underneath it. Asking for a variant that has no fill is cheaper than
-            turning one off. Its hover is red rather than the tray's neutral,
-            which is the point of it not being a `toolbarButton`.
-          */}
           {!creating && !missing && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setConfirmingDelete(true)}
-              className={cn(
-                toolbarMetrics,
-                "text-destructive hover:bg-destructive/10 hover:text-destructive"
-              )}
-            >
-              <Trash2 />
-              Delete
+            <Button type="button" variant="outline" className={toolbarButton}>
+              <Pause />
+              Hold
             </Button>
           )}
           {/*
-            Only on a draft. Here "clear" means one unambiguous thing — empty
-            every field — whereas on an edit form the same word could mean
-            either blanking the record or putting back what it said when the
-            tab opened, and a button that has to be guessed at is worse than no
-            button. Disabled rather than hidden while the form is untouched, so
-            it doesn't appear the moment you start typing.
+            On both forms, and meaning the same thing on each: empty every
+            field. It was once a draft-only button on the grounds that on an
+            edit "clear" could mean either blanking the record or putting back
+            what it said when the tab opened — but the fix for a word that
+            could mean two things is to pick one, not to withhold the button.
+            This is the blanking one. Putting the record back is what closing
+            the tab without saving already does, and does more safely.
+
+            Disabled while every field is empty, so it doesn't offer to do
+            nothing. On an edit that is only true once you have emptied the
+            form by hand.
           */}
-          {creating && (
+          {!missing && (
             <Button
               type="button"
               variant="outline"
@@ -247,11 +253,73 @@ export function RecordForm<T>({
               Clear
             </Button>
           )}
+          {/*
+            The leftovers, behind one menu — the same shape the list's toolbar
+            ends with, reading from the same `lib/row-actions` list, so the two
+            surfaces can't drift apart. Bare labels here: the list says "Export
+            3 rows" because it acts on a selection, and this form has exactly
+            one record.
+
+            Delete lives in it, last and behind a divider. It used to be a
+            button in this row, and this is the demotion the list screen paid
+            for: deleting one record is reachable from that toolbar too now, so
+            the case for spending a slot on it here is weaker than the case for
+            not sitting a destructive click beside Clear. It still opens the
+            confirmation rather than deleting — a menu item is easier to reach
+            by accident than a button, not harder.
+
+            Editing only, like Verify and Hold: every action in it is about a
+            record that exists.
+          */}
+          {!creating && !missing && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={toolbarButton}
+                  />
+                }
+              >
+                <Ellipsis />
+                More
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {primaryRowActions.map(({ label: action, icon: Icon }) => (
+                  <DropdownMenuItem key={action}>
+                    <Icon strokeWidth={1.5} />
+                    {action}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                {secondaryRowActions.map(
+                  ({ label: action, icon: Icon, shortcut }) => (
+                    <DropdownMenuItem key={action}>
+                      <Icon strokeWidth={1.5} />
+                      {action}
+                      {shortcut && (
+                        <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
+                      )}
+                    </DropdownMenuItem>
+                  )
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  <Trash2 strokeWidth={1.5} />
+                  Delete {noun}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         {/*
           Close stands in a tray of its own, the way Search does on the list:
           everything in the tray beside it acts on the record — saves it,
-          approves it, deletes it — while this one only puts the tab away, and
+          verifies it, holds it — while this one only puts the tab away, and
           the record is untouched either way. A stray click on the end of that
           tray should not be able to close the tab.
 
