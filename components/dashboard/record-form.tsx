@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/hooks/use-workspace"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
-import { isDraft, recordId } from "@/lib/record-param"
+import { paramKind, recordId } from "@/lib/record-param"
 import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
 import { toolbarBar, toolbarButton } from "@/lib/screen-toolbar"
 import { cn } from "@/lib/utils"
@@ -90,7 +90,7 @@ export function RecordForm<T>({
   tabId,
 }: RecordFormProps<T>) {
   const workspace = useWorkspace()
-  const creating = isDraft(param)
+  const creating = paramKind(param) === "draft"
 
   // The row this tab edits, found once by the key the param carries. A record
   // tab can outlive its row (a stale link, a deleted record), so this is

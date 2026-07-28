@@ -8,7 +8,7 @@ import {
 import { RecordForm } from "@/components/dashboard/record-form"
 import { ScreenHeader } from "@/components/dashboard/screen-header"
 import { sampleCustomers, sampleInventory } from "@/lib/fixtures"
-import { isDraft } from "@/lib/record-param"
+import { paramKind } from "@/lib/record-param"
 
 import {
   Landmark,
@@ -198,13 +198,14 @@ function listScreen<T>(
             // shorter and already what the user clicked. Prefixing it with the
             // screen would push the useful half of "Inventory SKU-0001" past
             // the chip's truncation.
-            label: (param) => (isDraft(param) ? draftLabel : param),
+            label: (param) =>
+              paramKind(param) === "draft" ? draftLabel : param,
             // Drafts are accepted only where creating is offered, and record
             // ids only where editing is — and only for a row that is actually
             // there, so a stale link drops the tab instead of opening a form
             // over nothing.
             accepts: (param) =>
-              isDraft(param)
+              paramKind(param) === "draft"
                 ? Boolean(creatable)
                 : Boolean(editable) &&
                   rows.some((row, i) => String(keyOf(row, i)) === param),
