@@ -203,6 +203,19 @@
      * brighter of the palette's two blues for the same reason the focus ring
      * does. */
   --toolbar-accent: oklch(0.546 0.245 262.881);
+  /* The chip the pointer puts on a toolbar button — a *raised* surface, not a
+     * deeper tint of the tray. Zinc-50, which is the one grey in this file with
+     * no warmth in it, and that costs nothing here: it is chroma 0 beside a
+     * card that is also chroma 0, so the neutral-next-to-warm mistake the
+     * `.system` block warns about needs a tinted surface to happen against, and
+     * white isn't one.
+     *
+     * L 0.985 sits between the tray's 0.968 and the card's 1, so the chip is
+     * the tray's own surface lifted back towards the page it sits on. The lift
+     * is a hair on its own — what carries it is that the chip drops the tray's
+     * blue entirely, so a change of *saturation* does the work a change of
+     * depth alone couldn't at this distance. */
+  --toolbar-chip: oklch(0.985 0 0);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
@@ -316,6 +329,25 @@
      * every accent here: it is mixed into a dark surface and worn by icons on
      * it, so it has to come *up* off the card rather than down off white. */
   --toolbar-accent: oklch(0.623 0.214 259.815);
+  /* The dark chip, which lifts like the light one does — up off the tray, not
+     * deeper into it — and has further to go to say so. This was `--muted`
+     * first, on the argument that a hovered row in the table wears it and the
+     * pointer should mean the same amount of surface wherever it lands. The
+     * distance is what that missed: a row hovers off the *card*, a 0.058 step,
+     * while the chip hovers off a tray already sitting at ~0.256, so the same
+     * token bought it half the lift and read as barely lit rather than raised.
+     *
+     * So it takes the next rung of this block's own ramp instead — page 0.153 →
+     * card 0.228 → fills 0.286 → 0.34, continuing the ~0.06 spacing the ramp
+     * already keeps. The chip clears the tray by what a row clears the card by,
+     * and it is the lightest surface in the theme, which is what the shape
+     * under the pointer should be.
+     *
+     * A literal, where the light block's neighbour derives nothing either: both
+     * chips are a rung that no existing token stands on. `--sidebar-rail-border`
+     * is near this value and is not it — a line's colour and a surface's are not
+     * the same thing to keep in step. */
+  --toolbar-chip: oklch(0.34 0.016 107.4);
   /* Dark takes the page, not pane 1 like the light block does: here the rail
      * and the card are the same 0.228, so a workspace on the rail would leave
      * every card invisible against the surface it sits on. The page is a step
@@ -385,10 +417,10 @@
 
 /*
  * The row-action toolbar: `toolbar-bar` is the tinted tray, `toolbar-tint` is
- * what a button inside it looks like. `--toolbar-accent` (declared per theme,
- * up in `:root`) is what lets both live on every theme, including the palettes
- * holding no blue of their own. Destructive actions never take the button
- * class: Delete keeps its own colour everywhere.
+ * what a button inside it looks like. `--toolbar-accent` and `--toolbar-chip`
+ * (declared per theme, up in `:root`) are what let both live on every theme,
+ * including the palettes holding no blue of their own. Destructive actions
+ * never take the button class: Delete keeps its own colour everywhere.
  *
  * The tint is on the *tray*, not on each button. The two look nearly the same
  * standing still and are not the same thing at all: a row of tinted buttons is
@@ -408,13 +440,20 @@
  * button is a link — so the row reads as words with a colour running through
  * it rather than as a slab.
  *
- * The hover is the tray's own blue, carried further along the same mix. It was
- * a neutral grey first, on the argument that a change of *hue* is a louder
- * signal than a change of depth — true in the abstract, and wrong here: it put
- * the one grey shape on the screen inside the one blue one, so the chip read as
- * a patch stuck to the tray rather than a part of it lighting up. Depth is
- * enough of a signal when the two shades are this far apart, and staying on the
- * hue keeps the tray one object.
+ * The hover is a plain surface *lifted out of* the tray, not the tray's blue
+ * carried further along the same mix, which is what it was first. Deepening the
+ * tint made the pointer read as pressing the toolbar in: the chip was the
+ * darkest thing in the row, and the strongest blue in it sat under whichever
+ * button the pointer happened to be over rather than under the one that leads
+ * it. Lifting inverts that — the chip comes up off the tray towards the page,
+ * the way a raised control does, and the accent stays where it was spent
+ * deliberately, on the icons.
+ *
+ * It costs the earlier argument that a hover on the hue keeps the tray one
+ * object. What buys it back is that the chip is *inside* the rim with 2px of
+ * tint all the way round it (see `toolbarBar`): a shape framed by the tray on
+ * every side is read as part of it whatever colour it takes, where a chip
+ * running to the tray's edge would have needed the hue to stay attached.
  *
  * Classes rather than a `variant` prop, from back when this was one palette's:
  * the theme lives in localStorage and `/dashboard` is prerendered, so a prop
@@ -444,10 +483,11 @@
  *
  * 7%, which is a *tint* and near the floor of what still reads as one: it puts
  * the light tray at L 0.968 against the card's 1, close enough to white that
- * what you see is the hue rather than a grey with blue in it. Going heavier
- * darkened it towards the neutral press below and cost the pair the thing that
- * makes it legible — the tray has to stay lighter than the chip the pointer
- * puts on it, or the hover reads as a hole rather than a lift.
+ * what you see is the hue rather than a grey with blue in it. It is also the
+ * whole of the room the hover has to work in: the chip lands between this and
+ * the card, so a heavier tray would leave the two ends of that gap further
+ * apart than a hover should travel, and a lighter one would leave the chip
+ * nothing to rise off.
  *
  * Colour only. What shape the tray is, how much air it holds around its
  * buttons, and how far apart they sit are metrics, and metrics are stated at
@@ -486,19 +526,14 @@
  * `aria-expanded` covers both the More trigger and the Search toggle. This is
  * the fill the transparent button above exists to leave room for.
  *
- * 16% against the tray's 7%: far enough to be unmistakable at a glance, and
- * still inside the range that reads as a light blue rather than as the accent
- * itself — a chip that reached the accent would be a `default` button sitting
- * in the row, promising a primary action every button in it took a turn at.
- *
- * It lands just under the 20% rim, so a hovered chip stops short of the edge
- * drawn around the tray and the tray keeps its outline. Mixed from the accent
- * towards the card like the rim, so it steps *away* from the tray in whichever
- * direction the theme goes: deeper on light, lighter on dark, a lift either
- * way. */
+ * The token flat, with no mix over it: the chip is a surface of its own rather
+ * than a shade of the tray's, which is the whole of the change described up
+ * top, and a mix towards `--card` here would be a chip that fades back into the
+ * tint by however much it was softened. The two ends it has to sit between are
+ * tuned where they are declared, not blended at the point of use. */
 .toolbar-tint:hover,
 .toolbar-tint[aria-expanded="true"] {
-  background-color: color-mix(in oklab, var(--toolbar-accent) 16%, var(--card));
+  background-color: var(--toolbar-chip);
 }
 
 /* Restored explicitly: the rules above outrank `focus-visible:border-ring`, and

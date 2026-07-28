@@ -211,25 +211,34 @@ describe("globals.css", () => {
   })
 
   /**
-   * The other half. Those rules read one variable, so a theme that answers
-   * nothing for it mixes its tint from an empty value and renders a toolbar
-   * with no surface at all. The neutral palettes have no accent to derive it
-   * from and carry the blue outright; the blue ones point it at their own.
+   * The other half. Those rules read two variables — the tint and the surface
+   * the pointer lifts out of it — and a theme that answers nothing for either
+   * doesn't degrade: an empty value mixes an empty tint and fills an empty
+   * chip, so the toolbar loses its surface or its hover outright rather than
+   * falling back to something duller.
+   *
+   * The accent: the neutral palettes have no accent to derive it from and carry
+   * the blue outright; the blue ones point it at their own. The chip: each
+   * brightness states its own rung, since neither ramp has a token standing on
+   * the one the other uses, so both blocks have to keep saying so.
    */
-  it("answers the toolbar accent from every theme", () => {
-    for (const theme of themes) {
-      const applies = (selector: string) =>
-        selector.includes(":root") ||
-        new RegExp(`\\.${theme}(?![\\w-])`).test(selector)
+  it.each(["--toolbar-accent", "--toolbar-chip"])(
+    "answers %s from every theme",
+    (token) => {
+      for (const theme of themes) {
+        const applies = (selector: string) =>
+          selector.includes(":root") ||
+          new RegExp(`\\.${theme}(?![\\w-])`).test(selector)
 
-      expect(
-        rules.some(
-          ([, selector, body]) =>
-            applies(selector) && body.includes("--toolbar-accent:")
-        )
-      ).toBe(true)
+        expect(
+          rules.some(
+            ([, selector, body]) =>
+              applies(selector) && body.includes(`${token}:`)
+          )
+        ).toBe(true)
+      }
     }
-  })
+  )
 
   /**
    * The focus ring is an accent, so a palette that moves the accent has to move
