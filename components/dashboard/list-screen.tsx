@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-  BadgeCheck,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -11,6 +10,7 @@ import {
   Check,
   ClipboardCopy,
   Ellipsis,
+  Eye,
   Filter,
   PencilLine,
   Plus,
@@ -482,14 +482,15 @@ export function ListScreen<T>({
         */}
         {/*
           One tray rather than four buttons spaced apart: everything in it acts
-          on rows — makes one, edits one, approves them, or opens the menu of
+          on rows — makes one, opens one, removes them, or opens the menu of
           the rest — so one surface holding them says they are one kind of
           thing. Search, which changes what the table shows rather than what it
           holds, gets a tray of its own.
 
           Everything in it is `outline`, which `toolbarButton` then strips back
-          to the tray behind it. The two that used to stand out carry their
-          meaning in their content instead — New keeps the only `+` in the row.
+          to the tray behind it — bar Delete, whose red is the one colour in
+          the row that has to survive the tint. The rest carry their meaning in
+          their content instead: Create keeps the only `+` in the row.
 
           The tray is a plain grouping element: `role="group"` is what a set of
           related controls is, and the rest is `toolbarBar`'s. See there for why
@@ -510,7 +511,7 @@ export function ListScreen<T>({
               className={toolbarButton}
             >
               <Plus />
-              New
+              Create
             </Button>
           )}
           {/*
@@ -519,8 +520,15 @@ export function ListScreen<T>({
             and it exists so a row reached by keyboard can be opened without
             knowing either.
 
-            Enabled only at exactly one selected row. "Edit" over several would
-            have to open a form per row or silently pick one, and neither is
+            Called "View" rather than "Edit" because opening the record is all
+            this promises — what the tab it lands on offers is that form's to
+            say, and on a read-only record "Edit" would have promised something
+            the form never gives. The row's own context menu still says "Edit
+            row": there the gesture is aimed at one row and the intent is
+            unambiguous.
+
+            Enabled only at exactly one selected row. Opening several would
+            have to make a tab per row or silently pick one, and neither is
             what the click asked for — the same reason the context menu hides
             it for a multi-row selection.
           */}
@@ -535,39 +543,43 @@ export function ListScreen<T>({
               }}
               className={toolbarButton}
             >
-              <PencilLine />
-              Edit
+              <Eye />
+              View
             </Button>
           )}
           {/*
-            A UI-only stub like the bulk actions in the More menu — there is no
-            backend to approve against yet, so it carries no handler. It is out
-            here rather than in that menu because approving is the one thing a
-            reviewer does over and over, and a two-click path for the common
-            case is the wrong way round.
+            Delete leads to the same confirmation a row's context menu opens —
+            it does not delete on click. That dialog names the rows one by one,
+            which is what makes a destructive action safe to put in a toolbar
+            at all: the button opens a question, and the question is where the
+            selection is spelled out.
 
-            Enabled from one row up: unlike Edit, approving several at once is
-            a coherent thing to ask for.
+            The one button in the tray without `toolbarButton`, matching the
+            record form's Delete: it takes `toolbarMetrics` so it belongs to
+            the row, but not the tint, so it stays red among the accented ones.
+            `ghost` rather than `outline` for the same reason — the tint's job
+            on the others is to strip the outline back to the tray, and a
+            button that skips the tint needs the same nothing underneath it.
           */}
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             disabled={selectedCount === 0}
-            className={toolbarButton}
+            onClick={() => setConfirmingDelete(true)}
+            className={cn(
+              toolbarMetrics,
+              "text-destructive hover:bg-destructive/10 hover:text-destructive"
+            )}
           >
-            <BadgeCheck />
-            Approve
+            <Trash2 />
+            Delete
           </Button>
           {/*
             Every bulk action behind one menu rather than a row of buttons:
-            this toolbar already carries New, Edit, Approve and Search, and
+            this toolbar already carries Create, View, Delete and Search, and
             spelling the rest out inline wrapped it onto a second line at
             laptop widths. Disabled rather than hidden when nothing is ticked,
             so the actions are discoverable before a selection exists.
-
-            Deleting is not offered here at all: it stays on a row's context
-            menu, which is a deliberate gesture at a particular row rather than
-            a button sitting one slip away from Approve.
 
             Last in the group, where an overflow menu belongs: the named
             actions come first and the leftovers trail them. "More" with an
@@ -1552,9 +1564,10 @@ export function ListScreen<T>({
 
       {/*
         Delete confirmation — the only irreversible action here, so it names
-        the rows instead of asking "are you sure?" about an abstract count. A
-        row's context menu is what opens it; the toolbar offers no Delete of
-        its own.
+        the rows instead of asking "are you sure?" about an abstract count.
+        Both the toolbar's Delete and a row's context menu open this same
+        dialog, so neither can remove anything without the rows being read back
+        first.
       */}
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="sm:max-w-md">

@@ -1,7 +1,7 @@
 /**
  * What a screen's row-action toolbar wears, declared once.
  *
- * Two screens draw this row — the list's New/Edit/Approve/More/Search, and a
+ * Two screens draw this row — the list's Create/View/Delete/More/Search, and a
  * record's Create-or-Save/Approve/Delete/Clear/Close — and they are meant to
  * read as the same row seen at two altitudes. It lived as a local in
  * `list-screen.tsx`, which is exactly why the record form went without: a
