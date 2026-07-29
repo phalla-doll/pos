@@ -708,11 +708,19 @@ export function ListScreen<T>({
           where Clear had to be pinned to the line it belongs beside rather
           than centred against the whole two-line block.
 
-          `pt-4` matches the `px-4` beside it, so the card's top inset is the
-          same 16px as its sides rather than the 12px it used to be — the one
-          corner where the padding didn't square up. `pb-3` under it is the top
-          half of the gap to the fields; the grid's `pt-1` is the rest. See
+          Open, `pt-4` matches the `px-4` beside it, so the card's top inset is
+          the same 16px as its sides rather than the 12px it used to be — the
+          one corner where the padding didn't square up. `pb-3` under it is the
+          top half of the gap to the fields; the grid's `pt-1` is the rest. See
           there for why the pair adds to 16.
+
+          Shut, it drops to `py-3`. Those numbers are a card's inset, and shut
+          this is not a card — it is a bar, one line of text between the
+          toolbar and the table, and 16px of air above and below a single line
+          made it read as an empty card rather than a closed one. 12 is enough
+          to keep the line off the border and no more. It stays even top and
+          bottom, because with nothing under it there is no gap for the lower
+          half to be part of.
 
           `min-h-6` holds the row at Clear's height whether Clear is there or
           not. Without it the row is the title's 20px line box until the first
@@ -721,7 +729,12 @@ export function ListScreen<T>({
           typing into it. The two-line header this replaced was taller than the
           button and so never had the problem.
         */}
-        <div className="flex min-h-6 flex-row items-center justify-between gap-4 px-4 pt-4 pb-3">
+        <div
+          className={cn(
+            "flex min-h-6 flex-row items-center justify-between gap-4 px-4",
+            advancedOpen ? "pt-4 pb-3" : "py-3"
+          )}
+        >
           {/*
             The trigger is the title and its chevron, not the whole row: Clear
             shares the row and a button inside a button is not a thing HTML
