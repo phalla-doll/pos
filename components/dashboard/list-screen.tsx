@@ -23,6 +23,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuGroup,
@@ -293,9 +298,12 @@ export function ListScreen<T>({
   // on Apply, so a half-built query never disturbs the table underneath. It is
   // seeded from the live filters each time the card opens, which is what makes
   // the two surfaces one filter set rather than two.
+  //
+  // The card is its own collapsible now, so this is the accordion's open state
+  // as well as the draft's cue — no `useId` beside it, because the trigger and
+  // the panel are one component and Base UI wires `aria-controls` itself.
   const [advancedOpen, setAdvancedOpen] = React.useState(false)
   const [draft, setDraft] = React.useState<FilterState>({})
-  const advancedId = React.useId()
 
   const filterable = React.useMemo(
     () => columns.filter((c) => c.filterable !== false),
@@ -493,10 +501,11 @@ export function ListScreen<T>({
         name only exists as a tab label.
       */}
       {/*
-        `gap-3` rather than `gap-2`: the only two things in this row are the
-        actions tray and Search's, and the wider gap is what earns Search its
-        "different kind of thing" standing — at `gap-2` the split read as the
-        spacing inside a tray, saying nothing.
+        One tray in the row now that Search has gone: the advanced card names
+        and opens itself, so the button that used to sit here beside the
+        actions had nothing left to say. `gap-3` stays for whatever lands next
+        to the tray — it was picked as the gap *between* trays, and the row is
+        still a row of trays.
       */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">{label}</h1>
@@ -512,8 +521,8 @@ export function ListScreen<T>({
           One tray rather than four buttons spaced apart: everything in it acts
           on rows — makes one, opens one, removes them, or opens the menu of
           the rest — so one surface holding them says they are one kind of
-          thing. Search, which changes what the table shows rather than what it
-          holds, gets a tray of its own.
+          thing. Nothing that changes what the table *shows* is in here: that
+          is the advanced card's, below.
 
           Everything in it is `outline`, which `toolbarButton` then strips back
           to the tray behind it — bar Delete, whose red is the one colour in
@@ -658,48 +667,6 @@ export function ListScreen<T>({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        {/*
-          Search sits in a tray of its own on purpose: everything in the tray
-          beside it acts on rows — makes one, edits one, approves them — while
-          this one changes what the table shows. Sharing a tray would have said
-          the two were the same kind of thing.
-
-          It opens the advanced card below rather than the per-column row: the
-          funnel on each header already owns that row, and one button opening
-          the surface the other one opens is a button with nothing of its own
-          to do.
-        */}
-        <div className={toolbarBar}>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => openAdvanced(!advancedOpen)}
-            aria-expanded={advancedOpen}
-            aria-controls={advancedId}
-            // The card is either open or shut, so the button is a toggle and
-            // has to look held down while it is on. `toolbar-tint` draws that
-            // off the `aria-expanded` above — the same neutral press its own
-            // hover takes — so the state is already handled here.
-            //
-            // `rounded-full` because it is alone in its tray: a chip takes a
-            // tighter corner than the tray around it so it reads as sitting
-            // *in* something, and with one button there is no row of chips for
-            // it to read as part of — only the pill it is centred in.
-            className={cn(toolbarButton, "rounded-full")}
-          >
-            <Search />
-            Search
-            {/*
-              Inline rather than a corner badge: the dot marks a filter that
-              neither surface is currently showing, and reading in the flow of
-              the label is what makes it a caption on the button instead of
-              decoration floating beside it.
-            */}
-            {filtersActive && (
-              <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-            )}
-          </Button>
-        </div>
       </div>
 
       {/*
@@ -709,61 +676,116 @@ export function ListScreen<T>({
         results has no business being a popover that shuts on the first click
         outside it.
 
-        Mounted and unmounted rather than hidden, so `autoFocus` and the draft
-        seeding both key off the open.
+        And it opens itself. It used to be summoned by a Search button up in
+        the toolbar, which meant a shut card was invisible — the one surface
+        that says what the table is filtered by left no trace when it was the
+        table you were looking at. As a collapsible it keeps its header on
+        screen always, so the card is its own affordance: the title names it,
+        the chevron says it opens, and the dot beside them reports a live
+        filter whether the conditions are showing or not. That is the whole
+        job the toolbar button had, done by the thing it pointed at.
+
+        The panel is mounted and unmounted with the open (Base UI's default),
+        so `autoFocus` and the draft seeding still key off it.
       */}
-      {advancedOpen && (
-        <div id={advancedId} className="rounded-xl border bg-card">
-          <form onSubmit={applyAdvanced} className="flex flex-col">
+      <Collapsible
+        open={advancedOpen}
+        onOpenChange={openAdvanced}
+        className="rounded-xl border bg-card"
+      >
+        {/*
+          The header row sits outside the panel, so it survives the collapse —
+          it is the card when the card is shut.
+
+          `items-center` now that the header is a single line: the title and
+          Clear are two things on one row, and centring is what puts them on
+          it. It read `items-start` while a description sat under the title,
+          where Clear had to be pinned to the line it belongs beside rather
+          than centred against the whole two-line block.
+
+          `pt-4` matches the `px-4` beside it, so the card's top inset is the
+          same 16px as its sides rather than the 12px it used to be — the one
+          corner where the padding didn't square up. `pb-3` under it is the top
+          half of the gap to the fields; the grid's `pt-1` is the rest. See
+          there for why the pair adds to 16.
+
+          `min-h-6` holds the row at Clear's height whether Clear is there or
+          not. Without it the row is the title's 20px line box until the first
+          keystroke fills a condition, at which point Clear appears at 24 and
+          shoves every field down 4px — a card that flinches as you start
+          typing into it. The two-line header this replaced was taller than the
+          button and so never had the problem.
+        */}
+        <div className="flex min-h-6 flex-row items-center justify-between gap-4 px-4 pt-4 pb-3">
+          {/*
+            The trigger is the title and its chevron, not the whole row: Clear
+            shares the row and a button inside a button is not a thing HTML
+            has. What it does cover is the pair that reads as "this opens" —
+            click either and you get the same panel.
+
+            `text-left` because a button centres its text by default, and this
+            one is a heading that happens to be pressable.
+          */}
+          <CollapsibleTrigger className="group/adv flex min-w-0 items-center gap-2 text-left text-sm font-semibold">
             {/*
-              `items-center` now that the header is a single line: the title and
-              Clear are two things on one row, and centring is what puts them on
-              it. It read `items-start` while a description sat under the title,
-              where Clear had to be pinned to the line it belongs beside rather
-              than centred against the whole two-line block.
-
-              `pt-4` matches the `px-4` beside it, so the card's top inset is
-              the same 16px as its sides rather than the 12px it used to be —
-              the one corner where the padding didn't square up.
-
-              `pb-3` is the top half of the gap to the fields; the grid's `pt-1`
-              is the rest. See there for why the pair adds to 16.
-
-              `min-h-6` holds the row at Clear's height whether Clear is there
-              or not. Without it the row is the title's 20px line box until the
-              first keystroke fills a condition, at which point Clear appears at
-              24 and shoves every field down 4px — a card that flinches as you
-              start typing into it. The two-line header this replaced was taller
-              than the button and so never had the problem.
+              Rotates rather than swapping glyphs, which is what makes the two
+              states one control moving between them. Same 90° turn and same
+              200ms the sidebar's groups use — a chevron means the same thing
+              in both places, so it had better move the same way.
             */}
-            <div className="flex min-h-6 flex-row items-center justify-between gap-4 px-4 pt-4 pb-3">
-              {/* Named for the button that opens it, not for what it does:
-                  "Search" alone repeated the word on the button an inch above,
-                  leaving nothing to say this is the deeper of the two surfaces.
-
-                  It stands alone. A description under it once said the
-                  conditions combine rather than replacing each other, which the
-                  card does not show on its own — but it said it on every open,
-                  forever, about a card whose four labelled rows and single
-                  Apply are not hard to read. A permanent sentence explaining a
-                  surface is a cost the surface pays every time. */}
-              <p className="text-sm font-semibold">Advanced search</p>
-              {draftActive && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  // No vertical nudge: the row centres the two now, and the
-                  // button is taller than the title's line box, so it is what
-                  // sets the row's height rather than needing to be aligned
-                  // into it.
-                  className="shrink-0"
-                  onClick={() => setDraft({})}
-                >
-                  Clear
-                </Button>
+            <ChevronRight
+              aria-hidden
+              className={cn(
+                "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                advancedOpen && "rotate-90"
               )}
-            </div>
+            />
+            {/* Named for what it is rather than for what it does: "Search"
+                alone was the word on the toolbar button that used to open it,
+                which said nothing about this being the deeper of the two
+                filter surfaces.
+
+                It stands alone. A description under it once said the
+                conditions combine rather than replacing each other, which the
+                card does not show on its own — but it said it on every open,
+                forever, about a card whose four labelled rows and single
+                Apply are not hard to read. A permanent sentence explaining a
+                surface is a cost the surface pays every time. */}
+            <span className="truncate">Advanced search</span>
+            {/*
+              Inline rather than a corner badge: the dot marks a filter in
+              force, and reading in the flow of the label is what makes it a
+              caption on the title instead of decoration floating beside it.
+
+              It matters most when the card is shut — that is when the
+              conditions themselves are off screen and this is all that is left
+              to say the table is not showing everything.
+            */}
+            {filtersActive && (
+              <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+            )}
+          </CollapsibleTrigger>
+          {/* Only while the panel is open: it clears the draft, and a button
+              for editing conditions you can't see is a button with nothing to
+              act on. */}
+          {advancedOpen && draftActive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              // No vertical nudge: the row centres the two now, and the
+              // button is taller than the title's line box, so it is what
+              // sets the row's height rather than needing to be aligned
+              // into it.
+              className="shrink-0"
+              onClick={() => setDraft({})}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+        <CollapsibleContent>
+          <form onSubmit={applyAdvanced} className="flex flex-col">
             {/*
               The outer grid: one track per column of conditions, laid down
               whether or not there is anything to put in it. One, two at `lg`,
@@ -972,8 +994,8 @@ export function ListScreen<T>({
               )}
             </div>
           </form>
-        </div>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Results table — the first row is a fixed, live per-column search bar. */}
       {/*
