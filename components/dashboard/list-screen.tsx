@@ -302,7 +302,12 @@ export function ListScreen<T>({
   // The card is its own collapsible now, so this is the accordion's open state
   // as well as the draft's cue — no `useId` beside it, because the trigger and
   // the panel are one component and Base UI wires `aria-controls` itself.
-  const [advancedOpen, setAdvancedOpen] = React.useState(false)
+  //
+  // Open on arrival. A shut accordion is a header and a chevron, which says a
+  // surface exists but not what it offers; showing the conditions once is what
+  // teaches the screen it can be queried this way. Seeding is free at mount —
+  // `filters` starts empty, so the draft below already matches it.
+  const [advancedOpen, setAdvancedOpen] = React.useState(true)
   const [draft, setDraft] = React.useState<FilterState>({})
 
   const filterable = React.useMemo(
