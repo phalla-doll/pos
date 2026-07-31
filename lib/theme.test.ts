@@ -187,7 +187,7 @@ describe("globals.css", () => {
    * The neutral palettes have no accent to derive it from and carry the blue
    * outright; the blue ones point it at their own.
    */
-  it("answers --toolbar-accent from every theme", () => {
+  it("answers --focus-accent from every theme", () => {
     for (const theme of themes) {
       const applies = (selector: string) =>
         selector.includes(":root") ||
@@ -196,7 +196,7 @@ describe("globals.css", () => {
       expect(
         rules.some(
           ([, selector, body]) =>
-            applies(selector) && body.includes("--toolbar-accent:")
+            applies(selector) && body.includes("--focus-accent:")
         )
       ).toBe(true)
     }
@@ -209,7 +209,7 @@ describe("globals.css", () => {
    *
    * Each block restating its own ring is what that used to mean, and a block
    * forgetting to is what it could not catch. So the edge is mixed from
-   * `--toolbar-accent` instead — a token the test above already pins every
+   * `--focus-accent` instead — a token the test above already pins every
    * theme to answering — and the invariant becomes the stronger one: exactly
    * one declaration, in `:root`, derived rather than written out. A theme
    * cannot then be added with a grey ring, because it cannot be added with a
@@ -228,7 +228,7 @@ describe("globals.css", () => {
     expect(declarations).toHaveLength(1)
     const [[, selector, body]] = declarations
     expect(selector).toContain(":root")
-    expect(body.match(pattern)?.[1]).toContain("--toolbar-accent")
+    expect(body.match(pattern)?.[1]).toContain("--focus-accent")
   })
 
   /**

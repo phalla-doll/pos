@@ -114,7 +114,7 @@
      *
      * So it becomes the app's blue, thinned towards the surface it is drawn
      * on. That blue is the app's one accent across all four palettes
-     * (see `--toolbar-accent`), which is what lets this be *one* declaration
+     * (see `--focus-accent`), which is what lets this be *one* declaration
      * where the ring used to be restated in four blocks: the neutral palettes
      * carry the accent outright and the blue ones point it at their own, so
      * mixing from it is right on every theme without any of them saying so
@@ -131,7 +131,7 @@
      * indicator is asked for; 85% (#3c7aff, 3.87:1) is the step that clears it,
      * and this number is the only thing to change.
      */
-  --ring: color-mix(in oklab, var(--toolbar-accent) 70%, var(--card));
+  --ring: color-mix(in oklab, var(--focus-accent) 70%, var(--card));
   /*
      * Chart color comes in two families, each doing one job. `chart-1..5` is an
      * ordinal emerald ramp (magnitude / ordered steps, light→dark); the light
@@ -191,7 +191,7 @@
      * card's — a menu button is drawn on the panel, not on a card, and this is
      * the one place the two shades differ enough to matter. Declared here and
      * nowhere else, like `--ring` above. */
-  --sidebar-ring: color-mix(in oklab, var(--toolbar-accent) 70%, var(--sidebar));
+  --sidebar-ring: color-mix(in oklab, var(--focus-accent) 70%, var(--sidebar));
   /* The rail — pane 1, and the app bar that continues it across the top. Ours,
      * not the palette's: the ramp above only reaches as far as the panel, so
      * this continues it downwards, one step *under* the workspace so the two
@@ -215,7 +215,7 @@
      *
      * Hue 277.5, which is off the accent's 262.9 — this is a violet-leaning
      * blue-white, not the accent thinned into the page, and `color-mix`ing it
-     * out of `--toolbar-accent` would land at #ecf3ff and be a different
+     * out of `--focus-accent` would land at #ecf3ff and be a different
      * colour. So it is stated outright, and the two tokens below follow *it*
      * rather than the accent, so the frame stays one colour internally.
      *
@@ -282,7 +282,7 @@
      * It is read *against* a surface — thinned into a hairline along a
      * control's edge — never as a fill carrying `--primary-foreground` text, so
      * it takes the brighter of the palette's two blues. */
-  --toolbar-accent: oklch(0.546 0.245 262.881);
+  --focus-accent: oklch(0.546 0.245 262.881);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
@@ -334,7 +334,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   /* No `--ring` or `--sidebar-ring` follows, here or in the blue blocks below.
-     * Both are one `color-mix` over `--toolbar-accent` and the surface under
+     * Both are one `color-mix` over `--focus-accent` and the surface under
      * the control, stated once in `:root` — and this block moves both of those
      * inputs, so the focus edge arrives already carrying the dark accent and
      * the dark card without a word of it being repeated. */
@@ -400,7 +400,7 @@
      * colour is the palette's exception. Lighter than the light theme's, like
      * every accent here: it is drawn on a dark surface, so it has to come *up*
      * off the card rather than down off white. */
-  --toolbar-accent: oklch(0.623 0.214 259.815);
+  --focus-accent: oklch(0.623 0.214 259.815);
   /* Dark takes the page, not pane 1 like the light block does: here the rail
      * and the card are the same 0.228, so a workspace on the rail would leave
      * every card invisible against the surface it sits on. The page is a step
@@ -433,7 +433,7 @@
   /* This block used to carry a `--ring` and a `--sidebar-ring` of its own,
    * pointed at the blue below, so that a blue app wouldn't answer a focused
    * input with the neutral grey. It no longer needs to: both are now mixed
-   * from `--toolbar-accent`, which is the very thing this block moves, so the
+   * from `--focus-accent`, which is the very thing this block moves, so the
    * focus edge follows the palette without being named here at all.
    *
    * They followed the *brighter* blue rather than `--primary`, and still do —
@@ -447,7 +447,7 @@
    * edge follows it rather than restating it — retune the palette and the ring
    * comes with it instead of drifting a shade away from the app it sits in. The
    * two are equal today; that is the point of not writing it twice. */
-  --toolbar-accent: var(--sidebar-primary);
+  --focus-accent: var(--sidebar-primary);
 }
 
 .system-dark {
@@ -456,7 +456,7 @@
   --sidebar-primary: oklch(0.623 0.214 259.815);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
   /* Same derivation as the light block, for the same reason. */
-  --toolbar-accent: var(--sidebar-primary);
+  --focus-accent: var(--sidebar-primary);
 }
 
 @layer base {
