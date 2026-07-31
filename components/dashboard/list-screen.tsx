@@ -974,12 +974,12 @@ export function ListScreen<T>({
             */}
             <div className="flex items-center gap-2 border-t px-4 py-3">
               {/*
-                `sm`, matching the row of actions above it, so the two rows of
-                controls on this screen stand the same height. `default`'s
-                solid fill is the stronger lead a submit wants — this button
-                leads a card of its own rather than joining the outline row.
+                `sm` and `outline`, matching the row of actions above it, so
+                every control on this screen stands the same height and carries
+                the same weight — the card's own border already sets Apply
+                apart, so a solid fill would only shout across it.
               */}
-              <Button type="submit" size="sm">
+              <Button type="submit" variant="outline" size="sm">
                 <Search />
                 Apply
               </Button>
