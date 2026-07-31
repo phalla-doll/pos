@@ -957,10 +957,6 @@ export function ListScreen<T>({
                                 active.op
                               )
                             }
-                            // The label beside it already names the column, so
-                            // repeating the header here would say the same word
-                            // twice on one row.
-                            placeholder="Value…"
                           />
                         </InputGroup>
                       </React.Fragment>
