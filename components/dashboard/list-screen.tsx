@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Collapsible,
@@ -107,7 +108,6 @@ import { deletePlan } from "@/lib/list-delete"
 import { conditionGroups } from "@/lib/list-filter-grid"
 import { deleteParam } from "@/lib/record-param"
 import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
-import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import {
   defaultPageSize,
   pageSizes,
@@ -506,11 +506,10 @@ export function ListScreen<T>({
         name only exists as a tab label.
       */}
       {/*
-        One tray in the row now that Search has gone: the advanced card names
-        and opens itself, so the button that used to sit here beside the
-        actions had nothing left to say. `gap-3` stays for whatever lands next
-        to the tray — it was picked as the gap *between* trays, and the row is
-        still a row of trays.
+        `gap-3` between the action group and whatever lands beside it: the
+        actions are stitched edge to edge inside the group, so a gap at all is
+        what says the next thing along is a different kind of thing rather than
+        one more action.
       */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">{label}</h1>
@@ -523,22 +522,16 @@ export function ListScreen<T>({
           delete confirmation names the rows one by one.
         */}
         {/*
-          One tray rather than four buttons spaced apart: everything in it acts
-          on rows — makes one, opens one, removes them, or opens the menu of
-          the rest — so one surface holding them says they are one kind of
-          thing. Nothing that changes what the table *shows* is in here: that
-          is the advanced card's, below.
+          One `ButtonGroup` rather than four buttons spaced apart: everything
+          in it acts on rows — makes one, opens one, removes them, or opens the
+          menu of the rest — so one segmented control holding them says they
+          are one kind of thing. Nothing that changes what the table *shows* is
+          in here: that is the advanced card's, below.
 
-          Everything in it is `outline`, which `toolbarButton` then strips back
-          to the tray behind it — bar Delete, whose red is the one colour in
-          the row that has to survive the tint. The rest carry their meaning in
-          their content instead: Create keeps the only `+` in the row.
-
-          The tray is a plain grouping element: `role="group"` is what a set of
-          related controls is, and the rest is `toolbarBar`'s. See there for why
-          this is not `ButtonGroup`.
+          Stock `outline` at `sm`, and nothing else — the group is what shapes
+          them, dropping the inner corners and the doubled edges on its own.
         */}
-        <div role="group" className={toolbarBar}>
+        <ButtonGroup>
           {/*
             Opens a blank form in a new tab rather than unfolding one above the
             table. It is no longer a toggle, so it doesn't need a held-down
@@ -549,8 +542,8 @@ export function ListScreen<T>({
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => workspace?.openDraft(screenType)}
-              className={toolbarButton}
             >
               <Plus />
               Create
@@ -578,12 +571,12 @@ export function ListScreen<T>({
             <Button
               type="button"
               variant="outline"
+              size="sm"
               disabled={selectedCount !== 1}
               onClick={() => {
                 const [key] = [...selected]
                 if (key !== undefined) openRecord(key)
               }}
-              className={toolbarButton}
             >
               <Eye />
               View
@@ -596,21 +589,19 @@ export function ListScreen<T>({
             what it is about to remove, which is what makes a destructive
             action safe to put in a toolbar at all.
 
-            And that is why it is no longer red. It used to take
-            `toolbarMetrics` alone so it kept the destructive colour among the
-            accented ones — but the colour is the app's mark for a click that
-            can't be taken back, and this click only asks a question. The
-            answer is where the red belongs, and that is where it still is: the
-            delete tab's Process, and the dialog's own Delete. A warning worn
-            by a button that merely opens the warning is one the eye learns to
-            read past.
+            And that is why it is not red. The colour is the app's mark for a
+            click that can't be taken back, and this click only asks a
+            question. The answer is where the red belongs, and that is where it
+            is: the delete tab's Process, and the dialog's own Delete. A
+            warning worn by a button that merely opens the warning is one the
+            eye learns to read past.
           */}
           <Button
             type="button"
             variant="outline"
+            size="sm"
             disabled={selectedCount === 0}
             onClick={() => requestDelete([...selected])}
-            className={toolbarButton}
           >
             <Trash2 />
             Delete
@@ -634,8 +625,8 @@ export function ListScreen<T>({
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   disabled={selectedCount === 0}
-                  className={toolbarButton}
                 />
               }
             >
@@ -671,7 +662,7 @@ export function ListScreen<T>({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </ButtonGroup>
       </div>
 
       {/*
@@ -987,15 +978,12 @@ export function ListScreen<T>({
             */}
             <div className="flex items-center gap-2 border-t px-4 py-3">
               {/*
-                `toolbarMetrics`, not the same two numbers written out again:
-                Apply leads this card the way New leads the toolbar, and the
-                padding an icon-led button in this app takes is stated once.
-                Not the full `toolbarButton` — the tint is what the toolbar
-                wears, and this button leads a card of its own; `default`'s
-                solid fill is the stronger lead a submit wants, and the two
-                looks stacked would be a tint painted over by a fill.
+                `sm`, matching the row of actions above it, so the two rows of
+                controls on this screen stand the same height. `default`'s
+                solid fill is the stronger lead a submit wants — this button
+                leads a card of its own rather than joining the outline row.
               */}
-              <Button type="submit" className={toolbarMetrics}>
+              <Button type="submit" size="sm">
                 <Search />
                 Apply
               </Button>
