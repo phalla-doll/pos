@@ -1,17 +1,20 @@
 /**
- * How the advanced search card divides its conditions into columns.
+ * How a card of label/input pairs divides them into columns.
  *
  * The card's breakpoints decide how many column *tracks* there are — one, two
  * at `lg`, three at `xl` — and those tracks are always laid down, whether or
- * not there are conditions to fill them. What this module decides is which
- * conditions go in which track.
+ * not there are fields to fill them. What this module decides is which field
+ * goes in which track.
  *
  * That is the whole reason the split is done here rather than by the grid. A
- * CSS grid of pairs fills row by row, so seven conditions across three tracks
- * come out 3/2/2 — every track short, and the eye reading across a row of
- * unrelated fields. Grouping them first makes each track a column that fills
- * from the top: 4/3/empty. An empty third track is fine; a card of stubs is
- * not.
+ * CSS grid of pairs fills row by row, so seven fields across three tracks come
+ * out 3/2/2 — every track short, and the eye reading across a row of unrelated
+ * fields. Grouping them first makes each track a column that fills from the
+ * top: 4/3/empty. An empty third track is fine; a card of stubs is not.
+ *
+ * Named for the advanced search card, which asked for this first and is where
+ * a field is a *condition*. The record form lays out the same screen's columns
+ * the same way and shares it — the rule is about fields, not conditions.
  */
 
 /**
