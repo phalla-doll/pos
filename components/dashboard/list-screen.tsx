@@ -896,6 +896,12 @@ export function ListScreen<T>({
                           sat above the input, but not what it is on a shared
                           row where the eye compares the two directly.
 
+                          `font-normal`, stated rather than left to inherit:
+                          the label and the value it names carry the same
+                          weight, so the pair reads as one thing. Bolding the
+                          label turns the label track into a column of headers
+                          the eye stops at on the way to every field.
+
                           No padding to hold it off the column beside it: the
                           columns are separate grids now, so the outer
                           `gap-x-8` is a real gap rather than one more track
@@ -903,7 +909,7 @@ export function ListScreen<T>({
                         */}
                         <label
                           htmlFor={`adv-${column.key}`}
-                          className="truncate text-sm font-medium"
+                          className="truncate text-sm font-normal"
                         >
                           {column.header}
                         </label>
