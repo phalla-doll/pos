@@ -540,6 +540,12 @@ export function RecordForm<T>({
                         row it reads as a caption *about* a field rather than
                         the field's name.
 
+                        `font-normal`, stated rather than left to inherit: the
+                        label and the value it names carry the same weight, so
+                        the pair reads as one thing. Bolding the label turns
+                        the label track into a column of headers the eye stops
+                        at on the way to every field.
+
                         `fit-content(8rem)` on the track sizes it to the
                         longest header in the column, so every input in a
                         column starts at the same x without a long header
@@ -548,7 +554,7 @@ export function RecordForm<T>({
                       */}
                       <label
                         htmlFor={`field-${column.key}`}
-                        className="truncate text-sm font-medium"
+                        className="truncate text-sm font-normal"
                       >
                         {column.header}
                       </label>
