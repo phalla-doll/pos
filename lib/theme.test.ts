@@ -180,54 +180,27 @@ describe("globals.css", () => {
   ]
 
   /**
-   * The toolbar's look — the tray and the buttons in it alike — is the app's,
-   * not one palette's: all four themes wear it. It was scoped to the blue
-   * palette once, and this is the half of that change a later edit could
-   * quietly undo — reintroducing a theme class here would leave the palettes it
-   * left out with an untinted toolbar.
+   * The focus edge is mixed from one accent, and a theme that answers nothing
+   * for it doesn't degrade: an empty value mixes an empty accent, so the ring
+   * loses its colour outright rather than falling back to something duller.
+   *
+   * The neutral palettes have no accent to derive it from and carry the blue
+   * outright; the blue ones point it at their own.
    */
-  it("tints the toolbar on every theme", () => {
-    const selectors = rules
-      .map(([, selector]) => selector)
-      .filter((selector) => /\.toolbar-(bar|tint)/.test(selector))
-    expect(selectors.length).toBeGreaterThan(0)
+  it("answers --toolbar-accent from every theme", () => {
+    for (const theme of themes) {
+      const applies = (selector: string) =>
+        selector.includes(":root") ||
+        new RegExp(`\\.${theme}(?![\\w-])`).test(selector)
 
-    for (const selector of selectors) {
-      for (const theme of classThemes) {
-        expect(selector).not.toContain(`.${theme}`)
-      }
+      expect(
+        rules.some(
+          ([, selector, body]) =>
+            applies(selector) && body.includes("--toolbar-accent:")
+        )
+      ).toBe(true)
     }
   })
-
-  /**
-   * The other half. Those rules read two variables — the tint and the surface
-   * the pointer lifts out of it — and a theme that answers nothing for either
-   * doesn't degrade: an empty value mixes an empty tint and fills an empty
-   * chip, so the toolbar loses its surface or its hover outright rather than
-   * falling back to something duller.
-   *
-   * The accent: the neutral palettes have no accent to derive it from and carry
-   * the blue outright; the blue ones point it at their own. The chip: each
-   * brightness states its own rung, since neither ramp has a token standing on
-   * the one the other uses, so both blocks have to keep saying so.
-   */
-  it.each(["--toolbar-accent", "--toolbar-chip"])(
-    "answers %s from every theme",
-    (token) => {
-      for (const theme of themes) {
-        const applies = (selector: string) =>
-          selector.includes(":root") ||
-          new RegExp(`\\.${theme}(?![\\w-])`).test(selector)
-
-        expect(
-          rules.some(
-            ([, selector, body]) =>
-              applies(selector) && body.includes(`${token}:`)
-          )
-        ).toBe(true)
-      }
-    }
-  )
 
   /**
    * The focus edge is an accent, so a palette that moves the accent has to move

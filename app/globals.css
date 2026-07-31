@@ -112,8 +112,8 @@
      * changed value slightly and nothing else, on a screen already full of
      * grey rules.
      *
-     * So it becomes the toolbar's blue, thinned towards the surface it is drawn
-     * on. That blue is already the app's one accent across all four palettes
+     * So it becomes the app's blue, thinned towards the surface it is drawn
+     * on. That blue is the app's one accent across all four palettes
      * (see `--toolbar-accent`), which is what lets this be *one* declaration
      * where the ring used to be restated in four blocks: the neutral palettes
      * carry the accent outright and the blue ones point it at their own, so
@@ -123,14 +123,13 @@
      *
      * 70%, which is the accent kept light rather than the accent: #5e94ff on
      * white, 2.91:1 against the card and 2.37:1 against the resting border it
-     * replaces. The tray's rim is the same mix at 20% and this deliberately is
-     * not that — 20% lands 1.07:1 on the border it swaps in for, a hue change
-     * with no value change behind it, which is legible when you are looking
-     * straight at it and gone in peripheral vision. That is affordable on a rim
-     * that is only decorating a surface and not on the one mark saying where
-     * the keyboard is. It is still short of the 3:1 a focus indicator is asked
-     * for; 85% (#3c7aff, 3.87:1) is the step that clears it, and this number is
-     * the only thing to change.
+     * replaces. Much less than that stops being a mark at all — around 20% the
+     * mix lands 1.07:1 on the border it swaps in for, a hue change with no
+     * value change behind it, legible when you are looking straight at it and
+     * gone in peripheral vision, which is not what the one mark saying where
+     * the keyboard is can afford. It is still short of the 3:1 a focus
+     * indicator is asked for; 85% (#3c7aff, 3.87:1) is the step that clears it,
+     * and this number is the only thing to change.
      */
   --ring: color-mix(in oklab, var(--toolbar-accent) 70%, var(--card));
   /*
@@ -192,11 +191,7 @@
      * card's — a menu button is drawn on the panel, not on a card, and this is
      * the one place the two shades differ enough to matter. Declared here and
      * nowhere else, like `--ring` above. */
-  --sidebar-ring: color-mix(
-    in oklab,
-    var(--toolbar-accent) 70%,
-    var(--sidebar)
-  );
+  --sidebar-ring: color-mix(in oklab, var(--toolbar-accent) 70%, var(--sidebar));
   /* The rail — pane 1, and the app bar that continues it across the top. Ours,
      * not the palette's: the ramp above only reaches as far as the panel, so
      * this continues it downwards, one step *under* the workspace so the two
@@ -218,7 +213,7 @@
      * distance than the old half-step did. What it does not do is survive
      * being desaturated, so the border below is no longer optional trim.
      *
-     * Hue 277.5, which is off the toolbar's 262.9 — this is a violet-leaning
+     * Hue 277.5, which is off the accent's 262.9 — this is a violet-leaning
      * blue-white, not the accent thinned into the page, and `color-mix`ing it
      * out of `--toolbar-accent` would land at #ecf3ff and be a different
      * colour. So it is stated outright, and the two tokens below follow *it*
@@ -275,35 +270,19 @@
      * clearing the surface it sits on. */
   --table-header: oklch(0.988 0.003 106.5);
   --table-header-accent: oklch(0.952 0.006 106.5);
-  /* The blue a screen's row-action toolbar is tinted with, and the one colour
-     * in this app that outlives the palette: the toolbar wears it on all four
-     * themes, so the neutral palettes carry it outright while the blue ones
-     * point it back at their own accent (see `.system`). That is a deliberate
-     * exception to the rule the rest of this file keeps — a neutral palette
-     * holds no accent, and `--sidebar-primary` was pulled off the CLI's blue
-     * for exactly that reason a few lines up. The toolbar is the one row that
-     * is on every screen at every moment, and it is what the exception buys:
-     * a fixed place the eye goes for "what can I do here", which is worth more
-     * than the palette staying perfectly monochrome.
+  /* The blue the focus edge is mixed from, and the one colour in this app that
+     * outlives the palette: `--ring` and `--sidebar-ring` are derived from it
+     * in `:root` alone, so the neutral palettes carry it outright while the
+     * blue ones point it back at their own accent (see `.system`). That is a
+     * deliberate exception to the rule the rest of this file keeps — a neutral
+     * palette holds no accent, and `--sidebar-primary` was pulled off the CLI's
+     * blue for exactly that reason a few lines up. What the exception buys is
+     * one declaration where the ring used to be restated in four blocks.
      *
-     * It is read *against* a surface — mixed into a tint, and worn by icons —
-     * never as a fill carrying `--primary-foreground` text, so it takes the
-     * brighter of the palette's two blues for the same reason the focus ring
-     * does. */
+     * It is read *against* a surface — thinned into a hairline along a
+     * control's edge — never as a fill carrying `--primary-foreground` text, so
+     * it takes the brighter of the palette's two blues. */
   --toolbar-accent: oklch(0.546 0.245 262.881);
-  /* The chip the pointer puts on a toolbar button — a *raised* surface, not a
-     * deeper tint of the tray. Zinc-50, which is the one grey in this file with
-     * no warmth in it, and that costs nothing here: it is chroma 0 beside a
-     * card that is also chroma 0, so the neutral-next-to-warm mistake the
-     * `.system` block warns about needs a tinted surface to happen against, and
-     * white isn't one.
-     *
-     * L 0.985 sits between the tray's 0.968 and the card's 1, so the chip is
-     * the tray's own surface lifted back towards the page it sits on. The lift
-     * is a hair on its own — what carries it is that the chip drops the tray's
-     * blue entirely, so a change of *saturation* does the work a change of
-     * depth alone couldn't at this distance. */
-  --toolbar-chip: oklch(0.985 0 0);
   /*
      * The workspace surface — the desk the screens' cards are laid on, and the
      * tab strip above them. Ours, not the palette's: the palette puts the page
@@ -417,30 +396,11 @@
      * either shade to point at. */
   --table-header: oklch(0.239 0.013 107.4);
   --table-header-accent: oklch(0.275 0.015 107.4);
-  /* The dark step of the toolbar's blue — see the light block for why this one
+  /* The dark step of the focus blue — see the light block for why this one
      * colour is the palette's exception. Lighter than the light theme's, like
-     * every accent here: it is mixed into a dark surface and worn by icons on
-     * it, so it has to come *up* off the card rather than down off white. */
+     * every accent here: it is drawn on a dark surface, so it has to come *up*
+     * off the card rather than down off white. */
   --toolbar-accent: oklch(0.623 0.214 259.815);
-  /* The dark chip, which lifts like the light one does — up off the tray, not
-     * deeper into it — and has further to go to say so. This was `--muted`
-     * first, on the argument that a hovered row in the table wears it and the
-     * pointer should mean the same amount of surface wherever it lands. The
-     * distance is what that missed: a row hovers off the *card*, a 0.058 step,
-     * while the chip hovers off a tray already sitting at ~0.256, so the same
-     * token bought it half the lift and read as barely lit rather than raised.
-     *
-     * So it takes the next rung of this block's own ramp instead — page 0.153 →
-     * card 0.228 → fills 0.286 → 0.34, continuing the ~0.06 spacing the ramp
-     * already keeps. The chip clears the tray by what a row clears the card by,
-     * and it is the lightest surface in the theme, which is what the shape
-     * under the pointer should be.
-     *
-     * A literal, where the light block's neighbour derives nothing either: both
-     * chips are a rung that no existing token stands on. `--sidebar-rail-border`
-     * is near this value and is not it — a line's colour and a surface's are not
-     * the same thing to keep in step. */
-  --toolbar-chip: oklch(0.34 0.016 107.4);
   /* Dark takes the page, not pane 1 like the light block does: here the rail
      * and the card are the same 0.228, so a workspace on the rail would leave
      * every card invisible against the surface it sits on. The page is a step
@@ -482,12 +442,11 @@
    * surface. On the dark palette that decides it: `--primary` reaches 2.22:1
    * on the page, the accent 5.21:1 before it is even thinned. */
 
-  /* The toolbar's blue is spelled out on the neutral palettes, which have no
-   * accent to derive it from. Here there is one, and it is the same blue, so
-   * the toolbar follows it rather than restating it — retune the palette and
-   * the toolbar comes with it instead of drifting a shade away from the app it
-   * sits in. The two are equal today; that is the point of not writing it
-   * twice. */
+  /* The focus blue is spelled out on the neutral palettes, which have no accent
+   * to derive it from. Here there is one, and it is the same blue, so the focus
+   * edge follows it rather than restating it — retune the palette and the ring
+   * comes with it instead of drifting a shade away from the app it sits in. The
+   * two are equal today; that is the point of not writing it twice. */
   --toolbar-accent: var(--sidebar-primary);
 }
 
@@ -498,159 +457,6 @@
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
   /* Same derivation as the light block, for the same reason. */
   --toolbar-accent: var(--sidebar-primary);
-}
-
-/*
- * The row-action toolbar: `toolbar-bar` is the tinted tray, `toolbar-tint` is
- * what a button inside it looks like. `--toolbar-accent` and `--toolbar-chip`
- * (declared per theme, up in `:root`) are what let both live on every theme,
- * including the palettes holding no blue of their own. The one click that
- * can't be taken back never takes the button class: the delete tab's Process
- * keeps its own colour everywhere. See `lib/screen-toolbar.ts` for why a
- * Delete that only asks the question is not that click.
- *
- * The tint is on the *tray*, not on each button. The two look nearly the same
- * standing still and are not the same thing at all: a row of tinted buttons is
- * several objects that happen to match, and every gap between them is a hole
- * showing the page through, so the row breaks into chips the moment one is
- * disabled or hidden. One tinted tray is a single object with controls in it —
- * it holds its shape however many buttons are in it, and it is what gives the
- * hover somewhere to *be*, which is the half a per-button fill cannot have:
- * with the fill already on the button, a hover can only change that fill's
- * shade, where here an untouched button is a transparent hole in the tray and
- * the pointer fills it in. Same reason the `--primary` slab this started as
- * had to go, one level up: the accent belongs to the surface, and the labels
- * and icons are read on it.
- *
- * That accent is spent on the icons alone. Labels stay `--foreground`, which is
- * what every other label on the screen is — a coloured one would claim the
- * button is a link — so the row reads as words with a colour running through
- * it rather than as a slab.
- *
- * The hover is a plain surface *lifted out of* the tray, not the tray's blue
- * carried further along the same mix, which is what it was first. Deepening the
- * tint made the pointer read as pressing the toolbar in: the chip was the
- * darkest thing in the row, and the strongest blue in it sat under whichever
- * button the pointer happened to be over rather than under the one that leads
- * it. Lifting inverts that — the chip comes up off the tray towards the page,
- * the way a raised control does, and the accent stays where it was spent
- * deliberately, on the icons.
- *
- * It costs the earlier argument that a hover on the hue keeps the tray one
- * object. What buys it back is that the chip is *inside* the rim with 2px of
- * tint all the way round it (see `toolbarBar`): a shape framed by the tray on
- * every side is read as part of it whatever colour it takes, where a chip
- * running to the tray's edge would have needed the hue to stay attached.
- *
- * Classes rather than a `variant` prop, from back when this was one palette's:
- * the theme lives in localStorage and `/dashboard` is prerendered, so a prop
- * only knows the answer after hydration and would paint the toolbar outlined
- * before flipping it in front of the user. They stay classes now that the look
- * is every theme's, because `button.tsx` is vendored and a variant of its own
- * is exactly the edit that file is not open to.
- *
- * So the button half is written as a diff over the `outline` variant these
- * buttons are declared with. Unlayered, like the sidebar rules below, so it
- * beats every utility that variant sets — including its `dark:` half, which
- * resolves to the same specificity and would otherwise be settled by
- * Tailwind's emit order alone. Being unlayered is what carries it: these
- * selectors are a single class where the palette-scoped ones were two, and a
- * layered utility would now outrank them on specificity. `theme.test.ts` pins
- * both halves — that these rules name no theme, and that every theme answers
- * `--toolbar-accent`.
- */
-
-/* The tray. Mixed with `--card` and not with `transparent`: a toolbar sits on
- * the workspace, and a translucent tint would take the shade of whatever it
- * were laid on — a different toolbar colour inside a card than outside one.
- *
- * `in oklab`, here and below. A polar `in oklch` mix interpolates hue, and one
- * end of every mix here is a near-neutral with no hue to interpolate from — the
- * table header's comment has the long version of what that does to a colour.
- *
- * 7%, which is a *tint* and near the floor of what still reads as one: it puts
- * the light tray at L 0.968 against the card's 1, close enough to white that
- * what you see is the hue rather than a grey with blue in it. It is also the
- * whole of the room the hover has to work in: the chip lands between this and
- * the card, so a heavier tray would leave the two ends of that gap further
- * apart than a hover should travel, and a lighter one would leave the chip
- * nothing to rise off.
- *
- * Colour only. What shape the tray is, how much air it holds around its
- * buttons, and how far apart they sit are metrics, and metrics are stated at
- * the call site with the rest of the row's — see `toolbarBar` in
- * `lib/screen-toolbar.ts`. */
-.toolbar-bar {
-  background-color: color-mix(in oklab, var(--toolbar-accent) 7%, var(--card));
-  /* The rim. The same blue further along the same mix, which is what keeps it a
-   * darker edge of *this* surface rather than a line drawn around it — the
-   * global `border-border` it replaces is the neutral hairline tuned for a white
-   * card, and on a tinted pill it read as a grey ring someone had left there.
-   *
-   * Mixing from the accent towards the card is also what makes one value serve
-   * both brightnesses: on light the accent is darker than the card, so the rim
-   * comes out under the fill, and on dark it is lighter, so the rim comes out
-   * above it. Either way it is the edge catching the light, which is the thing
-   * a border on a raised surface is imitating. */
-  border-color: color-mix(in oklab, var(--toolbar-accent) 20%, var(--card));
-}
-
-/* A button in the tray: no fill and no border of its own, so what shows is the
- * tray behind it. The `outline` variant it is declared with brings both, which
- * is why they are turned off here rather than simply left alone. */
-.toolbar-tint {
-  border-color: transparent;
-  background-color: transparent;
-  color: var(--foreground);
-}
-
-/* The blue the row actually spends — see the icons paragraph above. */
-.toolbar-tint svg {
-  color: var(--toolbar-accent);
-}
-
-/* Hover, and the held-down look of a button whose menu or panel is open —
- * `aria-expanded` covers both the More trigger and the Search toggle. This is
- * the fill the transparent button above exists to leave room for.
- *
- * The token flat, with no mix over it: the chip is a surface of its own rather
- * than a shade of the tray's, which is the whole of the change described up
- * top, and a mix towards `--card` here would be a chip that fades back into the
- * tint by however much it was softened. The two ends it has to sit between are
- * tuned where they are declared, not blended at the point of use. */
-.toolbar-tint:hover,
-.toolbar-tint[aria-expanded="true"] {
-  background-color: var(--toolbar-chip);
-  /* And an edge on it, drawn the same way the tray's rim is: the accent mixed
-   * into the surface it borders, so it is that surface's own edge rather than a
-   * line laid around it. The button already carries a transparent 1px border,
-   * so this is a colour arriving, not a box growing — the row can't shift under
-   * the pointer.
-   *
-   * It is what finishes the lift. The chip rises off the tray by dropping the
-   * blue, which is a change of saturation at almost no change in depth (see
-   * `--toolbar-chip`), and a raised surface with no edge reads as a patch where
-   * the tint was wiped off. The rim is what a raised thing has.
-   *
-   * 25% against the tray's 20%, which is the difference in what each has to
-   * cross. The tray's rim separates the tray from the page — the full step from
-   * a tint to white. This one separates the chip from the tint, which is a
-   * fraction of that distance, so the same percentage would leave the edge with
-   * the harder job the weaker of the two. At these numbers they come out level:
-   * each sits about 0.09 of lightness off the surface behind it, so the row
-   * reads as one object edged once, not as a chip outlined louder than the tray
-   * holding it. */
-  border-color: color-mix(
-    in oklab,
-    var(--toolbar-accent) 25%,
-    var(--toolbar-chip)
-  );
-}
-
-/* Restored explicitly: the rules above outrank `focus-visible:border-ring`, and
- * the ring alone is a thinner keyboard cue than the button was designed with. */
-.toolbar-tint:focus-visible {
-  border-color: var(--ring);
 }
 
 @layer base {
