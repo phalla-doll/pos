@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,6 @@ import type { RowKey } from "@/lib/list-selection"
 import { deleteParam, paramKind, recordId } from "@/lib/record-param"
 import type { ScreenType } from "@/lib/screens"
 import { primaryRowActions, secondaryRowActions } from "@/lib/row-actions"
-import { toolbarBar, toolbarButton, toolbarMetrics } from "@/lib/screen-toolbar"
 import { cn } from "@/lib/utils"
 
 export type RecordFormProps<T> = {
@@ -187,24 +187,24 @@ export function RecordForm<T>({
         Inventory" would claim to be editing the screen itself.
       */}
       {/*
-        `gap-3` rather than `gap-2`, matching the list's toolbar: the wider gap
-        is what earns Close its "different kind of thing" standing beside the
-        actions — at `gap-2` the split read as the spacing inside a tray,
-        saying nothing.
+        `gap-3`, matching the list's toolbar: it is what earns Close its
+        "different kind of thing" standing beside the actions, which are
+        stitched edge to edge inside the group and so have no gap of their own
+        for this one to be mistaken for.
       */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="sr-only">
           {creating ? draftLabel : `${deleting ? "Delete" : "Edit"} ${noun}`}
         </h1>
         {/*
-          The same tray the list's toolbar leads with, and the whole of what it
-          looks like is `toolbarBar` — so the two rows can't drift apart the
-          way they did while each call site spelled its own radius out.
+          The same `ButtonGroup` the list's toolbar leads with, holding the
+          same `sm` outline buttons, so a list and a record read as one row
+          seen at two altitudes.
         */}
-        <div role="group" className={toolbarBar}>
+        <ButtonGroup>
           {/*
             A delete tab is the same fields under a different question, so it
-            is the same tray under a different set of verbs — not a screen of
+            is the same group under a different set of verbs — not a screen of
             its own. Nothing below is shared between the two branches on
             purpose: a record you are about to remove has nothing to save,
             nothing to clear, and no state to put on hold.
@@ -213,11 +213,12 @@ export function RecordForm<T>({
             <>
               {/*
                 Process is the irreversible click this whole tab exists to
-                frame — so it takes the colour every destructive action in the
-                app takes, and none of the tint. It leads the row anyway: this
-                is what you came here to do, and a red button leading a row is
-                only alarming when the row didn't warn you, which the readonly
-                fields below and the tab's own "Delete …" chip already did.
+                frame — so it takes the `destructive` variant, the colour every
+                destructive action in the app takes, where the rest of the row
+                is `outline`. It leads the row anyway: this is what you came
+                here to do, and a red button leading a row is only alarming
+                when the row didn't warn you, which the readonly fields below
+                and the tab's own "Delete …" chip already did.
 
                 A stub, like the rest — there is no backend to delete from —
                 so what it actually does is stop showing you the record.
@@ -226,11 +227,8 @@ export function RecordForm<T>({
                 <Button
                   type="button"
                   onClick={closeSelf}
-                  variant="ghost"
-                  className={cn(
-                    toolbarMetrics,
-                    "text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  )}
+                  variant="destructive"
+                  size="sm"
                 >
                   <Trash2 />
                   Process
@@ -238,7 +236,7 @@ export function RecordForm<T>({
               )}
               {/*
                 Cancel is the way out, and it is why this branch renders no
-                Close tray: both would close the tab, and two buttons one gap
+                Close button: both would close the tab, and two buttons one gap
                 apart doing the identical thing is worse than either alone.
                 Cancel wins the slot because it answers the question the tab
                 asked — the record is untouched, which "Close" doesn't say.
@@ -252,7 +250,7 @@ export function RecordForm<T>({
                 type="button"
                 onClick={closeSelf}
                 variant="outline"
-                className={toolbarButton}
+                size="sm"
               >
                 <X />
                 Cancel
@@ -267,11 +265,7 @@ export function RecordForm<T>({
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={toolbarButton}
-                      />
+                      <Button type="button" variant="outline" size="sm" />
                     }
                   >
                     <Ellipsis />
@@ -317,12 +311,7 @@ export function RecordForm<T>({
             what is about to exist.
           */}
               {!missing && (
-                <Button
-                  type="submit"
-                  form={formId}
-                  variant="outline"
-                  className={toolbarButton}
-                >
+                <Button type="submit" form={formId} variant="outline" size="sm">
                   {creating ? <Plus /> : <Save />}
                   {creating ? `Create ${noun}` : "Save"}
                 </Button>
@@ -339,21 +328,13 @@ export function RecordForm<T>({
             the click does two things — save it, then act on it.
           */}
               {!creating && !missing && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={toolbarButton}
-                >
+                <Button type="button" variant="outline" size="sm">
                   <BadgeCheck />
                   Verify
                 </Button>
               )}
               {!creating && !missing && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={toolbarButton}
-                >
+                <Button type="button" variant="outline" size="sm">
                   <Pause />
                   Hold
                 </Button>
@@ -375,9 +356,9 @@ export function RecordForm<T>({
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   disabled={!dirty}
                   onClick={clearFields}
-                  className={toolbarButton}
                 >
                   <Eraser />
                   Clear
@@ -410,11 +391,7 @@ export function RecordForm<T>({
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={toolbarButton}
-                      />
+                      <Button type="button" variant="outline" size="sm" />
                     }
                   >
                     <Ellipsis />
@@ -459,36 +436,31 @@ export function RecordForm<T>({
               )}
             </>
           )}
-        </div>
+        </ButtonGroup>
         {/*
-          Close stands in a tray of its own, the way Search does on the list:
-          everything in the tray beside it acts on the record — saves it,
-          verifies it, holds it — while this one only puts the tab away, and
-          the record is untouched either way. A stray click on the end of that
-          tray should not be able to close the tab.
-
-          `rounded-full` for the same reason Search takes it: alone in a tray,
-          a chip has only the pill around it to read against.
+          Close stands outside the group, a `gap-3` away from its edge:
+          everything in the group acts on the record — saves it, verifies it,
+          holds it — while this one only puts the tab away, and the record is
+          untouched either way. A stray click on the end of that group should
+          not be able to close the tab.
 
           Closing is the workspace's job, so the button only exists inside one.
           It never isn't, in practice — but `useWorkspace` is allowed to answer
           null and this is cheaper than asserting it can't.
 
-          Not on a delete tab, which carries Cancel in the tray beside this
+          Not on a delete tab, which carries Cancel in the group beside this
           one and needs no second button that does the same thing. See there.
         */}
         {workspace && !deleting && (
-          <div className={toolbarBar}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => workspace.closeTab(tabId)}
-              className={cn(toolbarButton, "rounded-full")}
-            >
-              <X />
-              Close
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => workspace.closeTab(tabId)}
+          >
+            <X />
+            Close
+          </Button>
         )}
         {/*
           Beside the button that caused it, now that saving is up here.
