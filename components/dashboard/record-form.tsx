@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { useWorkspace } from "@/hooks/use-workspace"
+import { conditionGroups } from "@/lib/list-filter-grid"
 import type { ListColumn } from "@/lib/list-rows"
 import type { RowKey } from "@/lib/list-selection"
 import { deleteParam, paramKind, recordId } from "@/lib/record-param"
@@ -502,43 +503,67 @@ export function RecordForm<T>({
             onSubmit={handleSubmit}
             className="rounded-xl border bg-card p-4"
           >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {columns.map((column) => (
-                <div key={column.key} className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor={`field-${column.key}`}
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    {column.header}
-                  </label>
-                  {/*
-                    `readOnly` rather than `disabled` on a delete tab. A
-                    disabled input is skipped by the tab key and refuses to be
-                    selected, and this form's whole job is to be *read* — you
-                    should be able to tab through it and copy a value out
-                    before the record goes. What must not happen is an edit,
-                    which is exactly what `readOnly` stops.
+            {/*
+              Grouped into columns before the grid sees them, the way the
+              advanced search card's conditions are: `conditionGroups` fills a
+              track before starting the next, so seven fields are 4/3 with the
+              third track at `xl` simply empty, rather than the 3/2/2 of stubs
+              a plain grid would place. Named for the search card because that
+              is what asked for it first; the rule is about fields.
 
-                    The muted fill is what says so at a glance, since a
-                    readonly input is otherwise indistinguishable from an
-                    editable one. `cursor-default` drops the text caret the
-                    field would otherwise still advertise.
-                  */}
-                  <Input
-                    id={`field-${column.key}`}
-                    value={values[column.key] ?? ""}
-                    readOnly={deleting}
-                    onChange={(event) => {
-                      setValues((prev) => ({
-                        ...prev,
-                        [column.key]: event.target.value,
-                      }))
-                      setSaved(false)
-                    }}
-                    className={cn(
-                      deleting && "cursor-default bg-muted/50 dark:bg-muted/50"
-                    )}
-                  />
+              `gap-x-8` between tracks, plainly wider than the gap between the
+              fields inside one, or the columns read as one long row.
+              `items-start` keeps a short last column topped out rather than
+              stretched to the tallest one's height.
+            */}
+            <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 lg:grid-cols-2 xl:grid-cols-3">
+              {conditionGroups(columns).map((group) => (
+                <div
+                  // The first field names the column — a positional key would
+                  // let React reuse a column's inputs under a new set of
+                  // fields when the screen behind the tab changes.
+                  key={group[0].key}
+                  className="flex flex-col gap-4"
+                >
+                  {group.map((column) => (
+                    <div key={column.key} className="flex flex-col gap-1.5">
+                      <label
+                        htmlFor={`field-${column.key}`}
+                        className="text-xs font-medium text-muted-foreground"
+                      >
+                        {column.header}
+                      </label>
+                      {/*
+                        `readOnly` rather than `disabled` on a delete tab. A
+                        disabled input is skipped by the tab key and refuses to
+                        be selected, and this form's whole job is to be *read*
+                        — you should be able to tab through it and copy a value
+                        out before the record goes. What must not happen is an
+                        edit, which is exactly what `readOnly` stops.
+
+                        The muted fill is what says so at a glance, since a
+                        readonly input is otherwise indistinguishable from an
+                        editable one. `cursor-default` drops the text caret the
+                        field would otherwise still advertise.
+                      */}
+                      <Input
+                        id={`field-${column.key}`}
+                        value={values[column.key] ?? ""}
+                        readOnly={deleting}
+                        onChange={(event) => {
+                          setValues((prev) => ({
+                            ...prev,
+                            [column.key]: event.target.value,
+                          }))
+                          setSaved(false)
+                        }}
+                        className={cn(
+                          deleting &&
+                            "cursor-default bg-muted/50 dark:bg-muted/50"
+                        )}
+                      />
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
