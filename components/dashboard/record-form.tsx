@@ -523,20 +523,11 @@ export function RecordForm<T>({
                     readonly input is otherwise indistinguishable from an
                     editable one. `cursor-default` drops the text caret the
                     field would otherwise still advertise.
-
-                    No placeholder either: "Enter name…" is an invitation, and
-                    an empty field here means the record's value is empty, not
-                    that you should fill it in.
                   */}
                   <Input
                     id={`field-${column.key}`}
                     value={values[column.key] ?? ""}
                     readOnly={deleting}
-                    placeholder={
-                      deleting
-                        ? undefined
-                        : `Enter ${column.header.toLowerCase()}…`
-                    }
                     onChange={(event) => {
                       setValues((prev) => ({
                         ...prev,
