@@ -504,32 +504,51 @@ export function RecordForm<T>({
             className="rounded-xl border bg-card p-4"
           >
             {/*
-              Grouped into columns before the grid sees them, the way the
-              advanced search card's conditions are: `conditionGroups` fills a
-              track before starting the next, so seven fields are 4/3 with the
-              third track at `xl` simply empty, rather than the 3/2/2 of stubs
-              a plain grid would place. Named for the search card because that
-              is what asked for it first; the rule is about fields.
+              The same shape as the advanced search card, down to the grouping
+              helper: these fields *are* that card's columns, so a record and a
+              search over records should not be two different ways of reading
+              one list of headers.
 
-              `gap-x-8` between tracks, plainly wider than the gap between the
-              fields inside one, or the columns read as one long row.
-              `items-start` keeps a short last column topped out rather than
-              stretched to the tallest one's height.
+              That means the columns are grouped before the grid sees them —
+              `conditionGroups` fills a track before starting the next, so
+              seven fields are 4/3 with the third track at `xl` simply empty,
+              rather than the 3/2/2 of stubs a plain grid would place. Named
+              for the search card because that is what asked for it first; the
+              rule it encodes is about fields, not conditions.
+
+              `gap-x-8` between tracks against the inner `gap-x-4` between a
+              label and its field, for the same reason as there: the gap to the
+              next column has to plainly beat the one inside a field, or the
+              two read as one long row. `items-start` keeps a short last column
+              topped out rather than stretched.
             */}
-            <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-x-8 gap-y-2 lg:grid-cols-2 xl:grid-cols-3">
               {conditionGroups(columns).map((group) => (
                 <div
                   // The first field names the column — a positional key would
                   // let React reuse a column's inputs under a new set of
                   // fields when the screen behind the tab changes.
                   key={group[0].key}
-                  className="flex flex-col gap-4"
+                  className="grid grid-cols-[fit-content(8rem)_minmax(0,1fr)] items-center gap-x-4 gap-y-2"
                 >
                   {group.map((column) => (
-                    <div key={column.key} className="flex flex-col gap-1.5">
+                    <React.Fragment key={column.key}>
+                      {/*
+                        `text-sm` and full colour, matching the input beside
+                        it. Muted `text-xs` was right when the label sat above
+                        the field and had to stay out of its way; on a shared
+                        row it reads as a caption *about* a field rather than
+                        the field's name.
+
+                        `fit-content(8rem)` on the track sizes it to the
+                        longest header in the column, so every input in a
+                        column starts at the same x without a long header
+                        eating the field's width — `truncate` handles the one
+                        that overruns the cap.
+                      */}
                       <label
                         htmlFor={`field-${column.key}`}
-                        className="text-xs font-medium text-muted-foreground"
+                        className="truncate text-sm font-medium"
                       >
                         {column.header}
                       </label>
@@ -562,7 +581,7 @@ export function RecordForm<T>({
                             "cursor-default bg-muted/50 dark:bg-muted/50"
                         )}
                       />
-                    </div>
+                    </React.Fragment>
                   ))}
                 </div>
               ))}
