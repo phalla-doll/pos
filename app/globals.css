@@ -297,32 +297,37 @@
 .dark,
 .system-dark {
   color-scheme: dark;
-  /* The dark ramp: page 0.153 → card and panel 0.228 → fills 0.286, all on
-     * hue ~107.
+  /* The dark ramp: page 0.153 → card and panel 0.228 → fills 0.286, on the
+     * light block's hue — 265, the same cool neutral, so the two schemes share
+     * a temperature and the theme switch has no seam in it. That is the one
+     * rule this ramp and that one are asked to keep together; everything else
+     * about a dark surface is its own.
      *
-     * That hue is now the light block's *old* one — light moved to the cool
-     * 265 and this did not, so the two schemes no longer share a temperature.
-     * The argument this comment used to make still stands and now runs the
-     * other way: a dark mode on a different hue from the light one is a
-     * visible seam on the theme switch, so these should follow to 265
-     * (lightnesses untouched, hue and chroma swapped like the light ramp's
-     * were) the next time dark is opened up. Left as-is deliberately rather
-     * than changed unreviewed — the dark values below are validated against
-     * their own surface. */
-  --background: oklch(0.153 0.006 107.1);
-  --foreground: oklch(0.988 0.003 106.5);
-  --card: oklch(0.228 0.013 107.4);
-  --card-foreground: oklch(0.988 0.003 106.5);
-  --popover: oklch(0.228 0.013 107.4);
-  --popover-foreground: oklch(0.988 0.003 106.5);
-  --primary: oklch(0.93 0.007 106.5);
-  --primary-foreground: oklch(0.228 0.013 107.4);
-  --secondary: oklch(0.286 0.016 107.4);
-  --secondary-foreground: oklch(0.988 0.003 106.5);
-  --muted: oklch(0.286 0.016 107.4);
-  --muted-foreground: oklch(0.737 0.021 106.9);
-  --accent: oklch(0.286 0.016 107.4);
-  --accent-foreground: oklch(0.988 0.003 106.5);
+     * Only the hue moved. Every lightness here is the one that was validated
+     * against this surface and stays that way, and the chromas are the ones
+     * the warm ramp carried (0.008 → 0.014 → 0.016, rising as the surface
+     * darkens, for the reason `--sidebar-rail` gives up in the light block).
+     * So the steps below are unchanged to three decimals: card over page
+     * 1.15:1, header over card 1.03:1, fills over card 1.19:1.
+     *
+     * Three of these are the light block's own values seen from the other end
+     * — this page is its `--foreground`, this card its `--primary`, this
+     * foreground its `--primary-foreground`. They were equal on the warm ramp
+     * too; keeping them equal is what makes one hue mean one hue. */
+  --background: oklch(0.153 0.008 265);
+  --foreground: oklch(0.988 0.003 265);
+  --card: oklch(0.228 0.014 265);
+  --card-foreground: oklch(0.988 0.003 265);
+  --popover: oklch(0.228 0.014 265);
+  --popover-foreground: oklch(0.988 0.003 265);
+  --primary: oklch(0.93 0.007 265);
+  --primary-foreground: oklch(0.228 0.014 265);
+  --secondary: oklch(0.286 0.016 265);
+  --secondary-foreground: oklch(0.988 0.003 265);
+  --muted: oklch(0.286 0.016 265);
+  --muted-foreground: oklch(0.737 0.021 265);
+  --accent: oklch(0.286 0.016 265);
+  --accent-foreground: oklch(0.988 0.003 265);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -343,15 +348,15 @@
   --chart-cat-2: oklch(0.661 0.169 257.9);
   --chart-cat-3: oklch(0.66 0.164 54.7);
   --chart-cat-4: oklch(0.66 0.169 299.9);
-  --sidebar: oklch(0.228 0.013 107.4);
-  --sidebar-foreground: oklch(0.988 0.003 106.5);
+  --sidebar: oklch(0.228 0.014 265);
+  --sidebar-foreground: oklch(0.988 0.003 265);
   /* Mirrors `--primary`/`--primary-foreground` above. The CLI's neutral theme
      * emits a blue `--sidebar-primary` here — a leftover from the blue theme's
      * light block — which would be the one blue left in a neutral palette. */
-  --sidebar-primary: oklch(0.93 0.007 106.5);
-  --sidebar-primary-foreground: oklch(0.228 0.013 107.4);
-  --sidebar-accent: oklch(0.286 0.016 107.4);
-  --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-primary: oklch(0.93 0.007 265);
+  --sidebar-primary-foreground: oklch(0.228 0.014 265);
+  --sidebar-accent: oklch(0.286 0.016 265);
+  --sidebar-accent-foreground: oklch(0.988 0.003 265);
   --sidebar-border: oklch(1 0 0 / 10%);
   /* Dark keeps rail and panel on one surface — the light zinc ramp has no
      * dark counterpart, so the rail just follows the panel. */
@@ -366,7 +371,7 @@
      * which element happened to draw it. 0.322 is the shade the bar was
      * already rendering, so the bar is unchanged and the rail's edge comes up
      * to meet it. */
-  --sidebar-rail-border: oklch(0.322 0.014 107.1);
+  --sidebar-rail-border: oklch(0.322 0.014 265);
   /* Dark cannot borrow the rail the way light does — up there the rail is a
      * step under the workspace, but here it *is* the card (0.228), so a header
      * band on it would be the card it is meant to stand out from. It sits just
@@ -387,8 +392,8 @@
      * surface and going the other way — dark surfaces lift under the pointer
      * where light ones sink. Both are written out because there is no fill at
      * either shade to point at. */
-  --table-header: oklch(0.239 0.013 107.4);
-  --table-header-accent: oklch(0.275 0.015 107.4);
+  --table-header: oklch(0.239 0.014 265);
+  --table-header-accent: oklch(0.275 0.015 265);
   /* The dark step of the focus blue — see the light block for why this one
      * colour is the palette's exception. Lighter than the light theme's, like
      * every accent here: it is drawn on a dark surface, so it has to come *up*
