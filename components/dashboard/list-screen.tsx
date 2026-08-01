@@ -21,7 +21,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
+import { ToolbarGroup } from "@/components/dashboard/toolbar-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Collapsible,
@@ -529,10 +529,11 @@ export function ListScreen<T>({
           in here: that is the advanced card's, below.
 
           Stock `outline` at the default size, and nothing else — the group is
-          what shapes them, dropping the inner corners and the doubled edges on
-          its own.
+          what shapes them, dropping the inner corners and the doubled edges
+          and rounding the run's two ends to a pill on its own. See
+          `ToolbarGroup`, which the record form's toolbar leads with too.
         */}
-        <ButtonGroup>
+        <ToolbarGroup>
           {/*
             Opens a blank form in a new tab rather than unfolding one above the
             table. It is no longer a toggle, so it doesn't need a held-down
@@ -659,7 +660,7 @@ export function ListScreen<T>({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </ButtonGroup>
+        </ToolbarGroup>
       </div>
 
       {/*
