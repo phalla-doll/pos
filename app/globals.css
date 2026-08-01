@@ -297,37 +297,47 @@
 .dark,
 .system-dark {
   color-scheme: dark;
-  /* The dark ramp: page 0.153 → card and panel 0.228 → fills 0.286, on the
-     * light block's hue — 265, the same cool neutral, so the two schemes share
-     * a temperature and the theme switch has no seam in it. That is the one
-     * rule this ramp and that one are asked to keep together; everything else
-     * about a dark surface is its own.
+  /* The dark ramp is YouTube's: a true neutral, chroma 0 all the way down,
+     * page #0f0f0f → card and panel #212121 → fills #2e2e2e, with #f1f1f1 for
+     * text and #aaaaaa for the dimmed kind. The first two and both foregrounds
+     * are that palette's own values; the rest are set by the steps below.
      *
-     * Only the hue moved. Every lightness here is the one that was validated
-     * against this surface and stays that way, and the chromas are the ones
-     * the warm ramp carried (0.008 → 0.014 → 0.016, rising as the surface
-     * darkens, for the reason `--sidebar-rail` gives up in the light block).
-     * So the steps below are unchanged to three decimals: card over page
-     * 1.15:1, header over card 1.03:1, fills over card 1.19:1.
+     * The light block spends a little colour to keep its near-whites from
+     * reading as a blank page. This does the opposite on purpose. A dark
+     * surface is mostly surface — it is the largest thing on screen and the
+     * least interrupted — so a tint that is a whisper at L 0.99 is a cast at
+     * L 0.17, and what it casts over is the one place the app's actual colour
+     * (charts, status, the focus blue) has to carry.
      *
-     * Three of these are the light block's own values seen from the other end
-     * — this page is its `--foreground`, this card its `--primary`, this
-     * foreground its `--primary-foreground`. They were equal on the warm ramp
-     * too; keeping them equal is what makes one hue mean one hue. */
-  --background: oklch(0.153 0.008 265);
-  --foreground: oklch(0.988 0.003 265);
-  --card: oklch(0.228 0.014 265);
-  --card-foreground: oklch(0.988 0.003 265);
-  --popover: oklch(0.228 0.014 265);
-  --popover-foreground: oklch(0.988 0.003 265);
-  --primary: oklch(0.93 0.007 265);
-  --primary-foreground: oklch(0.228 0.014 265);
-  --secondary: oklch(0.286 0.016 265);
-  --secondary-foreground: oklch(0.988 0.003 265);
-  --muted: oklch(0.286 0.016 265);
-  --muted-foreground: oklch(0.737 0.021 265);
-  --accent: oklch(0.286 0.016 265);
-  --accent-foreground: oklch(0.988 0.003 265);
+     * So the two schemes no longer share a hue, and this is where that rule
+     * stops applying: what makes a theme switch seam is a *warm* scheme
+     * against a cool one, two temperatures disagreeing. Neutral disagrees with
+     * nothing. The light ramp's 0.002–0.013 of chroma is barely a temperature
+     * to begin with, which is why it can sit over this without a seam.
+     *
+     * The steps are the ones this ramp was already validated on, re-solved for
+     * the new surfaces rather than re-picked: header over card 1.03:1, its
+     * hover over that 1.11:1, fills over card 1.18:1, the rail's edge over
+     * card 1.35:1. Card over page comes out at 1.19:1, a little more than the
+     * 1.15:1 it had, because that pair is YouTube's rather than derived.
+     * Text on card lands at 14.2:1 and the dimmed kind at 6.9:1 — both below
+     * where they were, and both far above what they need, which is the point
+     * of #f1f1f1 over a pure white: less glare at 3am for contrast nobody was
+     * spending. */
+  --background: oklch(0.168 0 0);
+  --foreground: oklch(0.958 0 0);
+  --card: oklch(0.248 0 0);
+  --card-foreground: oklch(0.958 0 0);
+  --popover: oklch(0.248 0 0);
+  --popover-foreground: oklch(0.958 0 0);
+  --primary: oklch(0.93 0 0);
+  --primary-foreground: oklch(0.248 0 0);
+  --secondary: oklch(0.301 0 0);
+  --secondary-foreground: oklch(0.958 0 0);
+  --muted: oklch(0.301 0 0);
+  --muted-foreground: oklch(0.738 0 0);
+  --accent: oklch(0.301 0 0);
+  --accent-foreground: oklch(0.958 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -348,15 +358,15 @@
   --chart-cat-2: oklch(0.661 0.169 257.9);
   --chart-cat-3: oklch(0.66 0.164 54.7);
   --chart-cat-4: oklch(0.66 0.169 299.9);
-  --sidebar: oklch(0.228 0.014 265);
-  --sidebar-foreground: oklch(0.988 0.003 265);
+  --sidebar: oklch(0.248 0 0);
+  --sidebar-foreground: oklch(0.958 0 0);
   /* Mirrors `--primary`/`--primary-foreground` above. The CLI's neutral theme
      * emits a blue `--sidebar-primary` here — a leftover from the blue theme's
      * light block — which would be the one blue left in a neutral palette. */
-  --sidebar-primary: oklch(0.93 0.007 265);
-  --sidebar-primary-foreground: oklch(0.228 0.014 265);
-  --sidebar-accent: oklch(0.286 0.016 265);
-  --sidebar-accent-foreground: oklch(0.988 0.003 265);
+  --sidebar-primary: oklch(0.93 0 0);
+  --sidebar-primary-foreground: oklch(0.248 0 0);
+  --sidebar-accent: oklch(0.301 0 0);
+  --sidebar-accent-foreground: oklch(0.958 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   /* Dark keeps rail and panel on one surface — the light zinc ramp has no
      * dark counterpart, so the rail just follows the panel. */
@@ -364,19 +374,19 @@
   --sidebar-rail-accent: var(--sidebar-accent);
   /* Opaque, where the rest of the dark borders are a translucent white. It has
      * to be: this one line is drawn twice over different backdrops — the app
-     * bar paints it over its own surface (0.228), while the panel container
-     * that draws the rail's edge has no background of its own, so the same
-     * `oklch(1 0 0 / 10%)` fell on the workspace (0.153) instead and rendered
-     * 0.262 against the bar's 0.322. One edge, two shades, depending only on
-     * which element happened to draw it. 0.322 is the shade the bar was
-     * already rendering, so the bar is unchanged and the rail's edge comes up
-     * to meet it. */
-  --sidebar-rail-border: oklch(0.322 0.014 265);
+     * bar paints it over its own surface (the card's 0.248), while the panel
+     * container that draws the rail's edge has no background of its own, so
+     * the same `oklch(1 0 0 / 10%)` fell on the page instead and rendered a
+     * visibly darker line. One edge, two shades, depending only on which
+     * element happened to draw it. This is what a 10% white over the card
+     * comes to, so the bar is unchanged and the rail's edge comes up to meet
+     * it — 1.35:1 over the card, the step it has always had. */
+  --sidebar-rail-border: oklch(0.336 0 0);
   /* Dark cannot borrow the rail the way light does — up there the rail is a
-     * step under the workspace, but here it *is* the card (0.228), so a header
+     * step under the workspace, but here it *is* the card (0.248), so a header
      * band on it would be the card it is meant to stand out from. It sits just
-     * over the card instead, short of `--muted`'s 0.286: page 0.153 → card
-     * 0.228 → header 0.239, so the band is still the top of the ramp and the
+     * over the card instead, short of `--muted`'s 0.301: page 0.168 → card
+     * 0.248 → header 0.258, so the band is still the top of the ramp and the
      * rows below it are not.
      *
      * Not `--muted` itself, which is what this was, and not the 0.274 that
@@ -392,17 +402,17 @@
      * surface and going the other way — dark surfaces lift under the pointer
      * where light ones sink. Both are written out because there is no fill at
      * either shade to point at. */
-  --table-header: oklch(0.239 0.014 265);
-  --table-header-accent: oklch(0.275 0.015 265);
+  --table-header: oklch(0.258 0 0);
+  --table-header-accent: oklch(0.291 0 0);
   /* The dark step of the focus blue — see the light block for why this one
      * colour is the palette's exception. Lighter than the light theme's, like
      * every accent here: it is drawn on a dark surface, so it has to come *up*
      * off the card rather than down off white. */
   --focus-accent: oklch(0.623 0.214 259.815);
   /* Dark takes the page, not pane 1 like the light block does: here the rail
-     * and the card are the same 0.228, so a workspace on the rail would leave
+     * and the card are the same 0.248, so a workspace on the rail would leave
      * every card invisible against the surface it sits on. The page is a step
-     * *below* the card (1.16:1), which is the same "sheet on a desk"
+     * *below* the card (1.19:1), which is the same "sheet on a desk"
      * relationship light gets by going the other way. */
   --content: var(--background);
 }
