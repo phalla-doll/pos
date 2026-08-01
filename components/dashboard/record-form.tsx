@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { ButtonGroup } from "@/components/ui/button-group"
+import { ToolbarGroup } from "@/components/dashboard/toolbar-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -198,11 +198,12 @@ export function RecordForm<T>({
           {creating ? draftLabel : `${deleting ? "Delete" : "Edit"} ${noun}`}
         </h1>
         {/*
-          The same `ButtonGroup` the list's toolbar leads with, holding the
-          same `sm` outline buttons, so a list and a record read as one row
-          seen at two altitudes.
+          The same `ToolbarGroup` the list's toolbar leads with, holding the
+          same stock outline buttons at the same default size, so a list and a
+          record read as one row seen at two altitudes. The pill ends come with
+          it — see that module.
         */}
-        <ButtonGroup>
+        <ToolbarGroup>
           {/*
             A delete tab is the same fields under a different question, so it
             is the same group under a different set of verbs — not a screen of
@@ -225,12 +226,7 @@ export function RecordForm<T>({
                 so what it actually does is stop showing you the record.
               */}
               {!missing && (
-                <Button
-                  type="button"
-                  onClick={closeSelf}
-                  variant="destructive"
-                  size="sm"
-                >
+                <Button type="button" onClick={closeSelf} variant="destructive">
                   <Trash2 />
                   Process
                 </Button>
@@ -247,12 +243,7 @@ export function RecordForm<T>({
                 would be worse than a button that no-ops in a case that cannot
                 arise. Close, which is optional chrome, is gated instead.
               */}
-              <Button
-                type="button"
-                onClick={closeSelf}
-                variant="outline"
-                size="sm"
-              >
+              <Button type="button" onClick={closeSelf} variant="outline">
                 <X />
                 Cancel
               </Button>
@@ -265,9 +256,7 @@ export function RecordForm<T>({
               {!missing && (
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={
-                      <Button type="button" variant="outline" size="sm" />
-                    }
+                    render={<Button type="button" variant="outline" />}
                   >
                     <Ellipsis />
                     More
@@ -312,7 +301,7 @@ export function RecordForm<T>({
             what is about to exist.
           */}
               {!missing && (
-                <Button type="submit" form={formId} variant="outline" size="sm">
+                <Button type="submit" form={formId} variant="outline">
                   {creating ? <Plus /> : <Save />}
                   {creating ? `Create ${noun}` : "Save"}
                 </Button>
@@ -329,13 +318,13 @@ export function RecordForm<T>({
             the click does two things — save it, then act on it.
           */}
               {!creating && !missing && (
-                <Button type="button" variant="outline" size="sm">
+                <Button type="button" variant="outline">
                   <BadgeCheck />
                   Verify
                 </Button>
               )}
               {!creating && !missing && (
-                <Button type="button" variant="outline" size="sm">
+                <Button type="button" variant="outline">
                   <Pause />
                   Hold
                 </Button>
@@ -357,7 +346,6 @@ export function RecordForm<T>({
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
                   disabled={!dirty}
                   onClick={clearFields}
                 >
@@ -391,9 +379,7 @@ export function RecordForm<T>({
               {!creating && !missing && (
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={
-                      <Button type="button" variant="outline" size="sm" />
-                    }
+                    render={<Button type="button" variant="outline" />}
                   >
                     <Ellipsis />
                     More
@@ -437,7 +423,7 @@ export function RecordForm<T>({
               )}
             </>
           )}
-        </ButtonGroup>
+        </ToolbarGroup>
         {/*
           Close stands outside the group, a `gap-3` away from its edge:
           everything in the group acts on the record — saves it, verifies it,
@@ -451,12 +437,19 @@ export function RecordForm<T>({
 
           Not on a delete tab, which carries Cancel in the group beside this
           one and needs no second button that does the same thing. See there.
+
+          It takes the group's pill shape anyway — `rounded-full` outright,
+          since on its own it is both ends of a run and needs none of
+          `ToolbarGroup`'s end-finding. Standing apart is the gap's job, not
+          the corners': a lone `lg` rectangle beside a pill would read as a
+          different *kind* of control rather than as the same control held at
+          arm's length.
         */}
         {workspace && !deleting && (
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            className="rounded-full"
             onClick={() => workspace.closeTab(tabId)}
           >
             <X />
