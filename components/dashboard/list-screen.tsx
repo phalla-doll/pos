@@ -202,9 +202,9 @@ const indeterminateDash =
  * with `--foreground` and both themes come out faintly red. Mixing `in oklch`
  * interpolates a hue channel, the two ends of that mix are near-neutral, and
  * the result lands on `oklch(0.933 0.005 none)`: a missing hue, which renders
- * as hue 0. That is the red axis, so what should have been a warm grey arrives
- * with 0.005 of pink in it. Near-neutrals do not survive a polar mix; a token
- * with a hue already in it does.
+ * as hue 0. That is the red axis, so what should have been a near-neutral grey
+ * arrives with 0.005 of pink in it. Near-neutrals do not survive a polar mix; a
+ * token with a hue already in it does.
  */
 const headerSurface = "[&_th]:bg-table-header"
 const headerSortHover = "hover:bg-table-header-accent"

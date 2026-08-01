@@ -28,8 +28,8 @@ import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
  * surface it sits on (`--content`) rather than the page white — the two meet
  * with no seam, and only the hairline below divides them, which is what lets
  * the active tab punch through and look attached to the screen it opens. On
- * the page white it would read as a bright band wedged between the app bar
- * above it and the workspace below, both of which are darker. Contrast comes
+ * the page's own shade it would read as a bright band wedged between the app
+ * bar above it and the workspace below, both of which are darker. Contrast comes
  * from that bottom hairline, which the active tab
  * punches through — its fill + flared corners erase the line beneath it, so it
  * reads as connected to the content below, browser-tab style. The hairline is
