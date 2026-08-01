@@ -528,8 +528,9 @@ export function ListScreen<T>({
           are one kind of thing. Nothing that changes what the table *shows* is
           in here: that is the advanced card's, below.
 
-          Stock `outline` at `sm`, and nothing else — the group is what shapes
-          them, dropping the inner corners and the doubled edges on its own.
+          Stock `outline` at the default size, and nothing else — the group is
+          what shapes them, dropping the inner corners and the doubled edges on
+          its own.
         */}
         <ButtonGroup>
           {/*
@@ -542,7 +543,6 @@ export function ListScreen<T>({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => workspace?.openDraft(screenType)}
             >
               <Plus />
@@ -571,7 +571,6 @@ export function ListScreen<T>({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               disabled={selectedCount !== 1}
               onClick={() => {
                 const [key] = [...selected]
@@ -599,7 +598,6 @@ export function ListScreen<T>({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             disabled={selectedCount === 0}
             onClick={() => requestDelete([...selected])}
           >
@@ -625,7 +623,6 @@ export function ListScreen<T>({
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
                   disabled={selectedCount === 0}
                 />
               }
