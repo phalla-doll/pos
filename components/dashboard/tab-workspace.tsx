@@ -23,9 +23,8 @@ import { workspaceTitle } from "@/lib/title"
 import { cn } from "@/lib/utils"
 
 /**
- * The tabbed workspace. Owns tab state via {@link useTabs}, renders the
- * tab bar, and renders the active screen's content with a `key` derived
- * from the active tab id — so every tab switch is a fresh remount.
+ * The tabbed workspace. Owns tab state via {@link useTabs}, renders the tab
+ * bar, and keeps every open tab mounted with all but the focused one hidden.
  *
  * Uses `useSearchParams` (via the hook), so it must be wrapped in a
  * `<Suspense>` boundary by its parent.
@@ -112,6 +111,9 @@ export function TabWorkspace() {
               <Card className="flex min-h-0 flex-1 flex-col gap-0 py-0">
                 <ScreenContent tab={tab} />
               </Card>
+              {/* ^ memoized on `tab` — see `ScreenContent`. The wrapper's
+                  `hidden` class is what changes on a switch, and without the
+                  memo that re-rendered every screen under it, focused or not. */}
             </div>
           ))
         ) : (
@@ -130,8 +132,16 @@ export function TabWorkspace() {
  * given exactly the props they take — a detail component needs the `param`,
  * the plain one has no such field, and a single element with an optional prop
  * would have to lie about one of them.
+ *
+ * **Memoized**, and that is what makes "every tab stays mounted" affordable.
+ * The workspace re-renders on every switch — that is how the `hidden` class
+ * moves — and each open tab's screen is a child of it, so unmemoized, focusing
+ * a tab re-rendered the charts and tables of every *other* open tab too. A
+ * `tab` is identity-stable across a focus change (the reducer returns the same
+ * objects, see `tabsReducer`), so this bails out for every tab whose content
+ * genuinely didn't change, which on a switch is all of them.
  */
-function ScreenContent({ tab }: { tab: Tab }) {
+const ScreenContent = React.memo(function ScreenContent({ tab }: { tab: Tab }) {
   const screen = getScreen(tab.screenType)
   if (!screen) return null
 
@@ -145,7 +155,7 @@ function ScreenContent({ tab }: { tab: Tab }) {
     )
   }
   return <screen.component screenType={tab.screenType} tabId={tab.id} />
-}
+})
 
 /**
  * One card in the {@link WorkspaceSketch} — a wireframe of the screen layout
