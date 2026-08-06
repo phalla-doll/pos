@@ -223,7 +223,11 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
             aria-label={`Show ${tabs.length} more ${tabs.length === 1 ? "tab" : "tabs"}`}
             // Stays lit while the menu is open, so the button doesn't look
             // dismissed with its own popup on screen.
-            className="group/more flex h-7 shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-medium text-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+            //
+            // `font-normal` with the chips: this sits inline at the end of the
+            // same strip and reads as one of them, so it can't be the one
+            // heavy thing left in the row.
+            className="group/more flex h-7 shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-normal text-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
             {/* Count first — it's the part worth scanning, and it's what
                 changes as tabs come and go. */}
@@ -313,7 +317,16 @@ function TabChip({
               // `h-[calc(100%-1px)]` is the trigger's own height rule: it fills
               // the track's content box bar a hairline, which is what leaves a
               // sliver of rail visible around the active pill.
-              "group/tab relative flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm border border-transparent px-2 text-sm font-medium whitespace-nowrap transition-all",
+              //
+              // Weight is the one place the transcription departs from the
+              // variant: `font-normal` where `TabsTrigger` sets `font-medium`.
+              // A segmented control holds two or three short words and can
+              // carry the extra weight, but this strip runs the width of the
+              // window and every chip is a full screen name — at medium the
+              // row read as a line of headings rather than as somewhere to
+              // click. What marks the active tab is the pill and the lift, and
+              // those say it without help from the type.
+              "group/tab relative flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm border border-transparent px-2 text-sm font-normal whitespace-nowrap transition-all",
               isActive
                 ? // `shadow-xs`, not the variant's `shadow-sm`: a tab chip is
                   // wider than a segmented-control segment, so the same shadow
@@ -331,9 +344,9 @@ function TabChip({
           className="flex h-full items-center gap-1.5 outline-none [&_svg]:size-4 [&_svg]:shrink-0"
         >
           {icon}
-          {/* No ghost-width reservation needed: the variant holds weight at
-              medium in both states, so a chip measures the same active or not
-              and selecting one can't reflow its neighbors. */}
+          {/* No ghost-width reservation needed: weight is the same in both
+              states, so a chip measures the same active or not and selecting
+              one can't reflow its neighbors. */}
           <span className="max-w-40 truncate">{label}</span>
         </button>
 
