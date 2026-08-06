@@ -154,8 +154,15 @@ export function TabBar({
             `--muted` *is* the workspace shade the strip is drawn on, so the
             track vanished in light while showing plainly in dark. The token
             recesses it under the strip in light and lifts it over the strip in
-            dark — the same control on both. */}
-        <div className="flex h-8 items-center rounded-lg bg-(--tab-track) p-[3px] text-muted-foreground">
+            dark — the same control on both.
+
+            One step down the radius ramp from the variant (`md` here, `sm` on
+            the chips): a tab is a wide, squat box, and the radius that suits a
+            segmented control's short segments reads as a lozenge at this
+            width. The pair still steps together — the track's corner stays
+            the chip's plus roughly the 3px between them, so the two curves
+            stay concentric rather than one sitting inside a rounder one. */}
+        <div className="flex h-8 items-center rounded-md bg-(--tab-track) p-[3px] text-muted-foreground">
           {visible.map((tab) => (
             <TabChip
               key={tab.id}
@@ -216,7 +223,7 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
             aria-label={`Show ${tabs.length} more ${tabs.length === 1 ? "tab" : "tabs"}`}
             // Stays lit while the menu is open, so the button doesn't look
             // dismissed with its own popup on screen.
-            className="group/more flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+            className="group/more flex h-7 shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-medium text-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
             {/* Count first — it's the part worth scanning, and it's what
                 changes as tabs come and go. */}
@@ -306,7 +313,7 @@ function TabChip({
               // `h-[calc(100%-1px)]` is the trigger's own height rule: it fills
               // the track's content box bar a hairline, which is what leaves a
               // sliver of rail visible around the active pill.
-              "group/tab relative flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-md border border-transparent px-2 text-sm font-medium whitespace-nowrap transition-all",
+              "group/tab relative flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm border border-transparent px-2 text-sm font-medium whitespace-nowrap transition-all",
               isActive
                 ? // `shadow-xs`, not the variant's `shadow-sm`: a tab chip is
                   // wider than a segmented-control segment, so the same shadow
