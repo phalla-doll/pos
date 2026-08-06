@@ -978,12 +978,14 @@ export function ListScreen<T>({
             */}
             <div className="flex items-center gap-2 border-t px-4 py-3">
               {/*
-                `sm` and `outline`, matching the row of actions above it, so
-                every control on this screen stands the same height and carries
-                the same weight — the card's own border already sets Apply
-                apart, so a solid fill would only shout across it.
+                `secondary`, the variant the row of actions above it takes, so
+                the two rows carry the same weight — the card's own border
+                already sets Apply apart, so a louder fill would only shout
+                across it. `sm` stays: this one sits inside the card, under
+                fields of its own size, where the toolbar's default height
+                would overpower the row it closes.
               */}
-              <Button type="submit" variant="outline" size="sm">
+              <Button type="submit" variant="secondary" size="sm">
                 <Search />
                 Apply
               </Button>
