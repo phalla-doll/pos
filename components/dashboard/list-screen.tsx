@@ -528,8 +528,8 @@ export function ListScreen<T>({
           are one kind of thing. Nothing that changes what the table *shows* is
           in here: that is the advanced card's, below.
 
-          Stock `outline` at the default size, and nothing else — the group is
-          what shapes them, dropping the inner corners and the doubled edges
+          Stock `secondary` at the default size, and nothing else — the group
+          is what shapes them, dropping the inner corners and the doubled edges
           and rounding the run's two ends to a pill on its own. See
           `ToolbarGroup`, which the record form's toolbar leads with too.
         */}
@@ -543,7 +543,7 @@ export function ListScreen<T>({
           {canCreate && (
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => workspace?.openDraft(screenType)}
             >
               <Plus />
@@ -571,7 +571,7 @@ export function ListScreen<T>({
           {canEdit && (
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               disabled={selectedCount !== 1}
               onClick={() => {
                 const [key] = [...selected]
@@ -598,7 +598,7 @@ export function ListScreen<T>({
           */}
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             disabled={selectedCount === 0}
             onClick={() => requestDelete([...selected])}
           >
@@ -623,7 +623,7 @@ export function ListScreen<T>({
               render={
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   disabled={selectedCount === 0}
                 />
               }

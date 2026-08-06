@@ -199,8 +199,8 @@ export function RecordForm<T>({
         </h1>
         {/*
           The same `ToolbarGroup` the list's toolbar leads with, holding the
-          same stock outline buttons at the same default size, so a list and a
-          record read as one row seen at two altitudes. The pill ends come with
+          same stock secondary buttons at the same default size, so a list and
+          a record read as one row seen at two altitudes. The pill ends come with
           it — see that module.
         */}
         <ToolbarGroup>
@@ -217,7 +217,7 @@ export function RecordForm<T>({
                 Process is the irreversible click this whole tab exists to
                 frame — so it takes the `destructive` variant, the colour every
                 destructive action in the app takes, where the rest of the row
-                is `outline`. It leads the row anyway: this is what you came
+                is `secondary`. It leads the row anyway: this is what you came
                 here to do, and a red button leading a row is only alarming
                 when the row didn't warn you, which the readonly fields below
                 and the tab's own "Delete …" chip already did.
@@ -243,7 +243,7 @@ export function RecordForm<T>({
                 would be worse than a button that no-ops in a case that cannot
                 arise. Close, which is optional chrome, is gated instead.
               */}
-              <Button type="button" onClick={closeSelf} variant="outline">
+              <Button type="button" onClick={closeSelf} variant="secondary">
                 <X />
                 Cancel
               </Button>
@@ -256,7 +256,7 @@ export function RecordForm<T>({
               {!missing && (
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={<Button type="button" variant="outline" />}
+                    render={<Button type="button" variant="secondary" />}
                   >
                     <Ellipsis />
                     More
@@ -301,7 +301,7 @@ export function RecordForm<T>({
             what is about to exist.
           */}
               {!missing && (
-                <Button type="submit" form={formId} variant="outline">
+                <Button type="submit" form={formId} variant="secondary">
                   {creating ? <Plus /> : <Save />}
                   {creating ? `Create ${noun}` : "Save"}
                 </Button>
@@ -318,13 +318,13 @@ export function RecordForm<T>({
             the click does two things — save it, then act on it.
           */}
               {!creating && !missing && (
-                <Button type="button" variant="outline">
+                <Button type="button" variant="secondary">
                   <BadgeCheck />
                   Verify
                 </Button>
               )}
               {!creating && !missing && (
-                <Button type="button" variant="outline">
+                <Button type="button" variant="secondary">
                   <Pause />
                   Hold
                 </Button>
@@ -345,7 +345,7 @@ export function RecordForm<T>({
               {!missing && (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   disabled={!dirty}
                   onClick={clearFields}
                 >
@@ -379,7 +379,7 @@ export function RecordForm<T>({
               {!creating && !missing && (
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={<Button type="button" variant="outline" />}
+                    render={<Button type="button" variant="secondary" />}
                   >
                     <Ellipsis />
                     More
@@ -448,7 +448,7 @@ export function RecordForm<T>({
         {workspace && !deleting && (
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             className="rounded-full"
             onClick={() => workspace.closeTab(tabId)}
           >
