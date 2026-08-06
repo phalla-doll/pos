@@ -8,6 +8,7 @@
 //   BreadcrumbSeparator,
 // } from "@/components/ui/breadcrumb"
 import { HeaderNotifications } from "@/components/header-notifications"
+import { HeaderSearch } from "@/components/header-search"
 // import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { SidebarShell } from "@/components/sidebar-shell"
@@ -77,7 +78,17 @@ export default function DashboardLayout({
               </BreadcrumbList>
             </Breadcrumb>
             */}
+            {/*
+              The header tools. Search leads the cluster: it is the widest and
+              the most used, so it sits against the icon buttons rather than
+              beyond them.
+
+              It subscribes to nothing, so the header still prerenders — the
+              palette reads the live URL at click time rather than at render
+              (see `HeaderSearch`).
+            */}
             <div className="ml-auto flex items-center gap-2">
+              <HeaderSearch />
               <HeaderNotifications />
             </div>
           </header>
