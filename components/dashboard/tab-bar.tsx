@@ -13,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
@@ -26,23 +27,21 @@ import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
 /**
  * Height + bottom edge of the tab-bar row. The strip shares the workspace
  * surface it sits on (`--content`) rather than the page white — the two meet
- * with no seam, and only the hairline below divides them, which is what lets
- * the active tab punch through and look attached to the screen it opens. On
- * the page's own shade it would read as a bright band wedged between the app
- * bar above it and the workspace below, both of which are darker. Contrast comes
- * from that bottom hairline, which the active tab
- * punches through — its fill + flared corners erase the line beneath it, so it
- * reads as connected to the content below, browser-tab style. The hairline is
- * an *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the
- * content box (border-box), so the strip's own children would sit 1px shy of
- * its full height and the h-8 chips would no longer meet the baseline cleanly.
- * A shadow takes no layout space, so the row fills the strip exactly and the
- * active tab's background simply paints over the inset line — no `-mb-px`
- * overflow needed. Shared so the Suspense fallback (`TabWorkspaceFallback`)
- * matches the bar's size exactly, instead of re-declaring the constant.
+ * with no seam, and only the hairline below divides them. On the page's own
+ * shade it would read as a bright band wedged between the app bar above it and
+ * the workspace below, both of which are darker.
+ *
+ * `h-11` is the segmented track's own `h-8` plus a 6px gutter above and below,
+ * so the track floats in the row instead of touching its edges — the fill needs
+ * that air to read as one control rather than as a band. The hairline is an
+ * *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the content
+ * box (border-box), so the row's children would sit 1px shy of its full height
+ * and the centered track would land a half-pixel high. A shadow takes no layout
+ * space. Shared so the Suspense fallback (`TabWorkspaceFallback`) matches the
+ * bar's size exactly, instead of re-declaring the constant.
  */
 export const TAB_BAR_ROW =
-  "h-9 shrink-0 bg-(--content) shadow-[inset_0_-1px_0_0_var(--border)]"
+  "h-11 shrink-0 bg-(--content) shadow-[inset_0_-1px_0_0_var(--border)]"
 
 export type TabBarProps = {
   tabs: Tab[]
@@ -54,9 +53,19 @@ export type TabBarProps = {
   onCloseAll: () => void
 }
 
-/** `gap-1` and `px-2` on the strip, in px — the partitioner needs them numerically. */
-const CHIP_GAP = 4
-const STRIP_PADDING = 16
+/**
+ * The strip's fixed overheads, in px — the partitioner needs them numerically.
+ *
+ * `CHIP_GAP` is 0 because the default tabs variant butts its triggers together:
+ * the track's fill is what separates them, so a gap would only open slots of
+ * bare rail between tabs. `TRACK_PADDING` is the track's own `p-[3px]` on both
+ * sides, and `MORE_GAP` the `gap-1` between the track and the overflow button
+ * that sits outside it — both come off the budget the chips get to fill.
+ */
+const CHIP_GAP = 0
+const STRIP_PADDING = 24
+const TRACK_PADDING = 6
+const MORE_GAP = 4
 
 /**
  * Width assumed for the "More" button before it has ever rendered. Only used on
@@ -95,7 +104,7 @@ export function TabBar({
     const strip = stripRef.current
     if (!strip) return
     const observer = new ResizeObserver(() => {
-      setContainerWidth(strip.clientWidth - STRIP_PADDING)
+      setContainerWidth(strip.clientWidth - STRIP_PADDING - TRACK_PADDING)
     })
     observer.observe(strip)
     return () => observer.disconnect()
@@ -119,33 +128,48 @@ export function TabBar({
     widths,
     activeId,
     containerWidth,
-    moreWidth,
+    // The button's own width plus the gap that precedes it — the partitioner
+    // charges one `gap` for that space, and ours is 0 between chips.
+    moreWidth: moreWidth + MORE_GAP,
     gap: CHIP_GAP,
   })
 
   return (
-    <div className={cn("flex items-end", TAB_BAR_ROW)}>
-      {/* Tabs sit flush to the bottom of the strip so the active tab's flared
-          corners can merge into the content area beneath. `overflow-hidden`
-          guards the measuring commit, where every chip renders at once so its
-          width can be read — without it that pass would blow out the layout. */}
+    <div className={cn("flex items-center", TAB_BAR_ROW)}>
+      {/* `overflow-hidden` guards the measuring commit, where every chip renders
+          at once so its width can be read — without it that pass would blow out
+          the layout. */}
       <div
         ref={stripRef}
-        className="flex h-9 min-w-0 flex-1 items-end gap-1 overflow-hidden px-2"
+        className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden px-3"
       >
-        {visible.map((tab) => (
-          <TabChip
-            key={tab.id}
-            tab={tab}
-            isActive={tab.id === activeId}
-            onMeasure={measureChip}
-            onSelect={onSelect}
-            onClose={onClose}
-            onDuplicate={onDuplicate}
-            onCloseOthers={onCloseOthers}
-            onCloseAll={onCloseAll}
-          />
-        ))}
+        {/* The segmented track — `TabsList`'s default variant. It sizes to its
+            chips (`w-fit` by way of being a flex item), so with two tabs open
+            the fill stops after two tabs instead of drawing a rail across the
+            whole window. The chips inside are `shrink-0`, so during the
+            measuring commit the track simply overruns the strip's hidden
+            overflow rather than squeezing the labels it is trying to measure.
+
+            `--tab-track` in place of the variant's `bg-muted`: on this theme
+            `--muted` *is* the workspace shade the strip is drawn on, so the
+            track vanished in light while showing plainly in dark. The token
+            recesses it under the strip in light and lifts it over the strip in
+            dark — the same control on both. */}
+        <div className="flex h-8 items-center rounded-lg bg-(--tab-track) p-[3px] text-muted-foreground">
+          {visible.map((tab) => (
+            <TabChip
+              key={tab.id}
+              tab={tab}
+              isActive={tab.id === activeId}
+              onMeasure={measureChip}
+              onSelect={onSelect}
+              onClose={onClose}
+              onDuplicate={onDuplicate}
+              onCloseOthers={onCloseOthers}
+              onCloseAll={onCloseAll}
+            />
+          ))}
+        </div>
         {overflow.length > 0 && (
           <OverflowMenu
             tabs={overflow}
@@ -165,9 +189,14 @@ type OverflowMenuProps = {
 }
 
 /**
- * The "More" button and its list of collapsed tabs. Selecting one focuses it —
+ * The overflow button and its list of collapsed tabs. Selecting one focuses it —
  * and because `partitionTabs` pins the active tab, the chosen tab immediately
  * takes a visible slot, so the menu doubles as the way back out of overflow.
+ *
+ * Deliberately *not* styled as a tab, and deliberately outside the track: a tab
+ * is a slot in the segmented fill, so anything sharing that fill reads as one.
+ * A ghost button set just past the track's right edge reads instead as "tabs,
+ * then a control", which is what it is.
  */
 function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
   const measure = React.useCallback(
@@ -185,17 +214,24 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
             ref={measure}
             type="button"
             aria-label={`Show ${tabs.length} more ${tabs.length === 1 ? "tab" : "tabs"}`}
-            className="flex h-8 shrink-0 items-center gap-1 rounded-t-lg px-2.5 text-sm font-normal text-muted-foreground transition-colors duration-150 hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+            // Stays lit while the menu is open, so the button doesn't look
+            // dismissed with its own popup on screen.
+            className="group/more flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
-            <span>More</span>
+            {/* Count first — it's the part worth scanning, and it's what
+                changes as tabs come and go. */}
             <span className="tabular-nums">{tabs.length}</span>
-            <ChevronDown strokeWidth={1.5} />
+            <span>more</span>
+            <ChevronDown
+              strokeWidth={1.5}
+              className="transition-transform duration-150 group-data-popup-open/more:rotate-180"
+            />
           </button>
         }
       />
       {/* `w-auto` is load-bearing: the menu's default is `w-(--anchor-width)`,
           which sizes it to its trigger. That suits a select, but here the
-          trigger is a narrow "More n" button, so screen labels would be
+          trigger is a narrow "n more" button, so screen labels would be
           clipped by the very button that hides them. Size to the labels
           instead, with a max so one long name can't stretch the menu across
           the strip — only then does the item's `truncate` come into play. */}
@@ -203,6 +239,10 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
         align="end"
         className="max-h-80 w-auto max-w-72 min-w-44 overflow-y-auto"
       >
+        {/* Names what the list is. Without it the menu is a bare run of screen
+            names that could just as easily be a launcher — and these are open
+            tabs, not screens to open. */}
+        <DropdownMenuLabel>Hidden tabs</DropdownMenuLabel>
         {tabs.map((tab) => (
           <DropdownMenuItem key={tab.id} onClick={() => onSelect(tab.id)}>
             {getScreen(tab.screenType)?.icon}
@@ -255,28 +295,25 @@ function TabChip({
             data-slot="tab-chip"
             data-active={isActive}
             className={cn(
-              // `--tab-active` is the active tab's fill, shared by the body and
-              // the flared corners so they can never drift apart. It's a *mix*
-              // of primary into the strip's own surface rather than `primary/10`
-              // so it stays fully opaque — the fill has to erase the strip's
-              // hairline beneath it — and mixing into `--content` rather than a
-              // fixed white keeps the chip one step off whatever surface the
-              // strip is wearing. The mix is deliberately shallow: against a
-              // near-white surface, `primary` being a near-black neutral means
-              // even a small percentage darkens fast, and anything heavier turns
-              // tab chrome into a grey block that outshouts the content it
-              // frames. 6% lands roughly a `--muted` step below the strip —
-              // enough to read as raised alongside the flared corners and the
-              // medium weight, which carry most of the "this one is active"
-              // signal. Dark mode lifts a step *off* the near-black page in the
-              // other direction, because a tinted fill that reads as "raised" at
-              // L 0.153 has to be so saturated it turns into a colored block.
-              "group/tab relative flex shrink-0 items-center gap-1 rounded-t-lg pr-1.5 pl-2.5 text-sm transition-[background-color,color] duration-150",
-              "[--tab-active:color-mix(in_oklab,var(--primary)_6%,var(--content))]",
-              "dark:[--tab-active:var(--muted)]",
+              // Styled as the *default* variant of `components/ui/tabs.tsx`:
+              // the active tab is a raised pill lifted out of the muted track,
+              // and every other tab is dimmed text on that track. The classes
+              // are `TabsTrigger`'s own, transcribed rather than imported
+              // because a chip is a context-menu trigger wrapping a nested
+              // close button — it can't *be* a `TabsTrigger`, which renders a
+              // `<button>` (and buttons don't nest).
+              //
+              // `h-[calc(100%-1px)]` is the trigger's own height rule: it fills
+              // the track's content box bar a hairline, which is what leaves a
+              // sliver of rail visible around the active pill.
+              "group/tab relative flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-md border border-transparent px-2 text-sm font-medium whitespace-nowrap transition-all",
               isActive
-                ? "h-8 bg-[var(--tab-active)] font-medium text-foreground"
-                : "h-8 font-normal text-muted-foreground hover:text-foreground"
+                ? // `shadow-xs`, not the variant's `shadow-sm`: a tab chip is
+                  // wider than a segmented-control segment, so the same shadow
+                  // spread over that length reads as the pill floating well off
+                  // the strip. The lift only has to say "this one is on top".
+                  "bg-background text-foreground shadow-xs dark:border-input dark:bg-input/30"
+                : "text-foreground/60 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             )}
           />
         }
@@ -287,46 +324,32 @@ function TabChip({
           className="flex h-full items-center gap-1.5 outline-none [&_svg]:size-4 [&_svg]:shrink-0"
         >
           {icon}
-          {/* Reserve the bold width with an invisible ghost so switching
-              between active (medium) and inactive (normal) weights doesn't
-              reflow the tab and shift its neighbors. */}
-          <span className="grid max-w-40">
-            <span
-              aria-hidden
-              className="invisible col-start-1 row-start-1 truncate font-medium"
-            >
-              {label}
-            </span>
-            <span className="col-start-1 row-start-1 truncate">{label}</span>
-          </span>
+          {/* No ghost-width reservation needed: the variant holds weight at
+              medium in both states, so a chip measures the same active or not
+              and selecting one can't reflow its neighbors. */}
+          <span className="max-w-40 truncate">{label}</span>
         </button>
 
         {/* Close — the only inline action. Active tabs always show it;
-            inactive tabs reveal it on hover. Everything else lives in the
-            right-click menu, so there's a single, unambiguous target. */}
+            inactive tabs reveal it on hover, which doubles as their hover
+            feedback. Everything else lives in the right-click menu, so there's
+            a single, unambiguous target.
+
+            The hover fill is `foreground/10` rather than `accent`: an inactive
+            chip sits on the muted track and an active one on the raised pill,
+            and a translucent tint of the text color is the one fill that stays
+            visible on both. */}
         <button
           type="button"
           onClick={() => onClose(tab.id)}
           aria-label={`Close ${label} tab`}
           className={cn(
-            "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-opacity duration-150 hover:bg-accent hover:text-foreground [&_svg]:size-3.5",
+            "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-opacity duration-150 hover:bg-foreground/10 hover:text-foreground [&_svg]:size-3.5",
             isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100"
           )}
         >
           <X strokeWidth={1.5} />
         </button>
-
-        {/* Flared bottom corners — the browser-tab signature. Each is an 8px
-            square just outside the tab, filled with the tab's `--tab-active`
-            color everywhere except a quarter-circle carved from the corner
-            nearest the tab, so the rounded body sweeps concavely down to the
-            strip baseline instead of ending in a hard right angle. */}
-        {isActive && (
-          <>
-            <span className="pointer-events-none absolute bottom-0 left-[-8px] size-2 bg-[radial-gradient(circle_at_top_left,transparent_7.5px,var(--tab-active)_8px)]" />
-            <span className="pointer-events-none absolute right-[-8px] bottom-0 size-2 bg-[radial-gradient(circle_at_top_right,transparent_7.5px,var(--tab-active)_8px)]" />
-          </>
-        )}
       </ContextMenuTrigger>
 
       <ContextMenuContent>
