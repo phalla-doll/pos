@@ -287,6 +287,22 @@
      * at the ramp's chroma and the lightness does the work.
      */
   --content: oklch(0.96 0.005 265);
+  /*
+     * The tab strip's track — the recess the open tabs sit in, with the active
+     * one raised out of it onto the card's shade. Ours rather than `--muted`,
+     * which is what a segmented control would normally take: `--muted` is this
+     * ramp's 0.960, the very surface the strip is drawn on, so the track came
+     * out invisible in light and the same control read as two different designs
+     * depending on the theme.
+     *
+     * A track is a recess, so it goes *under* the workspace — the same
+     * direction the chrome takes, and the same step: 0.940, one down the ramp,
+     * 1.06:1 under the strip around it and 1.17:1 under the pill on it. Written
+     * out rather than pointed at `--sidebar-rail`, which is this same value: the
+     * frame and this track are equal by coincidence of the ramp, not because a
+     * track is a piece of chrome.
+     */
+  --tab-track: oklch(0.94 0.008 265);
   --background: oklch(0.994 0.002 265);
   --foreground: oklch(0.153 0.008 265);
 }
@@ -415,6 +431,14 @@
      * *below* the card (1.19:1), which is the same "sheet on a desk"
      * relationship light gets by going the other way. */
   --content: var(--background);
+  /* Dark goes the other way, as every surface here does: the page is the
+     * bottom of the ramp, so a recess under it has nowhere to go and the track
+     * has to lift instead. 0.301 is this ramp's fill shade (#2e2e2e) — the step
+     * a control's own surface takes over the page — and it lands 1.64:1 over
+     * the strip, more separation than light's 1.06:1 because a dark ramp has
+     * the room and a near-white one does not. Pointed at `--muted` rather than
+     * written out: here it *is* the fill step, which is what a track is. */
+  --tab-track: var(--muted);
 }
 
 /*
