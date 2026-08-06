@@ -732,8 +732,13 @@ export function ListScreen<T>({
 
             `text-left` because a button centres its text by default, and this
             one is a heading that happens to be pressable.
+
+            Normal weight, with everything else: it was `font-semibold`, which
+            made the one shut card on the screen the heaviest thing on it. What
+            marks it as a heading is the chevron, the rule under it, and the
+            card it opens — none of which needed the type to shout.
           */}
-          <CollapsibleTrigger className="group/adv flex min-w-0 items-center gap-2 text-left text-sm font-semibold">
+          <CollapsibleTrigger className="group/adv flex min-w-0 items-center gap-2 text-left text-sm font-normal">
             {/*
               Rotates rather than swapping glyphs, which is what makes the two
               states one control moving between them. Same 90° turn and same
