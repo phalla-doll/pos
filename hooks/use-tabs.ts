@@ -24,11 +24,22 @@ import {
 
 export type { ScreenRef, Tab }
 
-export type TabsApi = {
-  /** All currently open tabs, in order. */
-  tabs: Tab[]
-  /** The id of the focused tab, or null when nothing is open. */
-  activeId: string | null
+/**
+ * Everything that *mutates* the workspace, and nothing that describes it.
+ *
+ * The split is what keeps a tab switch cheap. This object is built once and
+ * never rebuilt — every function on it is stable for the life of the workspace,
+ * reaching the current state through a ref rather than through a closure. So
+ * the value handed to `WorkspaceProvider` never changes identity, and the
+ * screens consuming it (which only ever call these; none of them reads `tabs`)
+ * are not re-rendered when focus moves.
+ *
+ * Before the split the provider took the whole API, `tabs` and `activeId`
+ * included, so every mounted screen re-rendered on every switch — including the
+ * hidden ones, which is most of them. With four tabs open that was ~150ms of
+ * charts and tables re-rendering to change which one has `hidden` on it.
+ */
+export type WorkspaceActions = {
   /** Focus a tab by id. */
   setActive: (id: string) => void
   /**
@@ -55,6 +66,15 @@ export type TabsApi = {
   closeOthers: (id: string) => void
   /** Close every open tab. */
   closeAll: () => void
+}
+
+export type TabsApi = {
+  /** All currently open tabs, in order. */
+  tabs: Tab[]
+  /** The id of the focused tab, or null when nothing is open. */
+  activeId: string | null
+  /** The workspace's mutations — see {@link WorkspaceActions}. */
+  actions: WorkspaceActions
 }
 
 const tabUrlOptions = {
@@ -207,62 +227,51 @@ export function useTabs(): TabsApi {
   // (identity included), and project it to the URL. When that write echoes
   // back through `params`, the guard above sees it already matches this state
   // and leaves identity alone.
-  const apply = React.useCallback(
-    (action: TabsAction) => {
-      const next = tabsReducer(current, action)
-      if (next === current) return
-      setState(next)
-      void setParams(toTabParams(toContent(next)))
-    },
-    [current, setParams]
-  )
-
-  const setActive = React.useCallback(
-    (id: string) => apply({ type: "setActive", id }),
-    [apply]
-  )
-
-  const openTab = React.useCallback(
-    (ref: ScreenRef) => apply({ type: "open", ref, newId: newId() }),
-    [apply]
-  )
-
-  const openDraft = React.useCallback(
-    (screenType: ScreenType) =>
-      apply({
-        type: "open",
-        ref: { screenType, param: draftParam(newId) },
-        newId: newId(),
-      }),
-    [apply]
-  )
-
-  const closeTab = React.useCallback(
-    (id: string) => apply({ type: "close", id }),
-    [apply]
-  )
-
-  const duplicateTab = React.useCallback(
-    (id: string) => apply({ type: "duplicate", id, newId: newId() }),
-    [apply]
-  )
-
-  const closeOthers = React.useCallback(
-    (id: string) => apply({ type: "closeOthers", id }),
-    [apply]
-  )
-
-  const closeAll = React.useCallback(() => apply({ type: "closeAll" }), [apply])
-
-  return {
-    tabs: current.tabs,
-    activeId: current.activeId,
-    setActive,
-    openTab,
-    openDraft,
-    closeTab,
-    duplicateTab,
-    closeOthers,
-    closeAll,
+  const apply = (action: TabsAction) => {
+    const next = tabsReducer(current, action)
+    if (next === current) return
+    setState(next)
+    void setParams(toTabParams(toContent(next)))
   }
+
+  // `apply` closes over the state this render saw, so it is a different
+  // function every render — and an action object built from it would be too,
+  // which is exactly what would re-render every screen in the workspace on
+  // every switch. The latest one is parked in a ref instead, and the actions
+  // below read it at *call* time, so they can be built once and still act on
+  // current state.
+  //
+  // A layout effect, not an assignment during render: a render React discards
+  // (this component is interrupted mid-navigation routinely — see
+  // `useUrlSearch`) would otherwise leave the ref pointing at state that never
+  // committed. Effects only run for renders that do commit, and none of these
+  // functions can be *called* before then — a click can't land between commit
+  // and layout effect.
+  const applyRef = React.useRef(apply)
+  React.useLayoutEffect(() => {
+    applyRef.current = apply
+  })
+
+  // Built once, for the life of the workspace. Every dependency is either the
+  // ref above or freshly minted, so there is nothing here to invalidate.
+  const actions = React.useMemo<WorkspaceActions>(
+    () => ({
+      setActive: (id) => applyRef.current({ type: "setActive", id }),
+      openTab: (ref) => applyRef.current({ type: "open", ref, newId: newId() }),
+      openDraft: (screenType) =>
+        applyRef.current({
+          type: "open",
+          ref: { screenType, param: draftParam(newId) },
+          newId: newId(),
+        }),
+      closeTab: (id) => applyRef.current({ type: "close", id }),
+      duplicateTab: (id) =>
+        applyRef.current({ type: "duplicate", id, newId: newId() }),
+      closeOthers: (id) => applyRef.current({ type: "closeOthers", id }),
+      closeAll: () => applyRef.current({ type: "closeAll" }),
+    }),
+    []
+  )
+
+  return { tabs: current.tabs, activeId: current.activeId, actions }
 }

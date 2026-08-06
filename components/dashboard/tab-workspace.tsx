@@ -30,17 +30,9 @@ import { cn } from "@/lib/utils"
  * `<Suspense>` boundary by its parent.
  */
 export function TabWorkspace() {
-  const api = useTabs()
-  const {
-    tabs,
-    activeId,
-    setActive,
-    closeTab,
-    duplicateTab,
-    closeOthers,
-    closeAll,
-    openTab,
-  } = api
+  const { tabs, activeId, actions } = useTabs()
+  const { setActive, closeTab, duplicateTab, closeOthers, closeAll, openTab } =
+    actions
 
   const activeTab = tabs.find((t) => t.id === activeId) ?? null
 
@@ -50,7 +42,7 @@ export function TabWorkspace() {
   useDocumentTitle(workspaceTitle(activeTab ? tabTitle(activeTab) : undefined))
 
   return (
-    <WorkspaceProvider value={api}>
+    <WorkspaceProvider value={actions}>
       <div className="flex min-h-0 flex-1 flex-col">
         {tabs.length > 0 && (
           <TabBar
@@ -140,6 +132,10 @@ export function TabWorkspace() {
  * `tab` is identity-stable across a focus change (the reducer returns the same
  * objects, see `tabsReducer`), so this bails out for every tab whose content
  * genuinely didn't change, which on a switch is all of them.
+ *
+ * The other half of that is `WorkspaceActions`: `React.memo` doesn't stop a
+ * context change from reaching the screens below, so the value the workspace
+ * provides has to be stable too.
  */
 const ScreenContent = React.memo(function ScreenContent({ tab }: { tab: Tab }) {
   const screen = getScreen(tab.screenType)

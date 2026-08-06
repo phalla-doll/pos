@@ -2,10 +2,10 @@
 
 import * as React from "react"
 
-import type { TabsApi } from "@/hooks/use-tabs"
+import type { WorkspaceActions } from "@/hooks/use-tabs"
 
 /**
- * The workspace's tab API, shared with the screens rendered inside it.
+ * The workspace's tab *actions*, shared with the screens rendered inside it.
  *
  * This context exists because {@link import("@/hooks/use-tabs").useTabs} holds
  * its identity in `React.useState`: a second caller would get a second,
@@ -16,21 +16,27 @@ import type { TabsApi } from "@/hooks/use-tabs"
  * Screens read it to open tabs of their own — a list opening a record form is
  * the reason it exists — and could not do so by navigating, because they sit
  * *inside* the workspace and a navigation would race the state it owns.
+ *
+ * Actions only, deliberately: what a screen wants from the workspace is to
+ * *do* something to it. Carrying `tabs`/`activeId` through here as well would
+ * change this value on every switch and re-render every screen in the
+ * workspace for it — see {@link WorkspaceActions}. Anything that needs to
+ * *read* the open tabs is the workspace itself, which has them directly.
  */
-const WorkspaceContext = React.createContext<TabsApi | null>(null)
+const WorkspaceContext = React.createContext<WorkspaceActions | null>(null)
 
 export function WorkspaceProvider({
   value,
   children,
 }: {
-  value: TabsApi
+  value: WorkspaceActions
   children: React.ReactNode
 }) {
   return <WorkspaceContext value={value}>{children}</WorkspaceContext>
 }
 
 /**
- * The tab API of the workspace this component is rendered inside, or `null`
+ * The tab actions of the workspace this component is rendered inside, or `null`
  * outside one.
  *
  * Null is a supported answer, not a failure: the sidebar and the ⌘K palette
@@ -39,6 +45,6 @@ export function WorkspaceProvider({
  * tab-opening affordance should hide it when this returns null rather than
  * throw, so the same component stays renderable in both places.
  */
-export function useWorkspace(): TabsApi | null {
+export function useWorkspace(): WorkspaceActions | null {
   return React.use(WorkspaceContext)
 }
