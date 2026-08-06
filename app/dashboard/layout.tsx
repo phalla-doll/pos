@@ -9,6 +9,7 @@
 // } from "@/components/ui/breadcrumb"
 import { HeaderHelp } from "@/components/header-help"
 import { HeaderNotifications } from "@/components/header-notifications"
+import { HeaderRegister } from "@/components/header-register"
 import { HeaderSearch } from "@/components/header-search"
 // import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -80,15 +81,19 @@ export default function DashboardLayout({
             </Breadcrumb>
             */}
             {/*
-              The header tools. Search leads the cluster: it is the widest and
-              the most used, so it sits against the icon buttons rather than
-              beyond them.
+              The header tools, in order of how much of the bar they earn:
+              the register the app is trading from, then search, then the two
+              icon buttons. Search sits between them on purpose — it is the
+              widest and the most used, and putting it against the icon pair
+              keeps the row from reading as three unrelated widgets.
 
-              It subscribes to nothing, so the header still prerenders — the
-              palette reads the live URL at click time rather than at render
-              (see `HeaderSearch`).
+              None of these subscribes to the search params, so the header
+              still prerenders: the palette reads the live URL at click time
+              rather than at render (see `HeaderSearch`), and the register is
+              local state.
             */}
             <div className="ml-auto flex items-center gap-2">
+              <HeaderRegister />
               <HeaderSearch />
               <HeaderHelp />
               <HeaderNotifications />

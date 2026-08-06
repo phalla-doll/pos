@@ -6,6 +6,7 @@
 
 import { BrandMark } from "@/components/brand-mark"
 import { assetPath } from "@/lib/asset-path"
+import type { Store } from "@/lib/registers"
 
 export type Customer = {
   id: string
@@ -781,6 +782,36 @@ export const sampleNotifications: Notification[] = [
     unread: false,
   },
 ]
+
+/**
+ * The stores this workspace trades from, and the registers in each — what the
+ * app bar's switcher offers. Ids are unique across stores (see
+ * `lib/registers.test.ts`), so one id names one till.
+ */
+export const posStores: Store[] = [
+  {
+    name: "BKK1 Flagship",
+    registers: [
+      { id: "bkk1-r1", name: "Register 1" },
+      { id: "bkk1-r2", name: "Register 2" },
+      { id: "bkk1-r3", name: "Register 3" },
+    ],
+  },
+  {
+    name: "Toul Kork Branch",
+    registers: [
+      { id: "tk-r1", name: "Register 1" },
+      { id: "tk-r2", name: "Register 2" },
+    ],
+  },
+  {
+    name: "Riverside Kiosk",
+    registers: [{ id: "rk-counter", name: "Counter" }],
+  },
+]
+
+/** The till the app opens on — see `posStores`. */
+export const defaultRegisterId = "bkk1-r2"
 
 /** The workspace named in the sidebar header. */
 export const sidebarWorkspace = {
