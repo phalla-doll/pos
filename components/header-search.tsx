@@ -22,6 +22,7 @@ import {
   type NavCommand,
 } from "@/lib/nav"
 import type { ScreenType } from "@/lib/screens"
+import { shortcutEventKey } from "@/lib/shortcuts"
 import { launcherHref, contentFromSearch } from "@/lib/tab-url"
 
 /** Heading for palette entries that sit at the top level of the nav tree. */
@@ -81,7 +82,15 @@ export function HeaderSearch() {
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented || e.repeat) return
-      if (e.key.toLowerCase() !== "k" || !(e.metaKey || e.ctrlKey)) return
+      // The chord is declared in `lib/shortcuts.ts`, which is also what the
+      // help popover lists — so this and the promise made to the user can't
+      // come apart.
+      if (
+        e.key.toLowerCase() !== shortcutEventKey("search") ||
+        !(e.metaKey || e.ctrlKey)
+      ) {
+        return
+      }
       e.preventDefault()
       setOpen((prev) => !prev)
       // Reset on the shortcut too, not just `onOpenChange` — toggling the

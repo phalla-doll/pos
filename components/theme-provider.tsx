@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
 
+import { shortcutEventKey } from "@/lib/shortcuts"
 import { defaultTheme, themes, toggleLightDark } from "@/lib/theme"
 
 /**
@@ -63,7 +64,9 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      // Declared in `lib/shortcuts.ts` alongside the rest, so the help popover
+      // and this handler name the same key.
+      if (event.key.toLowerCase() !== shortcutEventKey("toggle-theme")) {
         return
       }
 
