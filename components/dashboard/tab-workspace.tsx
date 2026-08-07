@@ -81,7 +81,20 @@ export function TabWorkspace() {
             <div
               key={tab.id}
               className={cn(
-                "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content) p-3",
+                // `pt-1.5` against `p-3` everywhere else, so the tab bar's
+                // hairline gets equal air on both sides. The bar's own bottom
+                // gutter is 6px (`TAB_BAR_ROW` is the 32px track plus 6 above
+                // and below), and the bar and this pane are both `--content` —
+                // same shade, no seam. A 12px top padding therefore didn't read
+                // as the pane's own gutter; it stacked with the bar's into one
+                // 18px band with the hairline sitting a third of the way down
+                // it. Matching the 6px puts the line in the middle of its own
+                // space, and the column reads 6 / track / 6 / rule / 6 / card.
+                //
+                // The other three sides stay 12px on purpose — they're measured
+                // against the sidebar and the window, not against a rule, and
+                // the tighter top is what ties the card to the tab above it.
+                "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content) p-3 pt-1.5",
                 tab.id !== activeId && "hidden"
               )}
             >
