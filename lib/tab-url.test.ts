@@ -160,9 +160,9 @@ describe("workspaceHref", () => {
 })
 
 describe("launcherHref", () => {
-  it("appends and focuses a screen that isn't open", () => {
+  it("opens a screen that isn't open at the front, focused", () => {
     expect(launcherHref(content(["pos"], 0), users)).toBe(
-      "/dashboard?tabs=pos,users&i=1"
+      "/dashboard?tabs=users,pos"
     )
   })
 
@@ -171,7 +171,7 @@ describe("launcherHref", () => {
       launcherHref(content(["pos", "users"], 0), {
         screenType: "reports" as ScreenType,
       })
-    ).toBe("/dashboard?tabs=pos,users,reports&i=2")
+    ).toBe("/dashboard?tabs=reports,pos,users")
   })
 
   it("focuses an existing tab instead of opening a second one", () => {

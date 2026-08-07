@@ -47,6 +47,7 @@ function content(tokens: string[], activeIndex: number): WorkspaceContent {
 
 const inventory = "inventory" as ScreenType
 const dashboard = "dashboard" as ScreenType
+const pos = "pos" as ScreenType
 
 /** A deterministic mint so cases stay free of randomness. */
 function minter(prefix = "new") {
@@ -63,6 +64,45 @@ describe("open (reuse-or-create)", () => {
     })
     expect(next.tabs).toEqual([{ id: "a", screenType: inventory }])
     expect(next.activeId).toBe("a")
+  })
+
+  it("puts a new tab at the front of the strip", () => {
+    // The strip doesn't scroll — its tail collapses behind "More" — so a new
+    // tab opens where the user is already looking rather than in the half
+    // most likely to be hidden.
+    const start = state(
+      [
+        ["a", "dashboard"],
+        ["b", "inventory"],
+      ],
+      "a"
+    )
+    const next = tabsReducer(start, {
+      type: "open",
+      ref: { screenType: pos },
+      newId: "c",
+    })
+    expect(next.tabs.map((t) => t.id)).toEqual(["c", "a", "b"])
+    expect(next.activeId).toBe("c")
+  })
+
+  it("leaves a reused tab where it is rather than moving it to the front", () => {
+    // Only creation reorders. Focusing an open tab must not reshuffle the row
+    // under the user every time attention moves.
+    const start = state(
+      [
+        ["a", "dashboard"],
+        ["b", "inventory"],
+      ],
+      "a"
+    )
+    const next = tabsReducer(start, {
+      type: "open",
+      ref: { screenType: inventory },
+      newId: "unused",
+    })
+    expect(next.tabs.map((t) => t.id)).toEqual(["a", "b"])
+    expect(next.activeId).toBe("b")
   })
 
   it("reuses (focuses) an existing tab of the same type instead of creating", () => {
@@ -101,8 +141,8 @@ describe("open (reuse-or-create)", () => {
       newId: "b",
     })
     expect(next.tabs).toEqual([
-      { id: "a", screenType: inventory },
       { id: "b", screenType: inventory, param: "SKU-1" },
+      { id: "a", screenType: inventory },
     ])
     expect(next.activeId).toBe("b")
   })
@@ -150,7 +190,7 @@ describe("open (reuse-or-create)", () => {
       ref: { screenType: inventory, param: "SKU-2" },
       newId: "b",
     })
-    expect(next.tabs.map((t) => t.param)).toEqual(["SKU-1", "SKU-2"])
+    expect(next.tabs.map((t) => t.param)).toEqual(["SKU-2", "SKU-1"])
     expect(next.activeId).toBe("b")
   })
 
@@ -167,7 +207,8 @@ describe("open (reuse-or-create)", () => {
         }),
       initialWorkspaceState
     )
-    expect(end.tabs.map((t) => t.param)).toEqual(drafts)
+    // Newest first, so the run reads as the reverse of the order they opened.
+    expect(end.tabs.map((t) => t.param)).toEqual([...drafts].reverse())
     expect(end.activeId).toBe("t2")
   })
 })

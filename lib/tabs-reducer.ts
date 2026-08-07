@@ -59,7 +59,10 @@ export type TabsAction =
    * protect, because the screens involved weren't ours to begin with.
    */
   | { type: "sync"; content: WorkspaceContent; mint: () => string }
-  /** Open a screen as a tab (reuse an existing tab of that ref, else create). */
+  /**
+   * Open a screen as a tab: focus an existing tab of that ref, else create one
+   * at the front of the strip.
+   */
   | { type: "open"; ref: ScreenRef; newId: string }
   /** Focus a tab by id. No-op if the id isn't open. */
   | { type: "setActive"; id: string }
@@ -133,8 +136,21 @@ export function contentEquals(
 
 /**
  * Reuse an open tab with the same {@link refKey} (focusing it) or create one at
- * the end and focus that. Returns the same state reference when nothing
+ * the **front** and focus that. Returns the same state reference when nothing
  * changes.
+ *
+ * Newest-first, because the strip doesn't scroll: tabs that don't fit collapse
+ * behind the "More" button at the end of the run. Appending meant a new tab
+ * landed in the half most likely to be hidden, so opening a screen into a full
+ * strip could hide an existing tab to make room for one the user then had to go
+ * find in a menu. Opening at the front puts it where it is already being looked
+ * at, and pushes the least recently opened tab towards the overflow instead.
+ *
+ * Only *new* tabs move to the front. A reused tab keeps its place — its screen
+ * is already mounted and the user's mental map of the strip with it, and
+ * reordering on mere focus would reshuffle the row every time attention moved.
+ * `duplicate` likewise still inserts beside its source: a copy's position is a
+ * statement about the tab it came from.
  *
  * Matching on the whole ref is what lets a list and its record forms coexist:
  * opening `inventory` must not focus the `inventory:SKU-001` tab, and vice
@@ -155,7 +171,7 @@ function openOrReuse(
     return { ...state, activeId: existing.id }
   }
   const tab: Tab = { id: newId, ...ref }
-  return { tabs: [...state.tabs, tab], activeId: tab.id }
+  return { tabs: [tab, ...state.tabs], activeId: tab.id }
 }
 
 /**

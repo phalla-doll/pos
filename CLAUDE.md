@@ -75,6 +75,8 @@ Create and edit are **not** registry entries of their own — that would put "In
 - **Edits** carry the row key, so a record already open is focused rather than opened twice — two tabs disagreeing about one record is not something this can produce.
 - A list and its record forms never match each other, so opening `inventory` doesn't steal focus from `inventory:SKU-0001`.
 
+A **created** tab goes to the front of the strip; a **reused** one keeps its place. The strip doesn't scroll — its tail collapses behind "More" — so appending put every new tab in the half most likely to be hidden. Reuse deliberately doesn't reorder: focusing an open tab must not reshuffle the row under the user. `duplicate` still inserts beside its source, since a copy's position is a statement about the tab it came from.
+
 The registry's `detail.accepts` is called by the URL codec *before* a token becomes a tab, so a hand-edited link naming a record that doesn't exist drops that tab, and a param on a screen with no `detail` degrades to the bare screen. Validation stays in the registry; the codec only asks.
 
 Screens reach the workspace through `useWorkspace()`, not `useTabs()` — `useTabs` holds identity in `useState`, so a second caller would be a second, divergent workspace. `TabWorkspace` is the only caller and provides its one instance. `useWorkspace()` answers `null` outside a workspace (the sidebar, ⌘K), and screens hide their tab-opening affordances rather than throwing.
