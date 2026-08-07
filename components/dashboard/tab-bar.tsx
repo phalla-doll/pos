@@ -12,6 +12,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -250,16 +251,22 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
         align="end"
         className="max-h-80 w-auto max-w-72 min-w-44 overflow-y-auto"
       >
-        {/* Names what the list is. Without it the menu is a bare run of screen
-            names that could just as easily be a launcher — and these are open
-            tabs, not screens to open. */}
-        <DropdownMenuLabel>Hidden tabs</DropdownMenuLabel>
-        {tabs.map((tab) => (
-          <DropdownMenuItem key={tab.id} onClick={() => onSelect(tab.id)}>
-            {getScreen(tab.screenType)?.icon}
-            <span className="truncate">{tabTitle(tab)}</span>
-          </DropdownMenuItem>
-        ))}
+        {/* The group is required, not decorative: `DropdownMenuLabel` is Base
+            UI's `Menu.GroupLabel`, which reads `MenuGroupContext` and throws
+            outright when rendered outside a `Menu.Group`. It's also what ties
+            the label to the items for assistive tech. */}
+        <DropdownMenuGroup>
+          {/* Names what the list is. Without it the menu is a bare run of
+              screen names that could just as easily be a launcher — and these
+              are open tabs, not screens to open. */}
+          <DropdownMenuLabel>Hidden tabs</DropdownMenuLabel>
+          {tabs.map((tab) => (
+            <DropdownMenuItem key={tab.id} onClick={() => onSelect(tab.id)}>
+              {getScreen(tab.screenType)?.icon}
+              <span className="truncate">{tabTitle(tab)}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
