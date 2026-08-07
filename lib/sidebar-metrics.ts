@@ -12,8 +12,15 @@
  * collapses *to*, so a collapsed sidebar is exactly the rail with nothing
  * beside it. The nested pane-1 sidebar is pinned to `--sidebar-width-icon`
  * (+1px for its border) in `components/app-sidebar.tsx`.
+ *
+ * 56px against {@link railButton}'s 36px leaves 10px of rail either side of a
+ * button, up from the 6px that `3rem` gave. The buttons themselves are
+ * unchanged: this is the column they sit in getting wider, not the targets.
+ * That gutter is the only thing separating the glyphs from the page edge on
+ * one side and the workspace on the other, and at 6px the column read as tight
+ * around them rather than as a rail they sit on.
  */
-export const SIDEBAR_WIDTH_ICON = "3rem"
+export const SIDEBAR_WIDTH_ICON = "3.5rem"
 
 /**
  * A pane-1 rail button: a fixed 36px square with a centered 16px glyph. The
@@ -28,9 +35,20 @@ export const SIDEBAR_WIDTH_ICON = "3rem"
  * carries higher specificity, which outranks `!important`. So we re-assert the
  * size under the *same* variant — equal specificity, and `size-9` sorts after
  * `size-8`, so it wins — pinning the button to 36px in the collapsed state too.
+ *
+ * `mx-auto` is what keeps it centred in the rail, and it is load-bearing rather
+ * than belt-and-braces. The vendored button is `w-full`, so it filled its item
+ * and centring never came up; pinned to 36px it becomes a fixed-width box
+ * left-aligned in whatever the item leaves. At the old 3rem rail that was
+ * invisible — 48px less the group's 6px padding either side is exactly 36px, so
+ * the button had nowhere to sit but centred, by arithmetic rather than by
+ * intent. Any other rail width exposes the slack on the right.
+ *
+ * `justify-center` is the other half and does a different job: that one centres
+ * the glyph inside the button, this one centres the button inside the rail.
  */
 export const railButton =
-  "size-9! group-data-[collapsible=icon]:size-9! justify-center [&_svg]:size-4!"
+  "mx-auto size-9! group-data-[collapsible=icon]:size-9! justify-center [&_svg]:size-4!"
 
 /**
  * A nav item's label size: 13.5px, a half-step under the vendored `text-sm`.
