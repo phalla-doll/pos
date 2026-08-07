@@ -256,7 +256,7 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
             // legible both on the track and against the pill beside it. It
             // stays lit while the menu is open, so the trigger doesn't look
             // dismissed with its own popup on screen.
-            className="group/more flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-normal text-foreground/60 transition-colors duration-150 hover:text-foreground data-popup-open:bg-foreground/10 data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+            className="group/more flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-normal text-foreground/60 transition-colors duration-150 hover:text-foreground data-popup-open:bg-foreground/10 data-popup-open:text-foreground dark:text-foreground/45 dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
             {/* Count first — it's the part worth scanning, and it's what
                 changes as tabs come and go. */}
@@ -363,12 +363,28 @@ function TabChip({
               // those say it without help from the type.
               "group/tab relative flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm border border-transparent px-2 text-sm font-normal whitespace-nowrap transition-all",
               isActive
-                ? // `shadow-xs`, not the variant's `shadow-sm`: a tab chip is
+                ? // One fill for both themes, because `--tab-active` already
+                  // holds each theme's answer to "a step above the track" —
+                  // the card's shade in light, a deliberate lift in dark, where
+                  // borrowing the card would have recessed it. The variant's
+                  // `dark:bg-input/30` is what this replaces: 1.14:1 over the
+                  // track, which at the dark end of the ramp is nothing.
+                  //
+                  // `shadow-xs`, not the variant's `shadow-sm`: a tab chip is
                   // wider than a segmented-control segment, so the same shadow
                   // spread over that length reads as the pill floating well off
                   // the strip. The lift only has to say "this one is on top".
-                  "bg-background text-foreground shadow-xs dark:border-input dark:bg-input/30"
-                : "text-foreground/60 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                  // It does no work in dark — black at 5% on a dark surface is
+                  // invisible — which is exactly why the fill has to carry more
+                  // there than it does here.
+                  "bg-(--tab-active) text-foreground shadow-xs dark:border-input"
+                : // Dark's resting label was `--muted-foreground` (0.738),
+                  // which left only 2.06:1 between it and the focused tab's
+                  // label where light had 3.35:1 — so the row read as uniformly
+                  // bright and the active one didn't stand out. An alpha of
+                  // `--foreground` instead, the same way light states its own,
+                  // tuned to land at light's separation rather than its number.
+                  "text-foreground/60 hover:text-foreground dark:text-foreground/45 dark:hover:text-foreground"
             )}
           />
         }

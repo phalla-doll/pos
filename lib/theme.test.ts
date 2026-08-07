@@ -203,6 +203,39 @@ describe("globals.css", () => {
   })
 
   /**
+   * The tab strip's two surfaces. Each theme has to answer both, because the
+   * pair only means anything as a contrast: light lifts the focused pill *up*
+   * the ramp to the card's own shade, while dark has to lift it away from a
+   * card that sits *below* the track, and neither value is derivable from the
+   * other's direction.
+   *
+   * So the assertion is that dark *overrides* rather than merely resolves.
+   * Inheriting `:root` is the quiet failure and the reason this can't be the
+   * "answers it from every theme" shape the focus edge uses: light's
+   * `--tab-active` is `var(--card)`, which still resolves under `.dark` — to
+   * the shade *below* the track, recessing the one chip meant to sit on top.
+   * The tab bar would render, work, and simply stop saying which tab you are
+   * looking at.
+   */
+  it.each(["--tab-track", "--tab-active"])(
+    "%s is stated once per brightness, never inherited across one",
+    (token) => {
+      const declares = (match: (selector: string) => boolean) =>
+        rules.some(
+          ([, selector, body]) => match(selector) && body.includes(`${token}:`)
+        )
+
+      expect(declares((s) => s.includes(":root"))).toBe(true)
+
+      for (const theme of themes.filter((t) => brightnessOf(t) === "dark")) {
+        expect(
+          declares((s) => new RegExp(`\\.${theme}(?![\\w-])`).test(s))
+        ).toBe(true)
+      }
+    }
+  )
+
+  /**
    * The focus edge is an accent, so a palette that moves the accent has to move
    * it too — left inherited, the blue themes answered a focused input with the
    * neutral grey, and it is the one cue that exists to be noticed.

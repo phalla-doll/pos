@@ -303,6 +303,14 @@
      * track is a piece of chrome.
      */
   --tab-track: oklch(0.94 0.008 265);
+  /* The pill the focused tab is drawn as, lifted off the track above. Here it
+     * is simply the card's own shade: light lifts by going *up* the ramp, and
+     * the top of the ramp is the sheet the tab's screen is drawn on, so the
+     * pill and its content are literally the same surface. 1.17:1 over the
+     * track is slight, but a near-white against a grey is read at the end of
+     * the range where the eye is sharpest, and `shadow-xs` draws a real edge
+     * under it besides. Both of those stop being true in dark — see there. */
+  --tab-active: var(--card);
   --background: oklch(0.994 0.002 265);
   --foreground: oklch(0.153 0.008 265);
 }
@@ -439,6 +447,19 @@
      * the room and a near-white one does not. Pointed at `--muted` rather than
      * written out: here it *is* the fill step, which is what a track is. */
   --tab-track: var(--muted);
+  /* The focused tab's pill. It cannot be `--card` the way light's is: dark's
+     * card sits *below* the track (0.248 under 0.301), so borrowing it would
+     * recess the one tab that is meant to be on top. Lift instead — one clear
+     * step over the track, the direction everything on this ramp takes.
+     *
+     * 0.380 rather than something nearer the track, because the two cues light
+     * leans on are both gone here. `shadow-xs` is black at 5%: invisible on a
+     * dark surface, so there is no edge under the pill. And a pair this far
+     * down the ramp reads much flatter than the same ratio near white — light's
+     * 1.17:1 is plainly visible, the old `--input`-at-30% was 1.14:1 and simply
+     * wasn't. This lands 1.35:1, which is what it costs to say the same thing
+     * down here. */
+  --tab-active: oklch(0.38 0 0);
 }
 
 /*
