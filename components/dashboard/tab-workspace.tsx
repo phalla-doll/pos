@@ -81,18 +81,19 @@ export function TabWorkspace() {
             <div
               key={tab.id}
               className={cn(
-                // `pt-1.5` against `p-3` everywhere else, and the two together
-                // are the gutter — not a smaller one. `TAB_BAR_ROW` is the 32px
-                // track plus 6px above and below, and the bar and this pane are
-                // the same `--content` shade with nothing drawn between them,
-                // so the bar's bottom 6px and this 6px are one continuous space
-                // to the eye. That lands the card 12px from the track, matching
-                // the 12px it keeps from the sidebar and the window on its other
-                // three sides — the sheet is inset evenly all round.
+                // `pt-1.5` against `p-3` everywhere else, and this 6px is the
+                // *entire* gap between the tabs and the card: the bar ends
+                // where its track does (`TAB_BAR_ROW` is `items-end`), so
+                // nothing stacks underneath it. The bar and this pane are the
+                // same `--content` shade with nothing drawn between them, which
+                // is exactly why the gap has to be stated once — split across
+                // two boxes there was no seam to tell the halves apart, and it
+                // just read as one oversized band.
                 //
-                // A flat `p-3` here would have stacked with the bar's gutter
-                // into 18px, which is why the top used to read as too airy
-                // against the sides.
+                // Deliberately tighter than the 12px on the other three sides.
+                // Those are measured against the sidebar and the window; this
+                // one is measured against the tabs that belong to this card,
+                // and sitting close to them is what says they belong.
                 "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content) p-3 pt-1.5",
                 tab.id !== activeId && "hidden"
               )}

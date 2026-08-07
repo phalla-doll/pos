@@ -39,11 +39,19 @@ import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
  * eye then measured the space above the line against the space below it rather
  * than reading one gap between the tabs and the card.
  *
- * `h-11` is the segmented track's own `h-8` plus a 6px gutter above and below,
- * so the track floats in the row instead of touching its edges — the fill needs
- * that air to read as one control rather than as a band. Shared so the Suspense
- * fallback (`TabWorkspaceFallback`) matches the bar's size exactly, instead of
- * re-declaring the constant.
+ * `h-11` is the segmented track's own `h-8` plus the 12px that the row's
+ * `items-end` leaves above it — the track floats clear of the app bar rather
+ * than touching it, and the fill needs that air to read as one control rather
+ * than as a band. Nothing is left below: the row ends where the track does, and
+ * the 6px before the card is the pane's own top padding, so the whole gap under
+ * the tabs is stated in one place instead of split across two boxes.
+ *
+ * The two gaps are unequal on purpose, and this way round on purpose. The tabs
+ * are the card's tabs, so sitting nearer to it than to the app bar is what says
+ * so — proximity is the only thing grouping them now that no rule does.
+ *
+ * Shared so the Suspense fallback (`TabWorkspaceFallback`) matches the bar's
+ * size exactly, instead of re-declaring the constant.
  */
 export const TAB_BAR_ROW = "h-11 shrink-0 bg-(--content)"
 
@@ -138,7 +146,11 @@ export function TabBar({
   })
 
   return (
-    <div className={cn("flex items-center", TAB_BAR_ROW)}>
+    <div
+      // `items-end`, not `items-center`: the row's spare height all goes above
+      // the track, leaving the gap below it to the pane alone.
+      className={cn("flex items-end", TAB_BAR_ROW)}
+    >
       {/* `overflow-hidden` guards the measuring commit, where every chip renders
           at once so its width can be read — without it that pass would blow out
           the layout. */}
