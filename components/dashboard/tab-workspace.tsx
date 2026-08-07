@@ -81,19 +81,18 @@ export function TabWorkspace() {
             <div
               key={tab.id}
               className={cn(
-                // `pt-1.5` against `p-3` everywhere else, so the tab bar's
-                // hairline gets equal air on both sides. The bar's own bottom
-                // gutter is 6px (`TAB_BAR_ROW` is the 32px track plus 6 above
-                // and below), and the bar and this pane are both `--content` —
-                // same shade, no seam. A 12px top padding therefore didn't read
-                // as the pane's own gutter; it stacked with the bar's into one
-                // 18px band with the hairline sitting a third of the way down
-                // it. Matching the 6px puts the line in the middle of its own
-                // space, and the column reads 6 / track / 6 / rule / 6 / card.
+                // `pt-1.5` against `p-3` everywhere else, and the two together
+                // are the gutter — not a smaller one. `TAB_BAR_ROW` is the 32px
+                // track plus 6px above and below, and the bar and this pane are
+                // the same `--content` shade with nothing drawn between them,
+                // so the bar's bottom 6px and this 6px are one continuous space
+                // to the eye. That lands the card 12px from the track, matching
+                // the 12px it keeps from the sidebar and the window on its other
+                // three sides — the sheet is inset evenly all round.
                 //
-                // The other three sides stay 12px on purpose — they're measured
-                // against the sidebar and the window, not against a rule, and
-                // the tighter top is what ties the card to the tab above it.
+                // A flat `p-3` here would have stacked with the bar's gutter
+                // into 18px, which is why the top used to read as too airy
+                // against the sides.
                 "flex min-h-0 flex-1 flex-col overflow-auto bg-(--content) p-3 pt-1.5",
                 tab.id !== activeId && "hidden"
               )}

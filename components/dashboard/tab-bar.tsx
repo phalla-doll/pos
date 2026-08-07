@@ -26,23 +26,26 @@ import type { Tab } from "@/hooks/use-tabs"
 import { ChevronDown, Copy, X, XCircle, SquareX } from "lucide-react"
 
 /**
- * Height + bottom edge of the tab-bar row. The strip shares the workspace
- * surface it sits on (`--content`) rather than the page white — the two meet
- * with no seam, and only the hairline below divides them. On the page's own
- * shade it would read as a bright band wedged between the app bar above it and
- * the workspace below, both of which are darker.
+ * Height of the tab-bar row. The strip shares the workspace surface it sits on
+ * (`--content`) rather than the page white: the two meet with no seam at all,
+ * so the tabs and the sheet they belong to read as one region. On the page's
+ * own shade it would read as a bright band wedged between the app bar above it
+ * and the workspace below, both of which are darker.
+ *
+ * There is deliberately **no rule under the row**. Nothing needs dividing — the
+ * bar and the pane are the same surface, and the track is already a bounded
+ * object sitting on it, so a hairline only drew a line across an unbroken
+ * shade. What it did instead was cut the gutter below the track in two, and the
+ * eye then measured the space above the line against the space below it rather
+ * than reading one gap between the tabs and the card.
  *
  * `h-11` is the segmented track's own `h-8` plus a 6px gutter above and below,
  * so the track floats in the row instead of touching its edges — the fill needs
- * that air to read as one control rather than as a band. The hairline is an
- * *inset box-shadow*, not a `border-b`, on purpose: a border shrinks the content
- * box (border-box), so the row's children would sit 1px shy of its full height
- * and the centered track would land a half-pixel high. A shadow takes no layout
- * space. Shared so the Suspense fallback (`TabWorkspaceFallback`) matches the
- * bar's size exactly, instead of re-declaring the constant.
+ * that air to read as one control rather than as a band. Shared so the Suspense
+ * fallback (`TabWorkspaceFallback`) matches the bar's size exactly, instead of
+ * re-declaring the constant.
  */
-export const TAB_BAR_ROW =
-  "h-11 shrink-0 bg-(--content) shadow-[inset_0_-1px_0_0_var(--border)]"
+export const TAB_BAR_ROW = "h-11 shrink-0 bg-(--content)"
 
 export type TabBarProps = {
   tabs: Tab[]
