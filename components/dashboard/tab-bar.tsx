@@ -401,10 +401,32 @@ function TabChip({
           <span className="max-w-40 truncate">{label}</span>
         </button>
 
-        {/* Close — the only inline action. Active tabs always show it;
-            inactive tabs reveal it on hover, which doubles as their hover
-            feedback. Everything else lives in the right-click menu, so there's
-            a single, unambiguous target.
+        {/* Close — the only inline action. Everything else lives in the
+            right-click menu, so there's a single, unambiguous target.
+
+            Shown on every tab, which is a spacing fix before it is an
+            interaction one. It was `opacity-0` until hover on inactive tabs,
+            and opacity frees no layout: the 24px slot was reserved on every
+            chip regardless, so an inactive tab carried 33px of trailing space
+            against 9px of leading, all of it empty. Each label sat jammed
+            against its own icon and adrift from its own right edge, and the
+            run read at two rhythms — 21px after the active tab, 42px between
+            any two inactive ones.
+
+            Filling the slot rather than reclaiming it is deliberate. Dropping
+            the reservation would balance the box, but the chip would then grow
+            on hover and shove every tab to its right out from under the cursor
+            — and `measureChip` records a width once, on mount, so the
+            partitioner would never see the new one and an expanded chip could
+            run past the strip's `overflow-hidden` and clip. This way no width
+            changes at all.
+
+            `text-current`, not `text-muted-foreground`: the glyph takes its own
+            chip's colour, so it is full strength on the active pill and exactly
+            as quiet as the label it belongs to on the rest. Pinned to the muted
+            token it would have come out *brighter* than an inactive label in
+            dark, which now rests at `foreground/45` — a row of close buttons
+            louder than the tab names they close.
 
             The hover fill is `foreground/10` rather than `accent`: an inactive
             chip sits on the muted track and an active one on the raised pill,
@@ -414,10 +436,7 @@ function TabChip({
           type="button"
           onClick={() => onClose(tab.id)}
           aria-label={`Close ${label} tab`}
-          className={cn(
-            "flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-opacity duration-150 hover:bg-foreground/10 hover:text-foreground [&_svg]:size-3.5",
-            isActive ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100"
-          )}
+          className="flex size-5 items-center justify-center rounded-sm text-current transition-colors duration-150 hover:bg-foreground/10 hover:text-foreground [&_svg]:size-3.5"
         >
           <X strokeWidth={1.5} />
         </button>
