@@ -60,13 +60,14 @@ export type TabBarProps = {
  * `CHIP_GAP` is 0 because the default tabs variant butts its triggers together:
  * the track's fill is what separates them, so a gap would only open slots of
  * bare rail between tabs. `TRACK_PADDING` is the track's own `p-[3px]` on both
- * sides, and `MORE_GAP` the `gap-1` between the track and the overflow button
- * that sits outside it — both come off the budget the chips get to fill.
+ * sides, which comes off the budget the chips get to fill.
+ *
+ * The overflow trigger is a segment of the track like any chip, so it costs its
+ * own width and nothing more — there is no gap to charge for it.
  */
 const CHIP_GAP = 0
 const STRIP_PADDING = 24
 const TRACK_PADDING = 6
-const MORE_GAP = 4
 
 /**
  * Width assumed for the "More" button before it has ever rendered. Only used on
@@ -129,9 +130,7 @@ export function TabBar({
     widths,
     activeId,
     containerWidth,
-    // The button's own width plus the gap that precedes it — the partitioner
-    // charges one `gap` for that space, and ours is 0 between chips.
-    moreWidth: moreWidth + MORE_GAP,
+    moreWidth,
     gap: CHIP_GAP,
   })
 
@@ -177,14 +176,16 @@ export function TabBar({
               onCloseAll={onCloseAll}
             />
           ))}
+          {/* The last segment of the track, not a control beside it — see
+              `OverflowMenu`. */}
+          {overflow.length > 0 && (
+            <OverflowMenu
+              tabs={overflow}
+              onMeasure={setMoreWidth}
+              onSelect={onSelect}
+            />
+          )}
         </div>
-        {overflow.length > 0 && (
-          <OverflowMenu
-            tabs={overflow}
-            onMeasure={setMoreWidth}
-            onSelect={onSelect}
-          />
-        )}
       </div>
     </div>
   )
@@ -201,10 +202,16 @@ type OverflowMenuProps = {
  * and because `partitionTabs` pins the active tab, the chosen tab immediately
  * takes a visible slot, so the menu doubles as the way back out of overflow.
  *
- * Deliberately *not* styled as a tab, and deliberately outside the track: a tab
- * is a slot in the segmented fill, so anything sharing that fill reads as one.
- * A ghost button set just past the track's right edge reads instead as "tabs,
- * then a control", which is what it is.
+ * Rendered as the **last segment of the track**, sharing the chips' fill,
+ * height and radius rather than sitting past its right edge as a ghost button.
+ * What it collapses is tabs, so it belongs to the run of tabs: outside the
+ * track it read as an unrelated control that happened to land nearby, and the
+ * gap between the two made the strip look like it ended early.
+ *
+ * It still isn't styled as *the active* chip. It takes the inactive treatment —
+ * dimmed text on the track — and marks its open state with a translucent tint
+ * of the text color rather than the raised pill, because the pill is what says
+ * "this tab's screen is on display" and no menu trigger can say that.
  */
 function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
   const measure = React.useCallback(
@@ -222,13 +229,19 @@ function OverflowMenu({ tabs, onMeasure, onSelect }: OverflowMenuProps) {
             ref={measure}
             type="button"
             aria-label={`Show ${tabs.length} more ${tabs.length === 1 ? "tab" : "tabs"}`}
-            // Stays lit while the menu is open, so the button doesn't look
-            // dismissed with its own popup on screen.
+            // An inactive chip's box, transcribed: the same
+            // `h-[calc(100%-1px)]`, `rounded-sm`, `px-2`, `text-sm` and
+            // `font-normal`, so it sits in the track's fill at the chips'
+            // height instead of overflowing its 26px content box the way a
+            // fixed `h-7` did.
             //
-            // `font-normal` with the chips: this sits inline at the end of the
-            // same strip and reads as one of them, so it can't be the one
-            // heavy thing left in the row.
-            className="group/more flex h-7 shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-normal text-foreground/60 transition-colors duration-150 hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
+            // The open state is `foreground/10` rather than `accent`: the same
+            // tint the chips' close buttons use, and for the same reason — a
+            // translucent wash of the text color is the one fill that stays
+            // legible both on the track and against the pill beside it. It
+            // stays lit while the menu is open, so the trigger doesn't look
+            // dismissed with its own popup on screen.
+            className="group/more flex h-[calc(100%-1px)] shrink-0 items-center gap-1 rounded-sm px-2 text-sm font-normal text-foreground/60 transition-colors duration-150 hover:text-foreground data-popup-open:bg-foreground/10 data-popup-open:text-foreground dark:text-muted-foreground dark:hover:text-foreground [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
             {/* Count first — it's the part worth scanning, and it's what
                 changes as tabs come and go. */}
