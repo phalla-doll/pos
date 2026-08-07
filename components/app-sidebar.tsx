@@ -485,10 +485,24 @@ function SidebarBody({
               </div>
               {/* The identity row follows the search at the menu's top level
                   only — once drilled into a section, or over in favorites, the
-                  list takes the space. A divider sets it apart from the list
-                  below, and clicking it drills into the profile view. */}
+                  list takes the space. Clicking it drills into the profile
+                  view.
+
+                  No rule under it: the row is already a distinct object — an
+                  avatar and two lines of type against a column of single-line
+                  items — so the line was restating what the content says, and
+                  the panel only has room for so many horizontal strokes before
+                  it reads as a form.
+
+                  That leaves space to do the grouping, which is why `pb-2`
+                  rather than the `pb-4` the rule sat under. With the list's own
+                  8px it comes to 16px below the row against the search's 12px
+                  above it: enough of a step to say the list starts here, and
+                  not so much that the row floats between the two. At `pb-4` the
+                  gap was 24px against that same 12px — the rule was the only
+                  thing explaining it, so removing it would have left a hole. */}
               {!inFavorites && path.length === 0 && (
-                <div className="border-b px-3 pb-4">
+                <div className="px-3 pb-2">
                   <NavUserCard user={sidebarUser} onClick={openProfile} />
                 </div>
               )}
